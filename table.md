@@ -10,15 +10,15 @@ Báo cáo hiện có 11 bảng (I đến XI), đủ cho nhiệm vụ 2 nhưng th
 |---|---|---|---|
 | I | Số ảnh và truy vấn của VG ∩ COCO | Sửa: mở rộng thành bảng ba bộ dữ liệu | [Bảng 1](#bảng-1-thống-kê-ba-bộ-dữ-liệu) |
 | II | Kết quả mức 1 | Sửa: số 48,20 lệch với 48,12 ở Bảng III; thiếu độ lệch chuẩn; in đậm 48,20 trong khi dòng dưới 49,43 cao hơn | [Bảng 3](#bảng-3-kết-quả-chính-mức-1) |
-| III | Kết quả chính mức 2 trên hai tập | Giữ | [Bảng 8](#bảng-8-kết-quả-chính-mức-2-trên-hai-tập) |
-| IV | Trực tiếp và gián tiếp trên MKG-W, 3 phương pháp | Gộp với Bảng X | [Bảng 9](#bảng-9-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w) |
-| V | Biến thể ngoài ba mô hình chính | Giữ | [Bảng 10](#bảng-10-các-biến-thể-ngoài-ba-mô-hình-chính) |
-| VI | Thành phần của AdaMF-MAT | Giữ | [Bảng 11](#bảng-11-thành-phần-của-adamf-mat) |
-| VII | Ablation modality trên MKG-W caption subset | Giữ | [Bảng 12](#bảng-12-ablation-modality-trên-mkg-w-caption-subset) |
-| VIII | Relation queries và che cạnh | Giữ | [Bảng 13](#bảng-13-mô-hình-có-đọc-cạnh-không-che-cạnh-được-hỏi) |
-| IX | Truy vấn gián tiếp qua IsA | Chuyển xuống phụ lục: kết quả âm, không trả lời yêu cầu nào trực tiếp | [Bảng 23](#bảng-23-truy-vấn-gián-tiếp-qua-khái-niệm-cha-isa) |
-| X | Các phương pháp khác trên MKG-W | Gộp vào bảng trực tiếp và gián tiếp; hai dòng xáo cạnh sang bảng ablation cạnh | [Bảng 9](#bảng-9-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w) |
-| XI | Hai bộ kiểm tra thêm | Sửa: thêm số câu | [Bảng 15](#bảng-15-hai-bộ-truy-vấn-chỉ-dùng-để-đánh-giá) |
+| III | Kết quả chính mức 2 trên hai tập | Giữ | [Bảng 7](#bảng-7-kết-quả-chính-mức-2-trên-hai-tập) |
+| IV | Trực tiếp và gián tiếp trên MKG-W, 3 phương pháp | Gộp với Bảng X | [Bảng 8](#bảng-8-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w) |
+| V | Biến thể ngoài ba mô hình chính | Giữ | [Bảng 9](#bảng-9-các-biến-thể-ngoài-ba-mô-hình-chính) |
+| VI | Thành phần của AdaMF-MAT | Giữ | [Bảng 10](#bảng-10-thành-phần-của-adamf-mat) |
+| VII | Ablation modality trên MKG-W caption subset | Giữ | [Bảng 11](#bảng-11-ablation-modality-trên-mkg-w-caption-subset) |
+| VIII | Relation queries và che cạnh | Giữ | [Bảng 12](#bảng-12-mô-hình-có-đọc-cạnh-không-che-cạnh-được-hỏi) |
+| IX | Truy vấn gián tiếp qua IsA | Bỏ: kết quả âm, không trả lời trực tiếp yêu cầu nào của đề | – |
+| X | Các phương pháp khác trên MKG-W | Gộp vào bảng trực tiếp và gián tiếp; hai dòng xáo cạnh sang bảng ablation cạnh | [Bảng 8](#bảng-8-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w) |
+| XI | Hai bộ kiểm tra thêm | Sửa: thêm số câu | [Bảng 14](#bảng-14-hai-bộ-truy-vấn-chỉ-dùng-để-đánh-giá) |
 
 ## Danh sách bảng theo yêu cầu của đề
 
@@ -30,32 +30,29 @@ Mỗi bảng gắn với một yêu cầu của đề; bảng nào không trả 
 | [Bảng 2](#bảng-2-thiết-lập-thực-nghiệm): Thiết lập thực nghiệm | Dữ liệu và thiết lập | Chung: α và siêu tham số chọn trên validation, tối thiểu 3 seed | Thêm mới; có thể bỏ |
 | [Bảng 3](#bảng-3-kết-quả-chính-mức-1): Kết quả chính mức 1 | Nhiệm vụ 1 | Mức 1: so sánh CLIP với CLIP + đồ thị trên cùng cách chia | Sửa Bảng II: dùng lượt 48,12 ± 0,23 cho khớp Bảng III, thêm độ lệch chuẩn và cột điểm đồ thị, sửa chỗ in đậm |
 | [Bảng 4](#bảng-4-ablation-cấu-trúc-đồ-thị-huấn-luyện-lại): Ablation cấu trúc đồ thị (huấn luyện lại) | Nhiệm vụ 1 | Mức 1: bỏ cạnh hoặc thay bằng cạnh ngẫu nhiên | Thêm mới |
-| [Bảng 5](#bảng-5-chênh-lệch-ghép-cặp-của-ablation): Chênh lệch ghép cặp của ablation | Nhiệm vụ 1 | Mức 1: chứng minh cải thiện đến từ cấu trúc quan hệ | Thêm mới |
-| [Bảng 6](#bảng-6-xoá-cạnh-xoá-đỉnh-đổi-nhãn-lúc-test): Xoá cạnh, xoá đỉnh, đổi nhãn lúc test | Nhiệm vụ 1 | Mức 1 và 2: ablation xoá cạnh, xoá đỉnh | Thêm mới |
-| [Bảng 7](#bảng-7-5-truy-vấn-thành-công-5-thất-bại): 5 truy vấn thành công, 5 thất bại | Nhiệm vụ 1 | Mức 1: hiển thị quan hệ đã dùng; phân tích 5 thành công và 5 thất bại | Thêm mới |
-| [Bảng 8](#bảng-8-kết-quả-chính-mức-2-trên-hai-tập): Kết quả chính mức 2 trên hai tập | Nhiệm vụ 2 | Mức 2: phương pháp từ 2024 trên cùng pipeline, ít nhất 2 tập công khai | Giữ Bảng III |
-| [Bảng 9](#bảng-9-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w): Truy vấn trực tiếp và gián tiếp trên MKG-W | Nhiệm vụ 2 | Mức 2: bộ truy vấn có nhóm gián tiếp cần khai thác quan hệ, báo cáo tách hai nhóm | Gộp Bảng IV và Bảng X (bỏ hai dòng xáo cạnh, chuyển sang bảng ablation cạnh) |
-| [Bảng 10](#bảng-10-các-biến-thể-ngoài-ba-mô-hình-chính): Các biến thể ngoài ba mô hình chính | Nhiệm vụ 2 | Mức 2: tách đóng góp của đồ thị khỏi nhánh ảnh | Giữ Bảng V |
-| [Bảng 11](#bảng-11-thành-phần-của-adamf-mat): Thành phần của AdaMF-MAT | Nhiệm vụ 2 | Mức 2: ablation của phương pháp | Giữ Bảng VI |
-| [Bảng 12](#bảng-12-ablation-modality-trên-mkg-w-caption-subset): Ablation modality trên MKG-W caption subset | Nhiệm vụ 2 | Mức 2: ablation của phương pháp trên tập thứ hai | Giữ Bảng VII |
-| [Bảng 13](#bảng-13-mô-hình-có-đọc-cạnh-không-che-cạnh-được-hỏi): Mô hình có đọc cạnh không: che cạnh được hỏi | Nhiệm vụ 2 | Mức 2: xoá cạnh; truy vấn cần khai thác quan hệ | Giữ Bảng VIII |
-| [Bảng 14](#bảng-14-ablation-cạnh-trên-mkg-w): Ablation cạnh trên MKG-W | Nhiệm vụ 2 | Mức 1 và 2: bỏ cạnh hoặc cạnh ngẫu nhiên, trên tập thứ hai | Thêm mới (thay hai dòng “xáo cạnh” của Bảng X) |
-| [Bảng 15](#bảng-15-hai-bộ-truy-vấn-chỉ-dùng-để-đánh-giá): Hai bộ truy vấn chỉ dùng để đánh giá | Nhiệm vụ 2 | Mức 2: bộ tối thiểu 20 truy vấn chỉ để đánh giá | Sửa Bảng XI: thêm số câu |
-| [Bảng 16](#bảng-16-fidelity-và-sparsity): Fidelity và sparsity | Nhiệm vụ 3 | Mức 3: fidelity và sparsity định lượng | Thêm mới |
-| [Bảng 17](#bảng-17-validity): Validity | Nhiệm vụ 3 | Mức 3: validity định lượng | Thêm mới |
-| [Bảng 18](#bảng-18-bằng-chứng-trên-10-truy-vấn): Bằng chứng trên 10 truy vấn | Nhiệm vụ 3 | Mức 3: bằng chứng cụ thể cho tối thiểu 10 truy vấn | Thêm mới |
-| [Bảng 19](#bảng-19-vn-heritage-thẻ-dữ-liệu): VN Heritage: thẻ dữ liệu | Nhiệm vụ 3 | Mức 3: MMKG tự xây, mô tả nguồn và cách liên kết ảnh với thực thể | Thêm mới |
-| [Bảng 20](#bảng-20-vn-heritage-kết-quả): VN Heritage: kết quả | Nhiệm vụ 3 | Mức 3: chạy phương pháp của mức 1/2 trên MMKG tự xây; tách trực tiếp và gián tiếp | Thêm mới |
-| [Bảng 21](#bảng-21-vn-heritage-ablation-cạnh): VN Heritage: ablation cạnh | Nhiệm vụ 3 | Mức 1 trên MMKG tự xây: bỏ cạnh hoặc cạnh ngẫu nhiên | Thêm mới |
-| [Bảng 22](#bảng-22-vn-heritage-adamf-mat): VN Heritage: AdaMF-MAT | Nhiệm vụ 3 | Mức 3: chạy phương pháp tốt nhất của mức 2 trên MMKG tự xây | Thêm mới |
-| [Bảng 23](#bảng-23-truy-vấn-gián-tiếp-qua-khái-niệm-cha-isa): Truy vấn gián tiếp qua khái niệm cha (IsA) | Phụ lục | Mức 2: nhóm truy vấn gián tiếp trên VG ∩ COCO | Bảng IX: chuyển xuống phụ lục; có thể bỏ |
+| [Bảng 5](#bảng-5-xoá-cạnh-xoá-đỉnh-đổi-nhãn-lúc-test): Xoá cạnh, xoá đỉnh, đổi nhãn lúc test | Nhiệm vụ 1 | Mức 1 và 2: ablation xoá cạnh, xoá đỉnh | Thêm mới |
+| [Bảng 6](#bảng-6-5-truy-vấn-thành-công-5-thất-bại): 5 truy vấn thành công, 5 thất bại | Nhiệm vụ 1 | Mức 1: hiển thị quan hệ đã dùng; phân tích 5 thành công và 5 thất bại | Thêm mới |
+| [Bảng 7](#bảng-7-kết-quả-chính-mức-2-trên-hai-tập): Kết quả chính mức 2 trên hai tập | Nhiệm vụ 2 | Mức 2: phương pháp từ 2024 trên cùng pipeline, ít nhất 2 tập công khai | Giữ Bảng III |
+| [Bảng 8](#bảng-8-truy-vấn-trực-tiếp-và-gián-tiếp-trên-mkg-w): Truy vấn trực tiếp và gián tiếp trên MKG-W | Nhiệm vụ 2 | Mức 2: bộ truy vấn có nhóm gián tiếp cần khai thác quan hệ, báo cáo tách hai nhóm | Gộp Bảng IV và Bảng X (bỏ hai dòng xáo cạnh, chuyển sang bảng ablation cạnh) |
+| [Bảng 9](#bảng-9-các-biến-thể-ngoài-ba-mô-hình-chính): Các biến thể ngoài ba mô hình chính | Nhiệm vụ 2 | Mức 2: tách đóng góp của đồ thị khỏi nhánh ảnh | Giữ Bảng V |
+| [Bảng 10](#bảng-10-thành-phần-của-adamf-mat): Thành phần của AdaMF-MAT | Nhiệm vụ 2 | Mức 2: ablation của phương pháp | Giữ Bảng VI |
+| [Bảng 11](#bảng-11-ablation-modality-trên-mkg-w-caption-subset): Ablation modality trên MKG-W caption subset | Nhiệm vụ 2 | Mức 2: ablation của phương pháp trên tập thứ hai | Giữ Bảng VII |
+| [Bảng 12](#bảng-12-mô-hình-có-đọc-cạnh-không-che-cạnh-được-hỏi): Mô hình có đọc cạnh không: che cạnh được hỏi | Nhiệm vụ 2 | Mức 2: xoá cạnh; truy vấn cần khai thác quan hệ | Giữ Bảng VIII |
+| [Bảng 13](#bảng-13-ablation-cạnh-trên-mkg-w): Ablation cạnh trên MKG-W | Nhiệm vụ 2 | Mức 1 và 2: bỏ cạnh hoặc cạnh ngẫu nhiên, trên tập thứ hai | Thêm mới (thay hai dòng “xáo cạnh” của Bảng X) |
+| [Bảng 14](#bảng-14-hai-bộ-truy-vấn-chỉ-dùng-để-đánh-giá): Hai bộ truy vấn chỉ dùng để đánh giá | Nhiệm vụ 2 | Mức 2: bộ tối thiểu 20 truy vấn chỉ để đánh giá | Sửa Bảng XI: thêm số câu |
+| [Bảng 15](#bảng-15-fidelity-và-sparsity): Fidelity và sparsity | Nhiệm vụ 3 | Mức 3: fidelity và sparsity định lượng | Thêm mới |
+| [Bảng 16](#bảng-16-validity): Validity | Nhiệm vụ 3 | Mức 3: validity định lượng | Thêm mới |
+| [Bảng 17](#bảng-17-bằng-chứng-trên-10-truy-vấn): Bằng chứng trên 10 truy vấn | Nhiệm vụ 3 | Mức 3: bằng chứng cụ thể cho tối thiểu 10 truy vấn | Thêm mới |
+| [Bảng 18](#bảng-18-vn-heritage-thẻ-dữ-liệu): VN Heritage: thẻ dữ liệu | Nhiệm vụ 3 | Mức 3: MMKG tự xây, mô tả nguồn và cách liên kết ảnh với thực thể | Thêm mới |
+| [Bảng 19](#bảng-19-vn-heritage-kết-quả): VN Heritage: kết quả | Nhiệm vụ 3 | Mức 3: chạy phương pháp của mức 1/2 trên MMKG tự xây; tách trực tiếp và gián tiếp | Thêm mới |
+| [Bảng 20](#bảng-20-vn-heritage-ablation-cạnh): VN Heritage: ablation cạnh | Nhiệm vụ 3 | Mức 1 trên MMKG tự xây: bỏ cạnh hoặc cạnh ngẫu nhiên | Thêm mới |
+| [Bảng 21](#bảng-21-vn-heritage-adamf-mat): VN Heritage: AdaMF-MAT | Nhiệm vụ 3 | Mức 3: chạy phương pháp tốt nhất của mức 2 trên MMKG tự xây | Thêm mới |
 
 ### Bảng có thể bỏ
 
-Tập này có 23 bảng. Nếu vượt giới hạn trang, bỏ theo thứ tự sau; các bảng còn lại đều trả lời một yêu cầu của đề nên giữ.
+Tập này có 21 bảng. Nếu vượt giới hạn trang, bỏ bảng sau trước; các bảng còn lại đều trả lời một yêu cầu của đề nên giữ.
 
-1. [Bảng 23](#bảng-23-truy-vấn-gián-tiếp-qua-khái-niệm-cha-isa) (Truy vấn gián tiếp qua khái niệm cha (IsA)): kết quả âm, không trả lời trực tiếp yêu cầu nào của đề.
-2. [Bảng 2](#bảng-2-thiết-lập-thực-nghiệm) (Thiết lập thực nghiệm): các giá trị này viết gọn được thành một câu trong phần thiết lập.
+1. [Bảng 2](#bảng-2-thiết-lập-thực-nghiệm) (Thiết lập thực nghiệm): các giá trị này viết gọn được thành một câu trong phần thiết lập.
 
 Gói LaTeX cần có: `tabularx`, `multirow` (đã có trong `main.tex`). Bảng rộng dùng `table*`.
 
@@ -204,7 +201,7 @@ Nguồn: `runs/benchmark/*.json` (lượt 18/11).
 | Bỏ nhãn vị từ | 48,06 ± 0,28 | 27,35 ± 0,49 | 41,42 ± 0,66 | 22,52 ± 1,18 |
 | Không hướng | 47,84 ± 0,15 | **28,16 ± 0,58** | 42,25 ± 0,56 | 27,10 ± 1,93 |
 
-Trên VG ∩ COCO, bỏ hết cạnh chỉ mất 0,56 điểm trong 4,2 điểm tăng: phần lớn đến từ danh sách vật thể. Trên MKG-W caption subset, cạnh và nhãn vị từ đóng góp rõ hơn (mất 2,68 và 1,93 điểm).
+Trên VG ∩ COCO, bỏ hết cạnh chỉ mất 0,56 điểm trong 4,2 điểm tăng: phần lớn đến từ danh sách vật thể. Trên MKG-W caption subset, cạnh và nhãn vị từ đóng góp rõ hơn (mất 2,68 và 1,93 điểm). Khoảng tin cậy 95% của chênh lệch (bootstrap ghép cặp): bỏ cạnh [0,05; 1,06] trên VG ∩ COCO và [1,06; 4,35] trên MKG-W caption subset, không chứa 0; cạnh ngẫu nhiên [−0,09; 0,74] và [−0,45; 1,81], chứa 0.
 
 Nhóm cột trong bản LaTeX: VG ∩ COCO (2 cột); MKG-W caption subset (2 cột).
 
@@ -239,45 +236,7 @@ Nguồn: `runs/benchmark/*.json`; dataset 2 chạy ngày 21/11.
 \end{table*}
 ```
 
-### Bảng 5: Chênh lệch ghép cặp của ablation
-
-**Caption.** Bản đầy đủ trừ biến thể, điểm % R@1 sau xếp hạng lại, kèm khoảng tin cậy 95% (bootstrap ghép cặp, gom caption theo ảnh đúng). Khoảng không chứa 0 được in đậm.
-
-| Biến thể | VG ∩ COCO | MKG-W caption subset |
-|---|---|---|
-| Bỏ cạnh | **0,56 [0,05; 1,06]** | **2,68 [1,06; 4,35]** |
-| Cạnh ngẫu nhiên | 0,33 [−0,09; 0,74] | 0,68 [−0,45; 1,81] |
-| Bỏ nhãn vị từ | 0,05 [−0,35; 0,45] | **1,93 [0,38; 3,36]** |
-| Không hướng | – | 1,10 [−0,11; 2,34] |
-
-Chỉ phép bỏ cạnh tách được khỏi bản đầy đủ trên cả hai tập. Cạnh ngẫu nhiên giữ nguyên vật thể, số cạnh và nhãn vị từ, nên chưa tách được.
-
-Nguồn: `docs/graphsage-design-decisions.md`; `runs/mkg_w_captions/analysis/ablation.json`.
-
-```latex
-\begin{table}[t]
-  \centering
-  \caption{Bản đầy đủ trừ biến thể, điểm \% R@1 sau xếp hạng lại, kèm khoảng tin cậy 95\% (bootstrap ghép cặp, gom caption theo ảnh đúng). Khoảng không chứa 0 được in đậm}
-  \label{tab:t1-ablation-ci}
-  \footnotesize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{|l|c|c|}
-    \hline
-    Biến thể & VG $\cap$ COCO & MKG-W caption subset \\
-    \hline
-    Bỏ cạnh & \textbf{0,56 [0,05; 1,06]} & \textbf{2,68 [1,06; 4,35]} \\
-    \hline
-    Cạnh ngẫu nhiên & 0,33 [$-$0,09; 0,74] & 0,68 [$-$0,45; 1,81] \\
-    \hline
-    Bỏ nhãn vị từ & 0,05 [$-$0,35; 0,45] & \textbf{1,93 [0,38; 3,36]} \\
-    \hline
-    Không hướng & -- & 1,10 [$-$0,11; 2,34] \\
-    \hline
-  \end{tabular}
-\end{table}
-```
-
-### Bảng 6: Xoá cạnh, xoá đỉnh, đổi nhãn lúc test
+### Bảng 5: Xoá cạnh, xoá đỉnh, đổi nhãn lúc test
 
 **Caption.** Làm hỏng đồ thị của ảnh test rồi chấm lại, không huấn luyện lại: R@1 trên VG ∩ COCO (%), 3 seed. Mỗi phép làm hỏng áp dụng với xác suất ghi trong ngoặc; α và k giữ từ validation sạch.
 
@@ -322,7 +281,7 @@ Nguồn: `scripts/eval_graph_noise.py`; cột đầu chạy ngày 21/11 trên m�
 \end{table*}
 ```
 
-### Bảng 7: 5 truy vấn thành công, 5 thất bại
+### Bảng 6: 5 truy vấn thành công, 5 thất bại
 
 **Caption.** Năm truy vấn mà xếp hạng lại đưa ảnh đúng lên hạng 1 từ hạng CLIP thấp nhất, và năm truy vấn mà ảnh đúng rơi khỏi hạng 1 xa nhất (seed 13, test). Điểm đồ thị là của ảnh đúng, trong ngoặc là hạng của nó trong 1.500 ảnh.
 
@@ -386,7 +345,7 @@ Nguồn: `scripts/explain_retrieval.py`, mô hình huấn luyện lại ngày 21
 
 ## Nhiệm vụ 2
 
-### Bảng 8: Kết quả chính mức 2 trên hai tập
+### Bảng 7: Kết quả chính mức 2 trên hai tập
 
 **Caption.** Truy hồi ảnh theo caption (%). Trên VG ∩ COCO báo cáo R@1, R@5, R@10 và MRR; trên MKG-W caption subset báo cáo R@1. Trung bình ± độ lệch chuẩn qua 3 seed.
 
@@ -425,7 +384,7 @@ Nguồn: README, mục Cấp độ 2.
 \end{table*}
 ```
 
-### Bảng 9: Truy vấn trực tiếp và gián tiếp trên MKG-W
+### Bảng 8: Truy vấn trực tiếp và gián tiếp trên MKG-W
 
 **Caption.** R@1 (%) trên MKG-W sau xếp hạng lại cùng CLIP, tách theo nhóm truy vấn: 2.626 cặp gián tiếp, 2.710 cặp trực tiếp. 3 seed. Cột thứ hai cho biết mô hình nhận gì từ câu hỏi.
 
@@ -472,7 +431,7 @@ Nguồn: `docs/mkg-w-results.md`.
 \end{table*}
 ```
 
-### Bảng 10: Các biến thể ngoài ba mô hình chính
+### Bảng 9: Các biến thể ngoài ba mô hình chính
 
 **Caption.** Các biến thể ngoài ba mô hình ở bảng kết quả chính, trên cùng hai tập và cùng quy trình xếp hạng lại (%). 3 seed; dòng ghi 5 seed thêm seed 211 và 307.
 
@@ -511,7 +470,7 @@ Nguồn: README, mục Cấp độ 2.
 \end{table*}
 ```
 
-### Bảng 11: Thành phần của AdaMF-MAT
+### Bảng 10: Thành phần của AdaMF-MAT
 
 **Caption.** Ablation các thành phần của AdaMF-MAT trên VG ∩ COCO: R@1 sau xếp hạng lại (%), 3 seed.
 
@@ -558,7 +517,7 @@ Nguồn: README, mục Ablation của AdaMF-MAT.
 \end{table}
 ```
 
-### Bảng 12: Ablation modality trên MKG-W caption subset
+### Bảng 11: Ablation modality trên MKG-W caption subset
 
 **Caption.** Ablation modality trên MKG-W caption subset (%). 3 seed, dòng đầu 5 seed. Cột 2 là R@1 sau xếp hạng lại với CLIP, cột 3 là R@1 chỉ dùng điểm mô hình.
 
@@ -599,7 +558,7 @@ Nguồn: `docs/mkg-w-captions-results.md`.
 \end{table}
 ```
 
-### Bảng 13: Mô hình có đọc cạnh không: che cạnh được hỏi
+### Bảng 12: Mô hình có đọc cạnh không: che cạnh được hỏi
 
 **Caption.** Confuser acc@1 (%) của điểm mô hình (không cộng CLIP) trên bộ relation queries của VG ∩ COCO, 5 seed. Cột “Che cạnh” là kết quả sau khi xoá cạnh được hỏi khỏi đồ thị của ảnh đúng. `so0.3`: structure-only dropout 30%; `sl0.1`: structure-only loss với trọng số 0,1.
 
@@ -644,7 +603,7 @@ Nguồn: README, mục Mô hình có đọc cạnh không.
 \end{table}
 ```
 
-### Bảng 14: Ablation cạnh trên MKG-W
+### Bảng 13: Ablation cạnh trên MKG-W
 
 **Caption.** R@1 gián tiếp (%) trên MKG-W sau xếp hạng lại cùng CLIP khi thay đồ thị. Xáo cạnh giữ nguyên đầu và đuôi của các triple nhưng ghép lại ngẫu nhiên. CLIP đạt 2,70.
 
@@ -679,7 +638,7 @@ Nguồn: `docs/mkg-w-results.md`.
 \end{table}
 ```
 
-### Bảng 15: Hai bộ truy vấn chỉ dùng để đánh giá
+### Bảng 14: Hai bộ truy vấn chỉ dùng để đánh giá
 
 **Caption.** R@1 (%) trên hai bộ truy vấn gián tiếp chỉ dùng để đánh giá của MKG-W.
 
@@ -713,7 +672,7 @@ Nguồn: `docs/mkg-w-results.md`.
 
 ## Nhiệm vụ 3
 
-### Bảng 16: Fidelity và sparsity
+### Bảng 15: Fidelity và sparsity
 
 **Caption.** Fidelity và sparsity của giải thích trên VG ∩ COCO: 200 truy vấn test, 3 seed. Xoá đồng thời nhóm relation được chọn khỏi đồ thị của ảnh đứng đầu, hoặc chỉ giữ nhóm đó; “ngẫu nhiên” là trung bình 20 nhóm cùng số relation. Sparsity là 1 trừ tỷ lệ relation nằm trong giải thích.
 
@@ -757,7 +716,7 @@ Nguồn: `reports/explanation-quality/index.html`, lượt 21/11.
 \end{table*}
 ```
 
-### Bảng 17: Validity
+### Bảng 16: Validity
 
 **Caption.** Validity của giải thích: 42 relation của 20 truy vấn (10 ảnh trả về đúng, 10 sai), do một trợ lý AI xem ảnh và chấm một lượt; chưa có người chấm.
 
@@ -798,7 +757,7 @@ Nguồn: `reports/explanation-quality/index.html`, lượt 21/11.
 \end{table}
 ```
 
-### Bảng 18: Bằng chứng trên 10 truy vấn
+### Bảng 17: Bằng chứng trên 10 truy vấn
 
 **Caption.** Mười truy vấn test (seed 13, mức xoá 25%): năm truy vấn đầu tiên trong mẫu có ảnh trả về đúng và năm truy vấn đầu tiên có ảnh trả về sai, với ảnh có 6–11 relation. Điểm đồ thị giảm khi xoá nhóm giải thích so với trung bình 20 nhóm ngẫu nhiên.
 
@@ -854,7 +813,7 @@ Nguồn: `runs/fidelity/full-joint-test.json` của lượt 21/11 (file local).
 \end{table*}
 ```
 
-### Bảng 19: VN Heritage: thẻ dữ liệu
+### Bảng 18: VN Heritage: thẻ dữ liệu
 
 **Caption.** VN Heritage, MMKG tự xây về địa điểm và di tích Việt Nam (bản lõi).
 
@@ -898,7 +857,7 @@ Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/stats.j
 \end{table}
 ```
 
-### Bảng 20: VN Heritage: kết quả
+### Bảng 19: VN Heritage: kết quả
 
 **Caption.** Truy hồi trên VN Heritage, tập test (%). Bốn cột đầu chấm trên gallery 772 ảnh, cột cuối chấm trên gallery 160 địa điểm. Trung bình ± độ lệch chuẩn qua 10 cách chia claim, mỗi cách chia 5 seed.
 
@@ -936,7 +895,7 @@ Nguồn: `docs/vn-heritage-results.md`.
 \end{table*}
 ```
 
-### Bảng 21: VN Heritage: ablation cạnh
+### Bảng 20: VN Heritage: ablation cạnh
 
 **Caption.** Ablation đồ thị trên VN Heritage, truy vấn gián tiếp, tập test (%). Mỗi biến thể huấn luyện lại trên 10 cách chia × 5 seed. Cột chênh lệch là bản đầy đủ trừ biến thể, ghép cặp theo cách chia, ± sai số chuẩn; trong ngoặc là số cách chia thắng/thua.
 
@@ -981,7 +940,7 @@ Nguồn: `docs/vn-heritage-results.md`.
 \end{table*}
 ```
 
-### Bảng 22: VN Heritage: AdaMF-MAT
+### Bảng 21: VN Heritage: AdaMF-MAT
 
 **Caption.** AdaMF-MAT trên VN Heritage: truy vấn gián tiếp, tập test, chấm theo địa điểm (%). 3 cách chia claim × 5 seed. Cột cuối là MRR dự đoán liên kết của chính mô hình. RotatE là AdaMF-MAT bỏ ảnh và văn bản.
 
@@ -1020,59 +979,4 @@ Nguồn: `docs/vn-heritage-results.md`.
     \hline
   \end{tabular}
 \end{table}
-```
-
-## Phụ lục
-
-### Bảng 23: Truy vấn gián tiếp qua khái niệm cha (IsA)
-
-*Có thể bỏ nếu thiếu trang: kết quả âm, không trả lời trực tiếp yêu cầu nào của đề.*
-
-**Caption.** Truy vấn gián tiếp qua khái niệm cha WordNet IsA trên VG ∩ COCO (%), điểm mô hình không cộng CLIP, 3 seed. KG là đồ thị có thêm cạnh IsA; “che IsA” là xoá cạnh IsA của ảnh đúng rồi chấm lại.
-
-| Mô hình | Đồ thị | R@1 | Confuser acc@1 | R@1 | Confuser acc@1 |
-|---|---|---|---|---|---|
-| CLIP (tham chiếu) | không dùng | 3,8 | 23,9 | 7,6 | 27,3 |
-| AdaMF L2 | base | **5,3** | 24,2 | 9,1 | 27,2 |
-| AdaMF L2 | KG (+ IsA) | 5,0 | 25,0 | 8,4 | 26,7 |
-| AdaMF L2 | KG, che IsA | 4,1 | 24,3 | 8,4 | 26,9 |
-| AdaMF `so0.3` | base | **5,3** | 24,7 | **9,5** | **28,6** |
-| AdaMF `so0.3` | KG (+ IsA) | **5,3** | 25,2 | 9,1 | 27,7 |
-| AdaMF `so0.3` | KG, che IsA | 4,7 | **25,8** | 9,2 | 28,3 |
-
-Mô hình có dùng cạnh IsA (che đi thì R@1 gián tiếp tụt) nhưng IsA không giúp so với đồ thị gốc.
-
-Nhóm cột trong bản LaTeX: Gián tiếp (1.387 cặp) (2 cột); Trực tiếp (1.387 cặp) (2 cột).
-
-Nguồn: README, mục Indirect queries.
-
-```latex
-\begin{table*}[t]
-  \centering
-  \caption{Truy vấn gián tiếp qua khái niệm cha WordNet IsA trên VG $\cap$ COCO (\%), điểm mô hình không cộng CLIP, 3 seed. KG là đồ thị có thêm cạnh IsA; ``che IsA'' là xoá cạnh IsA của ảnh đúng rồi chấm lại}
-  \label{tab:t2-abl-isa}
-  \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{|l|l|c|c|c|c|}
-    \hline
-    \multirow{2}{*}{Mô hình} & \multirow{2}{*}{Đồ thị} & \multicolumn{2}{c|}{Gián tiếp (1.387 cặp)} & \multicolumn{2}{c|}{Trực tiếp (1.387 cặp)} \\
-    \cline{3-4} \cline{5-6}
-     &  & R@1 & Confuser acc@1 & R@1 & Confuser acc@1 \\
-    \hline
-    CLIP (tham chiếu) & không dùng & 3,8 & 23,9 & 7,6 & 27,3 \\
-    \hline
-    AdaMF L2 & base & \textbf{5,3} & 24,2 & 9,1 & 27,2 \\
-    \hline
-    AdaMF L2 & KG (+ IsA) & 5,0 & 25,0 & 8,4 & 26,7 \\
-    \hline
-    AdaMF L2 & KG, che IsA & 4,1 & 24,3 & 8,4 & 26,9 \\
-    \hline
-    AdaMF \texttt{so0.3} & base & \textbf{5,3} & 24,7 & \textbf{9,5} & \textbf{28,6} \\
-    \hline
-    AdaMF \texttt{so0.3} & KG (+ IsA) & \textbf{5,3} & 25,2 & 9,1 & 27,7 \\
-    \hline
-    AdaMF \texttt{so0.3} & KG, che IsA & 4,7 & \textbf{25,8} & 9,2 & 28,3 \\
-    \hline
-  \end{tabular}
-\end{table*}
 ```
