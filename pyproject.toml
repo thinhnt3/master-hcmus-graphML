@@ -10,6 +10,9 @@ select = ["E", "W", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.12"
 files = ["src", "scripts"]
+# `scripts` has no __init__.py but is imported as `scripts.<name>`; resolve it from the repo root.
+mypy_path = "."
+explicit_package_bases = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 disallow_untyped_defs = true
@@ -17,7 +20,7 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 # Third-party packages without type stubs.
-module = ["sklearn.*", "torch_geometric.*", "transformers.*", "faiss.*", "matplotlib.*", "nltk.*"]
+module = ["sklearn.*", "scipy.*", "torch_geometric.*", "transformers.*", "faiss.*", "matplotlib.*", "nltk.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
