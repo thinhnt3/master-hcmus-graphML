@@ -85,8 +85,12 @@ def test_gallery_image_without_words_scores_zero():
 def _split_data(split, image_ids, query_ids):
     empty = np.zeros((0, 0), dtype=np.float32)
     return SplitData(
-        split=split, image_ids=tuple(image_ids), query_ids=tuple(query_ids),
-        relevant_columns=np.zeros(len(query_ids), dtype=int), image_vectors=empty, query_vectors=empty,
+        split=split,
+        image_ids=tuple(image_ids),
+        query_ids=tuple(query_ids),
+        relevant_columns=np.zeros(len(query_ids), dtype=int),
+        image_vectors=empty,
+        query_vectors=empty,
     )
 
 
@@ -111,8 +115,8 @@ def _scores(use_predicates=True, graphs=GRAPHS, val_images=(10, 11), val_queries
 def test_graph_scores_follow_the_id_order_of_the_split_not_of_the_files():
     forward = _scores()
     assert forward.shape == (2, 2)
-    assert forward[0, 0] == 1.0 and forward[0, 1] == 0.0      # "a man" matches image 10 only
-    assert forward[1, 1] == 1.0 and forward[1, 0] == 0.0      # dog, riding, bike all in image 11
+    assert forward[0, 0] == 1.0 and forward[0, 1] == 0.0  # "a man" matches image 10 only
+    assert forward[1, 1] == 1.0 and forward[1, 0] == 0.0  # dog, riding, bike all in image 11
     swapped = _scores(val_images=(11, 10), val_queries=("q-bike", "q-man"))
     assert np.array_equal(swapped, forward[::-1, ::-1])
     assert np.array_equal(_scores(graphs=GRAPHS[::-1]), forward)
@@ -133,7 +137,7 @@ def test_idf_ignores_validation_and_test_graphs():
         for i, split in enumerate(["val", "test"] * 20)
     ]
     assert np.array_equal(_scores(graphs=crowded), _scores())
-    unseen = math.log(1 + 2)                # two train images
+    unseen = math.log(1 + 2)  # two train images
     bike, riding = math.log(1 + 2 / 2), math.log(1 + 2 / 2)
     # "a dog riding a bike" against image 10 (man, zebra): nothing matches; against a graph
     # holding only `bike`, the share is bike / (dog + riding + bike) with dog unseen.

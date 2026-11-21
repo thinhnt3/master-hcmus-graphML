@@ -17,6 +17,7 @@ Two evaluations of each trained model:
 Per-seed files go to <runs_dir>/adamf_mat/<run name>/seed-<n>/ and the summary over seeds
 to <runs_dir>/adamf_mat/<run name>/benchmark.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -69,10 +70,13 @@ def retrieval_scores(model: KgAdamfMat, data: EntitySplit, gallery: np.ndarray, 
     rows = [row for row, q in enumerate(data.queries) if q["anchor_id"] is not None]
     scores = np.zeros(data.clip_scores.shape, dtype=np.float32)
     for start in range(0, len(rows), batch_size):
-        batch = rows[start:start + batch_size]
+        batch = rows[start : start + batch_size]
         queries = [data.queries[row] for row in batch]
-        raw = score(np.array([q["anchor_id"] for q in queries]), np.array([q["relation_id"] for q in queries]),
-                    np.array([q["direction"] == "tail" for q in queries]))[:, gallery]
+        raw = score(
+            np.array([q["anchor_id"] for q in queries]),
+            np.array([q["relation_id"] for q in queries]),
+            np.array([q["direction"] == "tail" for q in queries]),
+        )[:, gallery]
         low, high = raw.min(axis=1, keepdims=True), raw.max(axis=1, keepdims=True)
         scores[batch] = (raw - low) / np.maximum(high - low, 1e-12)
     return scores
@@ -92,8 +96,9 @@ def run(config: MkgwRetrievalConfig, variant: Variant, seeds: tuple[int, ...]) -
     verify_inputs_unchanged(embeddings_dir)
     image_table = load_table(embeddings_dir, "images")
     query_table = load_table(embeddings_dir, "queries")
-    text_vectors = torch.from_numpy(load_table(embeddings_dir, "descriptions").select(
-        [e["entity_id"] for e in entities]))
+    text_vectors = torch.from_numpy(
+        load_table(embeddings_dir, "descriptions").select([e["entity_id"] for e in entities])
+    )
     image_vectors = entity_image_vectors(entities, image_table)
 
     gallery = np.array(list(gallery_columns(entities)))
@@ -107,8 +112,9 @@ def run(config: MkgwRetrievalConfig, variant: Variant, seeds: tuple[int, ...]) -
     training = config.adamf_training
     run_name = config.adamf_mat.run_name() + ("" if variant is Variant.REAL else f"-{variant.value}")
     out_dir = config.runs_dir / "adamf_mat" / run_name
-    log.info("run=%s train triples=%d val=%d test=%d gallery=%d", run_name, len(train), len(val), len(test),
-             len(gallery))
+    log.info(
+        "run=%s train triples=%d val=%d test=%d gallery=%d", run_name, len(train), len(val), len(test), len(gallery)
+    )
 
     max_hops = data.rules.max_hops
     per_seed: dict[str, Any] = {}
@@ -128,12 +134,19 @@ def run(config: MkgwRetrievalConfig, variant: Variant, seeds: tuple[int, ...]) -
 
         test_link = link_prediction_metrics(score_fn(model), test, completions, training.eval_batch_size)
         link.append(test_link)
-        log.info("seed %d best epoch %d, test link prediction: %s", seed, result.best_epoch,
-                 {k: round(v, 4) for k, v in test_link.items()})
+        log.info(
+            "seed %d best epoch %d, test link prediction: %s",
+            seed,
+            result.best_epoch,
+            {k: round(v, 4) for k, v in test_link.items()},
+        )
         scores = {s: retrieval_scores(model, d, gallery, training.eval_batch_size) for s, d in splits.items()}
         selected = select_alpha_top_k(splits[Split.VAL], scores[Split.VAL], config.alpha_grid, config.top_k_grid)
-        per_seed[str(seed)] = {"best_epoch": result.best_epoch, "stop_reason": result.stop_reason.value,
-                               "selected": selected}
+        per_seed[str(seed)] = {
+            "best_epoch": result.best_epoch,
+            "stop_reason": result.stop_reason.value,
+            "selected": selected,
+        }
         log.info("seed %d selected on val: %s", seed, selected)
         for split, split_data in splits.items():
             fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"], int(selected["top_k"]))
@@ -147,32 +160,47 @@ def run(config: MkgwRetrievalConfig, variant: Variant, seeds: tuple[int, ...]) -
         "graph_triples": len(train),
         "seeds": per_seed,
         "link_prediction": aggregate_runs(link),
-        "splits": {s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])}
-                   for s in splits},
+        "splits": {
+            s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])} for s in splits
+        },
     }
     write_json(out_dir / "benchmark.json", report)
-    log.info("test link prediction over seeds: %s",
-             {k: round(v["mean"], 4) for k, v in report["link_prediction"].items()})
+    log.info(
+        "test link prediction over seeds: %s", {k: round(v["mean"], 4) for k, v in report["link_prediction"].items()}
+    )
     for split in splits:
         for name, row in report["splits"][split.value]["reranked"].items():
             if name.startswith(LOGGED_PREFIXES):
                 alone = report["splits"][split.value]["graph_only"][name]
-                log.info("%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
-                         split.value, name, row["answers"], row["recall@1"]["mean"], row["recall@1"]["std"],
-                         row["recall@10"]["mean"], row["mrr"]["mean"],
-                         alone["recall@1"]["mean"], alone["recall@10"]["mean"])
+                log.info(
+                    "%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"]["mean"],
+                    row["recall@1"]["std"],
+                    row["recall@10"]["mean"],
+                    row["mrr"]["mean"],
+                    alone["recall@1"]["mean"],
+                    alone["recall@10"]["mean"],
+                )
     log.info("wrote %s", out_dir / "benchmark.json")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", default=DEFAULT_CONFIG)
-    parser.add_argument("--variant", default=Variant.REAL.value,
-                        choices=[Variant.REAL.value, Variant.SHUFFLED_EDGES.value])
+    parser.add_argument(
+        "--variant", default=Variant.REAL.value, choices=[Variant.REAL.value, Variant.SHUFFLED_EDGES.value]
+    )
     parser.add_argument("--no-mat", action="store_true", help="train without the modality generators")
     parser.add_argument("--mean-fusion", action="store_true", help="average the modalities instead of AdaMF weights")
-    parser.add_argument("--modalities", nargs="+", choices=MODALITIES, help="modalities to fuse; needs --no-mat "
-                        "unless all three are kept")
+    parser.add_argument(
+        "--modalities",
+        nargs="+",
+        choices=MODALITIES,
+        help="modalities to fuse; needs --no-mat unless all three are kept",
+    )
     parser.add_argument("--seeds", nargs="+", type=int, help="subset of training.seeds, e.g. for a smoke run")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

@@ -1,4 +1,5 @@
 """Retrieval metrics for queries with exactly one relevant item: Recall@K and MRR."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

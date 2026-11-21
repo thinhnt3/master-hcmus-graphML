@@ -7,6 +7,7 @@ Run from the repository root after `build_vn_heritage_core`:
 Writes to <out_dir>: entities.json, relations.json, triples.json (train / val / test claims
 and the article edges under every naming scheme), queries.json and card.json (counts).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -96,8 +97,12 @@ def build(cfg: QueryConfig) -> dict[str, Any]:
     article_relations = sorted({relation for triples in articles_of.values() for _, relation, _ in triples})
     relation_id = {name: position for position, name in enumerate(claim_relations + article_relations)}
     relations = [
-        {"relation_id": position, "pid": name, "label": name,
-         "source": "article" if name in article_relations else "claim"}
+        {
+            "relation_id": position,
+            "pid": name,
+            "label": name,
+            "source": "article" if name in article_relations else "claim",
+        }
         for name, position in relation_id.items()
     ]
 
@@ -116,9 +121,12 @@ def build(cfg: QueryConfig) -> dict[str, Any]:
     indirect = [replace(query, hops=found) for query, found in zip(indirect, hops, strict=True)]
     nearby = triples_within_two_hops([q.anchor_id for q in indirect if q.anchor_id is not None], graph)
     strata = {
-        q.query_id: {"triples_within_two_hops": nearby[q.anchor_id],
-                     "tier": density_tier(nearby[q.anchor_id], cfg.sparse_max, cfg.medium_max).value}
-        for q in indirect if q.anchor_id is not None
+        q.query_id: {
+            "triples_within_two_hops": nearby[q.anchor_id],
+            "tier": density_tier(nearby[q.anchor_id], cfg.sparse_max, cfg.medium_max).value,
+        }
+        for q in indirect
+        if q.anchor_id is not None
     }
     split_of_query = {q.query_id: q.split.value for q in indirect}
     place_split = {split: [entity_id[p["qid"]] for p in places if p["split"] == split.value] for split in Split}
@@ -131,31 +139,56 @@ def build(cfg: QueryConfig) -> dict[str, Any]:
         "images": sum(len(files) for files in files_of.values()),
         "claims": {split.value: len(triples) for split, triples in claim_ids.items()},
         "article_edges": {scheme.value: len(triples) for scheme, triples in article_ids.items()},
-        "relations": {"claim": len(claim_relations),
-                      **{scheme.value: len({r for _, r, _ in triples}) for scheme, triples in articles_of.items()}},
-        "asked_directions": sorted(f"{relations[r]['pid']}/{d.value}" for (r, d), s in stats.items()
-                                   if s.status.value == "kept"),
+        "relations": {
+            "claim": len(claim_relations),
+            **{scheme.value: len({r for _, r, _ in triples}) for scheme, triples in articles_of.items()},
+        },
+        "asked_directions": sorted(
+            f"{relations[r]['pid']}/{d.value}" for (r, d), s in stats.items() if s.status.value == "kept"
+        ),
         "directions_too_small_or_unworded": sorted(
-            f"{relations[r]['pid']}/{d.value}" for (r, d), s in all_stats.items()
-            if (r, d) not in stats or s.status.value != "kept"),
-        "queries": {f"{group}/{split}": count for (group, split), count in sorted(
-            Counter((q.group.value, q.split.value) for q in queries).items())},
-        "answers": {f"{group}/{split}": count for (group, split), count in sorted(
-            Counter({(g, s): sum(len(q.relevant_ids) for q in queries if (q.group.value, q.split.value) == (g, s))
-                     for g, s in {(q.group.value, q.split.value) for q in queries}}).items())},
-        "indirect_density": {f"{split}/{tier}": count for (split, tier), count in sorted(
-            Counter((split_of_query[query_id], row["tier"]) for query_id, row in strata.items()).items())},
-        "indirect_hops": {f"{split.value}/{hops_ or 'none'}": count for (split, hops_), count in sorted(
-            Counter((q.split, q.hops) for q in indirect).items(), key=str)},
+            f"{relations[r]['pid']}/{d.value}"
+            for (r, d), s in all_stats.items()
+            if (r, d) not in stats or s.status.value != "kept"
+        ),
+        "queries": {
+            f"{group}/{split}": count
+            for (group, split), count in sorted(Counter((q.group.value, q.split.value) for q in queries).items())
+        },
+        "answers": {
+            f"{group}/{split}": count
+            for (group, split), count in sorted(
+                Counter(
+                    {
+                        (g, s): sum(len(q.relevant_ids) for q in queries if (q.group.value, q.split.value) == (g, s))
+                        for g, s in {(q.group.value, q.split.value) for q in queries}
+                    }
+                ).items()
+            )
+        },
+        "indirect_density": {
+            f"{split}/{tier}": count
+            for (split, tier), count in sorted(
+                Counter((split_of_query[query_id], row["tier"]) for query_id, row in strata.items()).items()
+            )
+        },
+        "indirect_hops": {
+            f"{split.value}/{hops_ or 'none'}": count
+            for (split, hops_), count in sorted(Counter((q.split, q.hops) for q in indirect).items(), key=str)
+        },
     }
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
     write_json(cfg.out_dir / "entities.json", entities)
     write_json(cfg.out_dir / "relations.json", relations)
-    write_json(cfg.out_dir / "triples.json", {
-        **{split.value: [[t.head, t.relation, t.tail] for t in triples] for split, triples in claim_ids.items()},
-        "articles": {scheme.value: [[t.head, t.relation, t.tail] for t in triples]
-                     for scheme, triples in article_ids.items()},
-    })
+    write_json(
+        cfg.out_dir / "triples.json",
+        {
+            **{split.value: [[t.head, t.relation, t.tail] for t in triples] for split, triples in claim_ids.items()},
+            "articles": {
+                scheme.value: [[t.head, t.relation, t.tail] for t in triples] for scheme, triples in article_ids.items()
+            },
+        },
+    )
     write_json(cfg.out_dir / "queries.json", [query.to_dict() for query in queries])
     write_json(cfg.out_dir / "strata.json", strata)
     write_json(cfg.out_dir / "card.json", card)

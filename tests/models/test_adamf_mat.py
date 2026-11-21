@@ -26,8 +26,13 @@ def _unit(rows, seed):
 
 def _config(**overrides):
     values = dict(
-        dim=12, adaptive_fusion=True, mat=True, mu=1.0,
-        noise_dim=4, generator_hidden_dim=8, generator_learning_rate=0.01,
+        dim=12,
+        adaptive_fusion=True,
+        mat=True,
+        mu=1.0,
+        noise_dim=4,
+        generator_hidden_dim=8,
+        generator_learning_rate=0.01,
     )
     values.update(overrides)
     return AdamfMatConfig(**values)
@@ -57,8 +62,16 @@ def _dataset(n_images=16, captions=2, seed=1):
 
 def _training(**overrides):
     values = dict(
-        seeds=(0,), device=Device.CPU, batch_size=8, max_epochs=3, patience=5, learning_rate=0.01,
-        weight_decay=0.0, temperature=TEMPERATURE, grad_clip_norm=1.0, selection_metric=SelectionMetric.RECALL_AT_1,
+        seeds=(0,),
+        device=Device.CPU,
+        batch_size=8,
+        max_epochs=3,
+        patience=5,
+        learning_rate=0.01,
+        weight_decay=0.0,
+        temperature=TEMPERATURE,
+        grad_clip_norm=1.0,
+        selection_metric=SelectionMetric.RECALL_AT_1,
     )
     values.update(overrides)
     return TrainingConfig(**values)

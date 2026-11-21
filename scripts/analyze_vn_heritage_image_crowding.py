@@ -12,6 +12,7 @@ answer's best image, under three scores:
     best_image_only  the same, but a place's graph score goes to its most query-similar image only
 Written to <runs_dir>/image_crowding.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -75,7 +76,8 @@ def analyze(base: MkgwRetrievalConfig, split_seeds: list[int]) -> dict[str, Any]
         if not isinstance(test, ImageSplit):
             raise AssertionError("the image gallery must give an ImageSplit")
         query_vectors = load_table(config.model_embeddings_dir(), "queries").select(
-            [q["query_id"] for q in test.queries])
+            [q["query_id"] for q in test.queries]
+        )
         run_dir = config.runs_dir / "graphsage" / _GRAPH
         best = best_image_mask(test)
         for seed, info in read_json(run_dir / report_name(Gallery.IMAGE))["seeds"].items():

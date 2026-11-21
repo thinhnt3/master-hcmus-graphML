@@ -1,4 +1,5 @@
 """Pieces shared by the MKG-W training scripts: graph variants, train queries, seed summaries."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -65,7 +66,9 @@ def train_query_set(
 def seed_summary(per_seed: Sequence[Mapping[str, Mapping[str, float]]]) -> dict[str, Any]:
     """Mean and std over seeds of each metric, per report segment."""
     return {
-        name: {"answers": per_seed[0][name]["answers"],
-               **aggregate_runs([{m: seed[name][m] for m in _METRICS} for seed in per_seed])}
+        name: {
+            "answers": per_seed[0][name]["answers"],
+            **aggregate_runs([{m: seed[name][m] for m in _METRICS} for seed in per_seed]),
+        }
         for name in per_seed[0]
     }

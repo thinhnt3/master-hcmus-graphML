@@ -13,6 +13,7 @@ configs/retrieval/vg_coco_kg.yaml:
   the extended concepts and predicates, the indirect queries, and meta.json.
 Needs nltk with the WordNet corpus.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -88,7 +89,9 @@ def main() -> int:
         concepts, predicates, chains = extend_vocabulary(
             base_concepts,
             read_json(base_dir / "graph" / "predicates.json"),
-            hypernym_chain, DEPTH, synset_lemma,
+            hypernym_chain,
+            DEPTH,
+            synset_lemma,
         )
         isa_id = next(int(p["predicate_id"]) for p in predicates if p["text"] == ISA_PREDICATE)
         graphs = read_json(base_dir / "graph" / "image_graphs.json")
@@ -110,10 +113,14 @@ def main() -> int:
         write_json(kg_dir / "graph" / "image_graphs.json", kg_graphs, indent=None)
         write_json(kg_dir / "graph" / "indirect_queries.json", queries)
         added = sum(len(g["triplets"]) for g in kg_graphs) - sum(len(g["triplets"]) for g in graphs)
-        log.info("concepts %d (+%d hypernyms), IsA triplets %d, indirect queries %d; top hypernyms %s",
-                 len(concepts), len(concepts) - len(base_concepts), added,
-                 sum(1 for q in queries if q["kind"] == "indirect"),
-                 Counter(text[q["hypernym"]] for q in queries if q["kind"] == "indirect").most_common(8))
+        log.info(
+            "concepts %d (+%d hypernyms), IsA triplets %d, indirect queries %d; top hypernyms %s",
+            len(concepts),
+            len(concepts) - len(base_concepts),
+            added,
+            sum(1 for q in queries if q["kind"] == "indirect"),
+            Counter(text[q["hypernym"]] for q in queries if q["kind"] == "indirect").most_common(8),
+        )
 
         base_emb, kg_emb = base.model_embeddings_dir(), kg.model_embeddings_dir()
         for name in ("images", "queries"):
@@ -137,20 +144,30 @@ def main() -> int:
         }
         for name, table in tables.items():
             save_table(kg_emb, name, table)
-        inputs = [kg_dir / "images.json", kg_dir / "queries.json",
-                  kg_dir / "graph" / "concepts.json", kg_dir / "graph" / "predicates.json"]
-        write_json(kg_emb / META_FILE, {
-            "model_name": kg.clip.model_name,
-            "base_embeddings": str(base_emb),
-            "hypernym_depth": DEPTH,
-            "tables": {
-                name: {"rows": rows, "sha256": {p.name: sha256_of(p) for p in table_paths(kg_emb, name)}}
-                for name, rows in (
-                    ("images", None), ("queries", None), ("concepts", len(concepts)), ("predicates", len(predicates)),
-                )
+        inputs = [
+            kg_dir / "images.json",
+            kg_dir / "queries.json",
+            kg_dir / "graph" / "concepts.json",
+            kg_dir / "graph" / "predicates.json",
+        ]
+        write_json(
+            kg_emb / META_FILE,
+            {
+                "model_name": kg.clip.model_name,
+                "base_embeddings": str(base_emb),
+                "hypernym_depth": DEPTH,
+                "tables": {
+                    name: {"rows": rows, "sha256": {p.name: sha256_of(p) for p in table_paths(kg_emb, name)}}
+                    for name, rows in (
+                        ("images", None),
+                        ("queries", None),
+                        ("concepts", len(concepts)),
+                        ("predicates", len(predicates)),
+                    )
+                },
+                "inputs_sha256": {str(p): sha256_of(p) for p in inputs},
             },
-            "inputs_sha256": {str(p): sha256_of(p) for p in inputs},
-        })
+        )
         log.info("wrote %s and %s", kg_dir, kg_emb)
     except AppError:
         log.exception("building the KG variant failed")

@@ -15,6 +15,7 @@ validation relation queries, alpha and top-k on all of validation. Per-seed file
 <runs_dir>/relation_paths/<variant>/seed-<n>/ and the summary over seeds to
 <runs_dir>/relation_paths/<variant>/benchmark.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -53,8 +54,9 @@ def _anchored(data: EntitySplit, query_table: EmbeddingTable) -> tuple[list[int]
     """Rows of the split's queries that name an anchor, and those queries as a path query set."""
     rows = [row for row, q in enumerate(data.queries) if q["anchor_id"] is not None]
     vectors = torch.from_numpy(query_table.select([data.queries[row]["query_id"] for row in rows]))
-    queries = KgQuerySet(vectors, [data.relevant[row] for row in rows], [data.known[row] for row in rows],
-                         [[] for _ in rows])
+    queries = KgQuerySet(
+        vectors, [data.relevant[row] for row in rows], [data.known[row] for row in rows], [[] for _ in rows]
+    )
     return rows, PathQuerySet(queries, torch.tensor([data.queries[row]["anchor_id"] for row in rows]))
 
 
@@ -82,14 +84,22 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
     triples = torch.tensor(graph, dtype=torch.long)
     splits = {s: build_entity_split(s, entities, queries, image_table, query_table) for s in (Split.VAL, Split.TEST)}
     anchored = {s: _anchored(d, query_table) for s, d in splits.items()}
-    train_records = sorted((q for q in queries if q["split"] == Split.TRAIN.value and q["anchor_id"] is not None),
-                           key=lambda q: q["query_id"])
+    train_records = sorted(
+        (q for q in queries if q["split"] == Split.TRAIN.value and q["anchor_id"] is not None),
+        key=lambda q: q["query_id"],
+    )
     train = PathQuerySet(
         train_query_set(train_records, query_table, column_of, {triple: row for row, triple in enumerate(graph)}),
         torch.tensor([q["anchor_id"] for q in train_records]),
     )
-    log.info("variant=%s graph triples=%d train queries=%d val queries=%d gallery=%d", variant.value, len(graph),
-             len(train.anchors), len(anchored[Split.VAL][0]), len(gallery))
+    log.info(
+        "variant=%s graph triples=%d train queries=%d val queries=%d gallery=%d",
+        variant.value,
+        len(graph),
+        len(train.anchors),
+        len(anchored[Split.VAL][0]),
+        len(gallery),
+    )
 
     out_dir = config.runs_dir / "relation_paths" / variant.value
     max_hops = data.rules.max_hops
@@ -99,10 +109,10 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
     for seed in config.path_training.seeds:
         log.info("seed %d", seed)
         seed_everything(seed)
-        model = RelationPathScorer(config.relation_paths, triples, len(entities), len(relations),
-                                   train.queries.query_vectors.shape[1])
-        result = fit_paths(model, gallery, train, anchored[Split.VAL][1], config.path_training, seed,
-                           config.recall_ks)
+        model = RelationPathScorer(
+            config.relation_paths, triples, len(entities), len(relations), train.queries.query_vectors.shape[1]
+        )
+        result = fit_paths(model, gallery, train, anchored[Split.VAL][1], config.path_training, seed, config.recall_ks)
         model.load_state_dict(result.state_dict)
         seed_dir = out_dir / f"seed-{seed}"
         seed_dir.mkdir(parents=True, exist_ok=True)
@@ -115,8 +125,11 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
             scores[split] = np.zeros(split_data.clip_scores.shape, dtype=np.float32)
             scores[split][rows] = gallery_path_scores(model, path_queries, gallery)
         selected = select_alpha_top_k(splits[Split.VAL], scores[Split.VAL], config.alpha_grid, config.top_k_grid)
-        seeds[str(seed)] = {"best_epoch": result.best_epoch, "stop_reason": result.stop_reason.value,
-                            "selected": selected}
+        seeds[str(seed)] = {
+            "best_epoch": result.best_epoch,
+            "stop_reason": result.stop_reason.value,
+            "selected": selected,
+        }
         log.info("seed %d best epoch %d, selected on val: %s", seed, result.best_epoch, selected)
         for split, split_data in splits.items():
             fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"], int(selected["top_k"]))
@@ -129,18 +142,27 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
         "graph_triples": len(graph),
         "max_hops": config.relation_paths.max_hops,
         "seeds": seeds,
-        "splits": {s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])}
-                   for s in splits},
+        "splits": {
+            s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])} for s in splits
+        },
     }
     write_json(out_dir / "benchmark.json", report)
     for split in splits:
         for name, row in report["splits"][split.value]["reranked"].items():
             if name.startswith(LOGGED_PREFIXES):
                 alone = report["splits"][split.value]["graph_only"][name]
-                log.info("%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
-                         split.value, name, row["answers"], row["recall@1"]["mean"], row["recall@1"]["std"],
-                         row["recall@10"]["mean"], row["mrr"]["mean"],
-                         alone["recall@1"]["mean"], alone["recall@10"]["mean"])
+                log.info(
+                    "%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"]["mean"],
+                    row["recall@1"]["std"],
+                    row["recall@10"]["mean"],
+                    row["mrr"]["mean"],
+                    alone["recall@1"]["mean"],
+                    alone["recall@10"]["mean"],
+                )
     log.info("wrote %s", out_dir / "benchmark.json")
 
 

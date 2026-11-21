@@ -21,6 +21,7 @@ linked anchors, then applied unchanged to every set.
 
 Writes <runs_dir>/extra_queries/benchmark.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -110,12 +111,19 @@ def with_self_score(graph: np.ndarray, anchor_columns: Sequence[Sequence[int]], 
     return np.divide(scores, peak, out=np.zeros_like(scores), where=peak > 0)
 
 
-def select_with_self_score(val: EntitySplit, graph: np.ndarray, anchor_columns: Sequence[Sequence[int]],
-                           config: MkgwRetrievalConfig) -> dict[str, float]:
+def select_with_self_score(
+    val: EntitySplit, graph: np.ndarray, anchor_columns: Sequence[Sequence[int]], config: MkgwRetrievalConfig
+) -> dict[str, float]:
     """Best (self weight, alpha, top-k) on validation; a tie goes to the smaller self weight."""
-    candidates = [{"self_weight": weight, **select_alpha_top_k(
-        val, with_self_score(graph, anchor_columns, weight), config.alpha_grid, config.top_k_grid)}
-        for weight in config.anchor_self_weight_grid]
+    candidates = [
+        {
+            "self_weight": weight,
+            **select_alpha_top_k(
+                val, with_self_score(graph, anchor_columns, weight), config.alpha_grid, config.top_k_grid
+            ),
+        }
+        for weight in config.anchor_self_weight_grid
+    ]
     return max(candidates, key=lambda c: (c["val_recall@1"], c["val_mrr"], -c["self_weight"]))
 
 
@@ -160,65 +168,102 @@ def run(config: MkgwRetrievalConfig) -> None:
         model.load_state_dict(torch.load(config.runs_dir / "relation_paths" / "real" / f"seed-{seed}" / "model.pt"))
         scorers[seed] = model.eval()
 
-    report: dict[str, Any] = {"model_name": config.clip.model_name, "path_score_selected": paths_selected,
-                              "relation_paths_selected": {s: v["selected"] for s, v in scorer_report["seeds"].items()},
-                              "linked_tuned_selected": {}, "sets": {}}
+    report: dict[str, Any] = {
+        "model_name": config.clip.model_name,
+        "path_score_selected": paths_selected,
+        "relation_paths_selected": {s: v["selected"] for s, v in scorer_report["seeds"].items()},
+        "linked_tuned_selected": {},
+        "sets": {},
+    }
     tuned: dict[str, dict[str, float]] = report["linked_tuned_selected"]
     for name, (split, query_vectors) in sets.items():
+
         def metrics(scores: np.ndarray, split: EntitySplit = split) -> Segments:
             return segment_metrics(split, scores, relations, max_hops, config.recall_ks)
 
         vectors = torch.from_numpy(query_vectors)
-        anchors = {"given": [given_anchors(q) for q in split.queries],
-                   "linked": [linker.link(q["text"]) for q in split.queries]}
+        anchors = {
+            "given": [given_anchors(q) for q in split.queries],
+            "linked": [linker.link(q["text"]) for q in split.queries],
+        }
         methods: dict[str, Any] = {"clip": metrics(split.clip_scores)}
         own_columns = [[column_of[a] for a in ids if a in column_of] for ids in anchors["linked"]]
         for source, per_query in anchors.items():
             if any(anchor >= len(entities) for ids in per_query for anchor in ids):
                 raise DataError(f"{name}: an anchor is not an entity id")
-            walk = pooled_scores(per_query, len(gallery_ids), lambda _rows, ids: path_scores(
-                adjacency, ids.tolist(), max_hops, paths_selected["decay"])[:, gallery_ids])
+            walk = pooled_scores(
+                per_query,
+                len(gallery_ids),
+                lambda _rows, ids: path_scores(adjacency, ids.tolist(), max_hops, paths_selected["decay"])[
+                    :, gallery_ids
+                ],
+            )
             methods[f"path_score/{source}"] = {
-                "reranked": metrics(rerank_scores(split.clip_scores, walk, paths_selected["alpha"],
-                                                  paths_selected["top_k"])),
+                "reranked": metrics(
+                    rerank_scores(split.clip_scores, walk, paths_selected["alpha"], paths_selected["top_k"])
+                ),
                 "graph_only": metrics(walk),
             }
             if source == "linked":
                 if name == "val":
                     tuned["path_score"] = select_with_self_score(split, walk, own_columns, config)
                 chosen = tuned["path_score"]
-                methods["path_score/linked_tuned"] = {"reranked": metrics(rerank_scores(
-                    split.clip_scores, with_self_score(walk, own_columns, chosen["self_weight"]),
-                    chosen["alpha"], int(chosen["top_k"])))}
+                methods["path_score/linked_tuned"] = {
+                    "reranked": metrics(
+                        rerank_scores(
+                            split.clip_scores,
+                            with_self_score(walk, own_columns, chosen["self_weight"]),
+                            chosen["alpha"],
+                            int(chosen["top_k"]),
+                        )
+                    )
+                }
             reranked, alone, retuned = [], [], []
             for seed, model in scorers.items():
-                def learned(rows: np.ndarray, ids: np.ndarray, model: RelationPathScorer = model,
-                            vectors: torch.Tensor = vectors) -> np.ndarray:
+
+                def learned(
+                    rows: np.ndarray,
+                    ids: np.ndarray,
+                    model: RelationPathScorer = model,
+                    vectors: torch.Tensor = vectors,
+                ) -> np.ndarray:
                     with torch.inference_mode():
                         return model(vectors[rows], torch.from_numpy(ids))[:, gallery_ids].numpy()
 
                 graph = pooled_scores(per_query, len(gallery_ids), learned)
                 selected = scorer_report["seeds"][seed]["selected"]
-                reranked.append(metrics(rerank_scores(split.clip_scores, graph, selected["alpha"],
-                                                      int(selected["top_k"]))))
+                reranked.append(
+                    metrics(rerank_scores(split.clip_scores, graph, selected["alpha"], int(selected["top_k"])))
+                )
                 alone.append(metrics(graph))
                 if source == "linked":
                     if name == "val":
                         tuned[f"relation_paths/{seed}"] = select_with_self_score(split, graph, own_columns, config)
                     chosen = tuned[f"relation_paths/{seed}"]
-                    retuned.append(metrics(rerank_scores(
-                        split.clip_scores, with_self_score(graph, own_columns, chosen["self_weight"]),
-                        chosen["alpha"], int(chosen["top_k"]))))
-            methods[f"relation_paths/{source}"] = {"reranked": seed_summary(reranked),
-                                                   "graph_only": seed_summary(alone)}
+                    retuned.append(
+                        metrics(
+                            rerank_scores(
+                                split.clip_scores,
+                                with_self_score(graph, own_columns, chosen["self_weight"]),
+                                chosen["alpha"],
+                                int(chosen["top_k"]),
+                            )
+                        )
+                    )
+            methods[f"relation_paths/{source}"] = {
+                "reranked": seed_summary(reranked),
+                "graph_only": seed_summary(alone),
+            }
             if retuned:
                 methods["relation_paths/linked_tuned"] = {"reranked": seed_summary(retuned)}
         if name == "val":
             log.info("linked_tuned selected on val: %s", tuned)
             continue
-        report["sets"][name] = {"queries": len(split.queries), "linking": linking_stats(anchors["given"],
-                                                                                         anchors["linked"]),
-                                "methods": methods}
+        report["sets"][name] = {
+            "queries": len(split.queries),
+            "linking": linking_stats(anchors["given"], anchors["linked"]),
+            "methods": methods,
+        }
         log.info("%s linking: %s", name, report["sets"][name]["linking"])
         for segment, row in methods["clip"].items():
             if segment.startswith("relation="):

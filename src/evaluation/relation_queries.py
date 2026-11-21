@@ -9,6 +9,7 @@ Every relation query has an objects-only twin on the same image, built from the 
 concepts without the predicate. If a model gains as much on the twin as on the relation
 query, it does not use the relation. No file I/O here.
 """
+
 from __future__ import annotations
 
 import random
@@ -81,15 +82,17 @@ def build_relation_queries(
             "object": concept_text[triplet[2]],
         }
         for kind in QueryKind:
-            queries.append({
-                "query_id": f"{kind.value}-{image_id}",
-                "kind": kind.value,
-                "text": TEMPLATES[kind].format(**words),
-                "split": split.value,
-                "relevant_ids": [image_id],
-                "confuser_ids": confusers,
-                "triplet": list(triplet),
-            })
+            queries.append(
+                {
+                    "query_id": f"{kind.value}-{image_id}",
+                    "kind": kind.value,
+                    "text": TEMPLATES[kind].format(**words),
+                    "split": split.value,
+                    "relevant_ids": [image_id],
+                    "confuser_ids": confusers,
+                    "triplet": list(triplet),
+                }
+            )
     return queries
 
 
@@ -124,6 +127,7 @@ def contrast_confusers(query: Mapping[str, Any], graph_of: Mapping[int, Mapping[
     subject, _, obj = (int(x) for x in query["triplet"])
     pair = {subject, obj}
     return [
-        image_id for image_id in query["confuser_ids"]
+        image_id
+        for image_id in query["confuser_ids"]
         if any({int(s), int(o)} == pair for s, _, o in graph_of[int(image_id)]["triplets"])
     ]

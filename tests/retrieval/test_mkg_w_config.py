@@ -1,4 +1,5 @@
 """The knowledge-graph retrieval config loads for both datasets that share it."""
+
 from __future__ import annotations
 
 import pytest

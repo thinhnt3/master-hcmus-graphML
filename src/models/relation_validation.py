@@ -6,6 +6,7 @@ objects but not the triplet), first with its full graph, then with the queried e
 removed. `edge_sensitivity` is the accuracy lost to that removal: near zero means the
 encoder ignores the edges, whatever its caption metrics say.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -45,8 +46,10 @@ class RelationValidator:
         self.confusers = [[column[int(i)] for i in q["confuser_ids"]] for q in relation]
         self.contrast = [[column[i] for i in contrast_confusers(q, image_graphs)] for q in relation]
         self.masked_graphs = [
-            image_graph_to_data(remove_triplet(image_graphs[int(q["relevant_ids"][0])], q["triplet"]),
-                                image_row[int(q["relevant_ids"][0])])
+            image_graph_to_data(
+                remove_triplet(image_graphs[int(q["relevant_ids"][0])], q["triplet"]),
+                image_row[int(q["relevant_ids"][0])],
+            )
             for q in relation
         ]
 

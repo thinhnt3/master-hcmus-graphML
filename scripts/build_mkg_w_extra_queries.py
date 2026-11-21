@@ -9,6 +9,7 @@ Writes <processed_dir>/extra_queries.json with two lists of query records:
 - `handwritten`: the free-text queries of the hand-written file, checked against the triples.
 Both are test-only. Each record lists the entities its text names in `anchor_ids`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,16 +38,22 @@ def run(config: MkgwConfig, handwritten_file: Path) -> None:
     processed = config.paths.processed_dir
     entities = read_json(processed / "entities.json")
     relations = read_json(processed / "relations.json")
-    triples = {split: [Triple(*row) for row in rows]
-               for split, rows in ((Split(name), rows) for name, rows in read_json(processed / "triples.json").items())}
+    triples = {
+        split: [Triple(*row) for row in rows]
+        for split, rows in ((Split(name), rows) for name, rows in read_json(processed / "triples.json").items())
+    }
     names = [entity["name"] for entity in entities]
     has_image = [bool(entity["image_files"]) for entity in entities]
     relation_of = {relation["pid"]: relation["relation_id"] for relation in relations}
     templates = {relation_of[pid]: template for pid, template in config.templates.items()}
 
     stats = direction_stats(triples[Split.TRAIN], config.rules)
-    chain = [{**query.to_dict(), "anchor_ids": [query.anchor_id]} for query in build_chain_queries(
-        triples, Split.TEST, stats, templates, names, has_image, config.rules.max_answers)]
+    chain = [
+        {**query.to_dict(), "anchor_ids": [query.anchor_id]}
+        for query in build_chain_queries(
+            triples, Split.TEST, stats, templates, names, has_image, config.rules.max_answers
+        )
+    ]
 
     items = read_mapping(handwritten_file).get("queries")
     if not isinstance(items, list) or not items:

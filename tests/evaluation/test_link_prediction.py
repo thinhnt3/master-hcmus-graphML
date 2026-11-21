@@ -1,4 +1,5 @@
 """Filtered link prediction ranks both ends of a triple and skips other true completions."""
+
 from __future__ import annotations
 
 import numpy as np

@@ -1,4 +1,5 @@
 """GraphSAGE encoder that turns an image's sub-graph into one vector in the CLIP space."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from src.models.graph_data import NodeKind
 class ImageNodeFeature(StrEnum):
     """Initial feature of the image node."""
 
-    LEARNED = "learned"        # one trainable vector shared by all images: the output comes from the graph only
+    LEARNED = "learned"  # one trainable vector shared by all images: the output comes from the graph only
     CLIP_IMAGE = "clip_image"  # the image's own frozen CLIP vector
 
 
@@ -48,7 +49,7 @@ class DirectedSAGELayer(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super().__init__()
-        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")   # messages along the edge
+        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages along the edge
         self.backward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages against the edge
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:

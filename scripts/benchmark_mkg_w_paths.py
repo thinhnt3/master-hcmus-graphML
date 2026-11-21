@@ -10,6 +10,7 @@ the control graph. The anchor of a relation query is read from the query record
 (`anchor_id`), i.e. entity linking is assumed solved. Queries without an anchor get a zero
 path score. Results go to <runs_dir>/paths/benchmark.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,8 +62,9 @@ def _select_on_val(
     val: EntitySplit, graph_by_decay: Mapping[float, np.ndarray], alphas: Sequence[float], top_ks: Sequence[int]
 ) -> dict[str, Any]:
     """Best (decay, alpha, top_k) on validation; see `select_alpha_top_k` for the order of preference."""
-    candidates = [{"decay": decay, **select_alpha_top_k(val, graph, alphas, top_ks)}
-                  for decay, graph in graph_by_decay.items()]
+    candidates = [
+        {"decay": decay, **select_alpha_top_k(val, graph, alphas, top_ks)} for decay, graph in graph_by_decay.items()
+    ]
     return max(candidates, key=lambda c: (c["val_recall@1"], c["val_mrr"], c["alpha"], -c["top_k"]))
 
 
@@ -88,12 +90,18 @@ def run(config: MkgwRetrievalConfig) -> None:
         "paths": train_edges,
         "paths_shuffled_edges": shuffled_tails(train_edges, config.path_shuffle_seed),
     }
-    report: dict[str, Any] = {"model_name": config.clip.model_name, "gallery_entities": len(gallery_ids),
-                              "max_hops": max_hops, "methods": {}}
+    report: dict[str, Any] = {
+        "model_name": config.clip.model_name,
+        "gallery_entities": len(gallery_ids),
+        "max_hops": max_hops,
+        "methods": {},
+    }
     for method, edges in graphs.items():
         adjacency = normalized_adjacency(edges, len(entities))
-        val_graphs = {decay: _graph_scores(splits[Split.VAL], adjacency, gallery_ids, max_hops, decay)
-                      for decay in config.path_decay_grid}
+        val_graphs = {
+            decay: _graph_scores(splits[Split.VAL], adjacency, gallery_ids, max_hops, decay)
+            for decay in config.path_decay_grid
+        }
         selected = _select_on_val(splits[Split.VAL], val_graphs, config.alpha_grid, config.top_k_grid)
         log.info("%s selected on val: %s", method, selected)
         report["methods"][method] = {"selected": selected, "splits": {}}
@@ -109,10 +117,19 @@ def run(config: MkgwRetrievalConfig) -> None:
             }
             for name, row in segments.items():
                 if row["answers"] >= _MIN_LOGGED_PAIRS and not name.startswith("relation="):
-                    log.info("%-20s %-5s %-24s n=%5d R@1 %.3f R@10 %.3f MRR %.3f | graph only R@1 %s",
-                             method, split.value, name, row["answers"], row["recall@1"], row["recall@10"],
-                             row["mrr"], graph_only[name]["recall@1"] if name in report["methods"][method]["splits"][
-                                 split.value]["graph_only"] else "-")
+                    log.info(
+                        "%-20s %-5s %-24s n=%5d R@1 %.3f R@10 %.3f MRR %.3f | graph only R@1 %s",
+                        method,
+                        split.value,
+                        name,
+                        row["answers"],
+                        row["recall@1"],
+                        row["recall@10"],
+                        row["mrr"],
+                        graph_only[name]["recall@1"]
+                        if name in report["methods"][method]["splits"][split.value]["graph_only"]
+                        else "-",
+                    )
     out_path = config.runs_dir / "paths" / "benchmark.json"
     write_json(out_path, report)
     log.info("wrote %s", out_path)

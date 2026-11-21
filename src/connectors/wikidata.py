@@ -1,4 +1,5 @@
 """Minimal MediaWiki Action API clients for Wikidata and Wikipedia (read-only)."""
+
 from __future__ import annotations
 
 import time
@@ -62,8 +63,9 @@ class WikidataClient(ActionApiClient):
         """Labels per item in the given languages; items without any of them are left out."""
         result: dict[str, dict[str, str]] = {}
         for batch in _batches(qids):
-            payload = self.get({"action": "wbgetentities", "ids": "|".join(batch), "props": "labels",
-                                "languages": "|".join(languages)})
+            payload = self.get(
+                {"action": "wbgetentities", "ids": "|".join(batch), "props": "labels", "languages": "|".join(languages)}
+            )
             for qid, entity in payload.get("entities", {}).items():
                 found = {lang: value["value"] for lang, value in (entity.get("labels") or {}).items()}
                 if found:
@@ -89,8 +91,9 @@ class WikidataClient(ActionApiClient):
         """Article title of each item on one wiki (e.g. `viwiki`); items without one are left out."""
         result: dict[str, str] = {}
         for batch in _batches(qids):
-            payload = self.get({"action": "wbgetentities", "ids": "|".join(batch), "props": "sitelinks",
-                                "sitefilter": site})
+            payload = self.get(
+                {"action": "wbgetentities", "ids": "|".join(batch), "props": "sitelinks", "sitefilter": site}
+            )
             for qid, entity in payload.get("entities", {}).items():
                 link = (entity.get("sitelinks") or {}).get(site)
                 if link:
@@ -105,8 +108,15 @@ class WikipediaClient(ActionApiClient):
         """Current wikitext keyed by the requested title."""
         result: dict[str, str] = {}
         for batch in _batches(titles):
-            for payload in self.paged({"action": "query", "titles": "|".join(batch), "prop": "revisions",
-                                       "rvprop": "content", "rvslots": "main"}):
+            for payload in self.paged(
+                {
+                    "action": "query",
+                    "titles": "|".join(batch),
+                    "prop": "revisions",
+                    "rvprop": "content",
+                    "rvslots": "main",
+                }
+            ):
                 for page in payload.get("query", {}).get("pages", []):
                     revisions = page.get("revisions")
                     if revisions:
@@ -117,8 +127,15 @@ class WikipediaClient(ActionApiClient):
         """Wikidata id of each requested title, following redirects; pages without an item are left out."""
         result: dict[str, str] = {}
         for batch in _batches(titles):
-            for payload in self.paged({"action": "query", "titles": "|".join(batch), "prop": "pageprops",
-                                       "ppprop": "wikibase_item", "redirects": 1}):
+            for payload in self.paged(
+                {
+                    "action": "query",
+                    "titles": "|".join(batch),
+                    "prop": "pageprops",
+                    "ppprop": "wikibase_item",
+                    "redirects": 1,
+                }
+            ):
                 query = payload.get("query", {})
                 source = {step["to"]: step["from"] for step in query.get("normalized", [])}
                 for step in query.get("redirects", []):

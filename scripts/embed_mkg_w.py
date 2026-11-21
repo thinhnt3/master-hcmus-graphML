@@ -10,6 +10,7 @@ Writes four tables to <embeddings_dir>/<model name>/: `images` (one row per imag
 
 `--tables descriptions` recomputes only the named tables and keeps the others as they are.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -79,8 +80,12 @@ def run(config: MkgwRetrievalConfig, only: Sequence[str] = ()) -> None:
     texts, text_batch = encoder.encode_texts, config.clip.text_batch_size
     jobs: dict[str, tuple[list[Any], list[Any], Encode, int]] = {
         "entities": ([e["entity_id"] for e in entities], [e["name"] for e in entities], texts, text_batch),
-        "descriptions": ([e["entity_id"] for e in entities], [e["description"] or e["name"] for e in entities],
-                         texts, text_batch),
+        "descriptions": (
+            [e["entity_id"] for e in entities],
+            [e["description"] or e["name"] for e in entities],
+            texts,
+            text_batch,
+        ),
         "queries": ([q["query_id"] for q in queries], [q["text"] for q in queries], texts, text_batch),
         "images": (image_ids, image_files, encoder.encode_image_files, config.clip.image_batch_size),
     }
@@ -99,16 +104,20 @@ def run(config: MkgwRetrievalConfig, only: Sequence[str] = ()) -> None:
         tables[name] = EmbeddingTable(ids=tuple(ids), vectors=vectors)
         save_table(out_dir, name, tables[name])
 
-    write_json(out_dir / META_FILE, {
-        "model_name": config.clip.model_name,
-        "device": encoder.device,
-        "dim": encoder.dim,
-        "tables": kept | {
-            name: {"rows": len(table.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
-            for name, table in tables.items()
+    write_json(
+        out_dir / META_FILE,
+        {
+            "model_name": config.clip.model_name,
+            "device": encoder.device,
+            "dim": encoder.dim,
+            "tables": kept
+            | {
+                name: {"rows": len(table.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
+                for name, table in tables.items()
+            },
+            "inputs_sha256": {str(p): sha256_of(p) for p in inputs.values()},
         },
-        "inputs_sha256": {str(p): sha256_of(p) for p in inputs.values()},
-    })
+    )
     log.info("tables: %s", {name: table.vectors.shape for name, table in tables.items()})
     log.info("wrote %s", out_dir)
 

@@ -1,4 +1,5 @@
 """Training loop of AdaMF-MAT on a knowledge graph: negative sampling, then the generator step."""
+
 from __future__ import annotations
 
 import logging
@@ -29,8 +30,8 @@ class KgAdamfTrainingConfig:
     batch_size: int
     learning_rate: float
     max_epochs: int
-    eval_every: int       # epochs between two validation runs
-    patience: int         # validation runs without a better MRR before stopping
+    eval_every: int  # epochs between two validation runs
+    patience: int  # validation runs without a better MRR before stopping
     eval_batch_size: int
 
     def __post_init__(self) -> None:
@@ -59,9 +60,12 @@ def score_fn(model: KgAdamfMat) -> ScoreFn:
 
     def score(anchors: np.ndarray, relations: np.ndarray, anchor_is_head: np.ndarray) -> np.ndarray:
         model.eval()
-        scores = model.candidate_scores(torch.as_tensor(anchors, device=device),
-                                        torch.as_tensor(relations, device=device),
-                                        torch.as_tensor(anchor_is_head, device=device), everyone)
+        scores = model.candidate_scores(
+            torch.as_tensor(anchors, device=device),
+            torch.as_tensor(relations, device=device),
+            torch.as_tensor(anchor_is_head, device=device),
+            everyone,
+        )
         return scores.cpu().numpy()
 
     return score
@@ -84,8 +88,11 @@ def fit_kg_adamf(
     triples = torch.tensor(train, dtype=torch.long, device=device)
     completions = known_completions(known)
     optimizer = torch.optim.Adam(model.encoder_parameters(), lr=config.learning_rate)
-    generator_optimizer = (torch.optim.Adam(model.generator_parameters(), lr=model.config.generator_learning_rate)
-                           if model.config.mat else None)
+    generator_optimizer = (
+        torch.optim.Adam(model.generator_parameters(), lr=model.config.generator_learning_rate)
+        if model.config.mat
+        else None
+    )
     history: list[dict[str, Any]] = []
     best_mrr, best_epoch, bad_runs = -1.0, 0, 0
     best_state = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
@@ -97,9 +104,10 @@ def fit_kg_adamf(
         model.train()
         losses, generator_losses = [], []
         for step, start in enumerate(range(0, len(triples), config.batch_size)):
-            batch = triples[order[start:start + config.batch_size]]
-            negatives = torch.randint(model.n_entities, (len(batch), model.config.negatives),
-                                      generator=generator).to(device)
+            batch = triples[order[start : start + config.batch_size]]
+            negatives = torch.randint(model.n_entities, (len(batch), model.config.negatives), generator=generator).to(
+                device
+            )
             loss = model.encoder_loss(batch, negatives, corrupt_head=step % 2 == 0)
             if not torch.isfinite(loss):
                 raise TrainingError(f"loss is {loss.item()} at epoch {epoch}")
@@ -116,9 +124,12 @@ def fit_kg_adamf(
         if epoch % config.eval_every and epoch != config.max_epochs:
             continue
         metrics = link_prediction_metrics(score_fn(model), val, completions, config.eval_batch_size)
-        entry = {"epoch": epoch, "train_loss": round(float(np.mean(losses)), 5),
-                 **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
-                 "seconds": round(time.perf_counter() - started, 1)}
+        entry = {
+            "epoch": epoch,
+            "train_loss": round(float(np.mean(losses)), 5),
+            **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
+            "seconds": round(time.perf_counter() - started, 1),
+        }
         if generator_losses:
             entry["generator_loss"] = round(float(np.mean(generator_losses)), 5)
         history.append(entry)
@@ -128,8 +139,16 @@ def fit_kg_adamf(
             best_state = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
         else:
             bad_runs += 1
-        log.info("epoch %4d loss %.4f val MRR %.4f H@1 %.4f H@10 %.4f (%.0fs)%s", epoch, entry["train_loss"],
-                 metrics["mrr"], metrics["hits@1"], metrics["hits@10"], entry["seconds"], " *" if improved else "")
+        log.info(
+            "epoch %4d loss %.4f val MRR %.4f H@1 %.4f H@10 %.4f (%.0fs)%s",
+            epoch,
+            entry["train_loss"],
+            metrics["mrr"],
+            metrics["hits@1"],
+            metrics["hits@10"],
+            entry["seconds"],
+            " *" if improved else "",
+        )
         if bad_runs >= config.patience:
             stop_reason = StopReason.NO_IMPROVEMENT
             break

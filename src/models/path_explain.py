@@ -4,6 +4,7 @@ The scorer's value for an entity is the sum of the masses of all walks of at mos
 edges that end on it. Listing those walks is therefore an exact decomposition of the score;
 the heaviest ones form the explanation sub-graph of a (query, entity) pair.
 """
+
 from __future__ import annotations
 
 from collections import deque
@@ -109,8 +110,7 @@ class PathExplainer:
             for edge in edges.tolist():
                 after = int(self.targets[edge])
                 edge_type = int(self.edge_types[edge])
-                step = PathStep(node, edge_type % self.n_relations, edge < self.n_triples, after,
-                                edge % self.n_triples)
+                step = PathStep(node, edge_type % self.n_relations, edge < self.n_triples, after, edge % self.n_triples)
                 walked = (*steps, step)
                 walked_mass = mass * weights[hop, edge_type] * self.edge_scale[edge]
                 if after == target:

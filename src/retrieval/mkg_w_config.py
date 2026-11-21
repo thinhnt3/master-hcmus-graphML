@@ -1,4 +1,5 @@
 """Typed, validated view of `configs/retrieval/mkg_w.yaml`."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -100,14 +101,20 @@ class MkgwRetrievalConfig:
             raise ConfigError(f"benchmark.alpha_step must divide 1 evenly and lie in (0, 1], got {alpha_step}")
         path_raw = require_section(raw, "path_score")
         decays = path_raw.get("decay_grid")
-        if (not isinstance(decays, list) or not decays
-                or not all(isinstance(d, (int, float)) and not isinstance(d, bool) and 0 < d <= 1 for d in decays)):
+        if (
+            not isinstance(decays, list)
+            or not decays
+            or not all(isinstance(d, (int, float)) and not isinstance(d, bool) and 0 < d <= 1 for d in decays)
+        ):
             raise ConfigError("path_score.decay_grid must be a non-empty list of numbers in (0, 1]")
         self_weights: list[Any] | None = None
         if "anchor_linking" in raw:
             self_weights = require_section(raw, "anchor_linking").get("self_weight_grid")
-            if (not isinstance(self_weights, list) or not self_weights or not all(
-                    isinstance(w, (int, float)) and not isinstance(w, bool) and w >= 0 for w in self_weights)):
+            if (
+                not isinstance(self_weights, list)
+                or not self_weights
+                or not all(isinstance(w, (int, float)) and not isinstance(w, bool) and w >= 0 for w in self_weights)
+            ):
                 raise ConfigError("anchor_linking.self_weight_grid must be a non-empty list of numbers >= 0")
         sage_raw = require_section(raw, "kg_graphsage")
         # Absent keys keep what configs written before them did: select on all queries, no structure-only rows.
@@ -162,7 +169,10 @@ class MkgwRetrievalConfig:
 
 def _positive_ints(raw: dict[str, Any], key: str) -> tuple[int, ...]:
     values = raw.get(key)
-    if (not isinstance(values, list) or not values
-            or not all(isinstance(v, int) and not isinstance(v, bool) and v >= 1 for v in values)):
+    if (
+        not isinstance(values, list)
+        or not values
+        or not all(isinstance(v, int) and not isinstance(v, bool) and v >= 1 for v in values)
+    ):
         raise ConfigError(f"benchmark.{key} must be a non-empty list of integers >= 1")
     return tuple(values)

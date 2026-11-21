@@ -1,4 +1,5 @@
 """Filtered link prediction: rank the true head and the true tail of each triple among all entities."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -24,13 +25,14 @@ def known_completions(triples: Sequence[Sequence[int]]) -> dict[tuple[int, int, 
     return known
 
 
-def link_prediction_metrics(score: ScoreFn, triples: Sequence[Sequence[int]],
-                            known: dict[tuple[int, int, bool], set[int]], batch_size: int) -> dict[str, float]:
+def link_prediction_metrics(
+    score: ScoreFn, triples: Sequence[Sequence[int]], known: dict[tuple[int, int, bool], set[int]], batch_size: int
+) -> dict[str, float]:
     """MRR and Hits@K over tail and head prediction; other true completions are skipped."""
     cases = [(h, r, True, t) for h, r, t in triples] + [(t, r, False, h) for h, r, t in triples]
     ranks = []
     for start in range(0, len(cases), batch_size):
-        batch = cases[start:start + batch_size]
+        batch = cases[start : start + batch_size]
         anchors, relations, is_head, answers = (np.array(column) for column in zip(*batch, strict=True))
         scores = score(anchors, relations, is_head.astype(bool))
         others = [sorted(known[(a, r, bool(d))] - {answer}) for a, r, d, answer in batch]

@@ -13,6 +13,7 @@ Reported per setting: the encoder alone, and CLIP + encoder with the alpha and t
 seed selected on clean validation data (runs/benchmark/<method>-<run>.json). Nothing is
 tuned on test. Writes <runs_dir>/analysis/graph_noise-<method>-<run>.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,9 +53,14 @@ GRID = (
 # misses relations at the same time.
 WIDE_GRID = (
     Corruption(),
-    Corruption(drop_node=0.1), Corruption(drop_node=0.3), Corruption(drop_node=0.5),
-    Corruption(flip_label=0.1), Corruption(flip_label=0.2), Corruption(flip_label=0.4),
-    Corruption(drop_edge=0.5), Corruption(drop_edge=1.0),
+    Corruption(drop_node=0.1),
+    Corruption(drop_node=0.3),
+    Corruption(drop_node=0.5),
+    Corruption(flip_label=0.1),
+    Corruption(flip_label=0.2),
+    Corruption(flip_label=0.4),
+    Corruption(drop_edge=0.5),
+    Corruption(drop_edge=1.0),
     Corruption(drop_edge=0.3, drop_node=0.2, flip_label=0.1),
     Corruption(drop_edge=0.5, drop_node=0.4, flip_label=0.3),
 )
@@ -98,7 +104,10 @@ def main() -> int:
                 results["reranked"].append(score_method(fused, test, ks))
                 log.info(
                     "seed %d %-14s graph only R@1 %.4f  clip + graph R@1 %.4f",
-                    seed, noise.name(), results["graph_only"][-1]["recall@1"], results["reranked"][-1]["recall@1"],
+                    seed,
+                    noise.name(),
+                    results["graph_only"][-1]["recall@1"],
+                    results["reranked"][-1]["recall@1"],
                 )
         if not per_setting:
             raise DataError("no seeds to score")
@@ -116,8 +125,12 @@ def main() -> int:
             },
         }
         for name, kinds in report["settings"].items():
-            log.info("%-14s graph only R@1 %s  clip + graph R@1 %s", name,
-                     kinds["graph_only"]["recall@1"], kinds["reranked"]["recall@1"])
+            log.info(
+                "%-14s graph only R@1 %s  clip + graph R@1 %s",
+                name,
+                kinds["graph_only"]["recall@1"],
+                kinds["reranked"]["recall@1"],
+            )
         suffix = "-wide" if args.grid == "wide" else ""
         out = config.runs_dir / "analysis" / f"graph_noise-{args.method}-{args.run}{suffix}.json"
         write_json(out, report)

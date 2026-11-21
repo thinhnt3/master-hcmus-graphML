@@ -41,6 +41,7 @@ from src.retrieval.rerank import rerank_scores
 
 log = logging.getLogger(__name__)
 
+
 class Selector(StrEnum):
     """How the relations of an explanation are ranked before the joint deletion."""
 

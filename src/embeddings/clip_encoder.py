@@ -1,4 +1,5 @@
 """Frozen CLIP encoder for images and text. The model is loaded once and never trained."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

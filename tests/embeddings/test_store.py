@@ -96,10 +96,13 @@ def test_stale_embeddings_are_detected(tmp_path):
     table = EmbeddingTable(ids=(1,), vectors=_unit([[1, 0]]))
     save_table(directory, "images", table)
     table_hashes = {p.name: sha256_of(p) for p in table_paths(directory, "images")}
-    write_json(directory / META_FILE, {
-        "inputs_sha256": {str(source): sha256_of(source)},
-        "tables": {"images": {"rows": 1, "sha256": table_hashes}},
-    })
+    write_json(
+        directory / META_FILE,
+        {
+            "inputs_sha256": {str(source): sha256_of(source)},
+            "tables": {"images": {"rows": 1, "sha256": table_hashes}},
+        },
+    )
     verify_inputs_unchanged(directory)  # unchanged input: no error
     save_table(directory, "images", EmbeddingTable(ids=(1,), vectors=_unit([[0, 1]])))
     with pytest.raises(DataError, match="differ from meta.json"):

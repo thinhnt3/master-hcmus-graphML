@@ -64,13 +64,23 @@ def test_fit_learns_which_relation_a_query_follows():
         vectors = torch.eye(2).repeat_interleave(len(films), dim=0)  # kind A rows, then kind B rows
         relevant = [[f] for f in films] + [[n + f] for f in films]
         own_triples = [[f] for f in films] + [[n_train + f] for f in films] if own else [[] for _ in relevant]
-        return PathQuerySet(KgQuerySet(vectors, relevant, [[] for _ in relevant], own_triples),
-                            torch.tensor(list(films) * 2))
+        return PathQuerySet(
+            KgQuerySet(vectors, relevant, [[] for _ in relevant], own_triples), torch.tensor(list(films) * 2)
+        )
 
     train, val = queries(range(n_train), own=True), queries(range(n_train, n), own=False)
-    config = TrainingConfig(seeds=(1,), device=Device.CPU, batch_size=8, max_epochs=30, patience=30,
-                            learning_rate=0.05, weight_decay=0.0, temperature=0.1, grad_clip_norm=1.0,
-                            selection_metric=SelectionMetric.RECALL_AT_1)
+    config = TrainingConfig(
+        seeds=(1,),
+        device=Device.CPU,
+        batch_size=8,
+        max_epochs=30,
+        patience=30,
+        learning_rate=0.05,
+        weight_decay=0.0,
+        temperature=0.1,
+        grad_clip_norm=1.0,
+        selection_metric=SelectionMetric.RECALL_AT_1,
+    )
     model = _scorer(triples, n_entities=3 * n, n_relations=4, hops=1, dim=2)
     assert evaluate_paths(model, val, gallery, (1,))["recall@1"] == 0.0  # A_i and B_i tie
     result = fit_paths(model, gallery, train, val, config, seed=1, ks=(1,))

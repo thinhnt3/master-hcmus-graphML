@@ -1,4 +1,5 @@
 """Sanity checks on stored embeddings."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

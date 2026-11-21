@@ -1,4 +1,5 @@
 """Shared pieces of the MKG-W benchmarks: the entity gallery, split scores and report segments."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -78,12 +79,20 @@ def select_alpha_top_k(
         for alpha in alphas:
             ranks, _ = val.ranks(rerank_scores(val.clip_scores, graph_scores, alpha, top_k))
             metrics = retrieval_metrics(ranks, (1,))
-            key = (round(metrics["recall@1"], _SELECTION_DECIMALS), round(metrics["mrr"], _SELECTION_DECIMALS),
-                   alpha, -top_k)
+            key = (
+                round(metrics["recall@1"], _SELECTION_DECIMALS),
+                round(metrics["mrr"], _SELECTION_DECIMALS),
+                alpha,
+                -top_k,
+            )
             if best_key is None or key > best_key:
                 best_key = key
-                best = {"alpha": alpha, "top_k": top_k,
-                        "val_recall@1": round(metrics["recall@1"], 4), "val_mrr": round(metrics["mrr"], 4)}
+                best = {
+                    "alpha": alpha,
+                    "top_k": top_k,
+                    "val_recall@1": round(metrics["recall@1"], 4),
+                    "val_mrr": round(metrics["mrr"], 4),
+                }
     return best
 
 

@@ -8,6 +8,7 @@ Writes to <processed_dir>: images.json, queries.json, graph/{image_graphs,concep
 and images/<entity id>.jpg (each item's first image, at most 512 pixels a side), plus the split file and a card with the
 sizes. After that the VG ∩ COCO scripts run on it with `--config configs/retrieval/mkg_w_captions.yaml`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -57,11 +58,15 @@ def run(config_path: str) -> None:
     items = select_items(entities, triples, subset)
     if not items:
         raise DataError("no entity passes the subset rules")
-    item_split = {item: split for split, ids in split_entities(list(items), subset.fractions, data.split.seed).items()
-                  for item in ids}
+    item_split = {
+        item: split
+        for split, ids in split_entities(list(items), subset.fractions, data.split.seed).items()
+        for item in ids
+    }
     touching = item_triples(triples)
     concepts, predicates, concept_of, predicate_of = build_vocabulary(
-        item_split, touching, names, [r["label"] or r["pid"] for r in relations], subset.mask_text)
+        item_split, touching, names, [r["label"] or r["pid"] for r in relations], subset.mask_text
+    )
     graphs = [item_graph(item, item_split[item], touching[item], concept_of, predicate_of) for item in sorted(items)]
 
     out = data.paths.processed_dir
@@ -76,10 +81,18 @@ def run(config_path: str) -> None:
             copy.save(image_path(out / "images", item), "JPEG", quality=_JPEG_QUALITY)
         split = item_split[item].value
         captions = [{"caption_id": f"cap-{item}-{n}", "text": text} for n, text in enumerate(items[item])]
-        images.append({"vg_image_id": item, "name": display_name(names[item]), "source_image": source_file,
-                       "split": split, "captions": captions})
-        queries.extend({"query_id": c["caption_id"], "text": c["text"], "relevant_ids": [item], "split": split}
-                       for c in captions)
+        images.append(
+            {
+                "vg_image_id": item,
+                "name": display_name(names[item]),
+                "source_image": source_file,
+                "split": split,
+                "captions": captions,
+            }
+        )
+        queries.extend(
+            {"query_id": c["caption_id"], "text": c["text"], "relevant_ids": [item], "split": split} for c in captions
+        )
 
     write_json(out / "images.json", images)
     write_json(out / "queries.json", queries)
@@ -87,9 +100,17 @@ def run(config_path: str) -> None:
     write_json(out / "graph" / "concepts.json", concepts)
     write_json(out / "graph" / "predicates.json", predicates)
     by_split = {s.value: sorted(i for i, v in item_split.items() if v is s) for s in Split}
-    write_json(data.paths.split_file, {"config": {"min_triples": subset.min_triples, "seed": data.split.seed,
-                                                  "fractions": {s.value: f for s, f in subset.fractions.items()}},
-                                       **by_split})
+    write_json(
+        data.paths.split_file,
+        {
+            "config": {
+                "min_triples": subset.min_triples,
+                "seed": data.split.seed,
+                "fractions": {s.value: f for s, f in subset.fractions.items()},
+            },
+            **by_split,
+        },
+    )
     triple_counts = [len(g["triplets"]) for g in graphs]
     card = {
         "items": {s: len(ids) for s, ids in by_split.items()},
@@ -98,12 +119,17 @@ def run(config_path: str) -> None:
         "concepts": len(concepts),
         "concepts_seen_in_train": sum(c["train_images"] > 0 for c in concepts),
         "predicates": len(predicates),
-        "triples_per_item": {"min": min(triple_counts), "median": statistics.median(triple_counts),
-                             "max": max(triple_counts)},
+        "triples_per_item": {
+            "min": min(triple_counts),
+            "median": statistics.median(triple_counts),
+            "max": max(triple_counts),
+        },
     }
     data.paths.graph_card_file.write_text(
         "# MKG-W caption subset card. Written by `python -m scripts.build_mkg_w_captions`; do not edit by hand.\n"
-        + yaml.safe_dump(card, sort_keys=False), encoding="utf-8")
+        + yaml.safe_dump(card, sort_keys=False),
+        encoding="utf-8",
+    )
     log.info("card: %s", card)
     log.info("wrote %s", out)
 

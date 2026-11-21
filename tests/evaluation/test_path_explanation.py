@@ -64,7 +64,8 @@ def test_validity_checks_relation_and_direction():
     _, _, paths = _paths()
     shortcut = [p for p in paths if len(p.steps) == 1]
     assert relation_validity(shortcut, 1, relation_id=2, forward=True) == {
-        "relation_on_top_path": True, "relation_in_explanation": True,
+        "relation_on_top_path": True,
+        "relation_in_explanation": True,
         "relation_and_direction_in_explanation": True,
     }
     against = relation_validity(shortcut, 1, relation_id=2, forward=False)

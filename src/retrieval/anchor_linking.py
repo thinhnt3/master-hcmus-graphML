@@ -1,4 +1,5 @@
 """Find the entities a query names by matching entity names in its text."""
+
 from __future__ import annotations
 
 import re
@@ -42,7 +43,7 @@ class AnchorLinker:
         position = 0
         while position < len(words):
             for length in range(min(self._max_words, len(words) - position), 0, -1):
-                span = text[words[position][0]:words[position + length - 1][1]]
+                span = text[words[position][0] : words[position + length - 1][1]]
                 entity = next((self._entity_of[v] for v in _variants(span) if v in self._entity_of), None)
                 if entity is not None:
                     found.append(entity)

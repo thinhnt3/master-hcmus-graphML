@@ -1,4 +1,5 @@
 """Embedding tables on disk: a float32 matrix plus the ids of its rows, in the same order."""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
@@ -66,7 +67,7 @@ def encode_in_batches[Item](
         raise DataError(f"batch_size must be >= 1, got {batch_size}")
     parts = []
     for start in range(0, len(items), batch_size):
-        batch = items[start:start + batch_size]
+        batch = items[start : start + batch_size]
         vectors = np.asarray(encode(batch), dtype=np.float32)
         if vectors.ndim != 2 or vectors.shape[0] != len(batch):
             raise DataError(f"encoder returned shape {vectors.shape} for a batch of {len(batch)}")
@@ -109,7 +110,8 @@ def verify_inputs_unchanged(directory: Path) -> None:
         raise DataError(f"{meta_path} not found; compute the embeddings first")
     meta = read_json(meta_path)
     changed = [
-        path for path, digest in meta["inputs_sha256"].items()
+        path
+        for path, digest in meta["inputs_sha256"].items()
         if not Path(path).is_file() or sha256_of(Path(path)) != digest
     ]
     if changed:

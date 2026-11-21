@@ -1,4 +1,5 @@
 """Path scorer with learned relation weights: walks start at the entity a query names."""
+
 from __future__ import annotations
 
 import logging
@@ -73,8 +74,9 @@ class RelationPathScorer(nn.Module):
     edge_types: torch.Tensor
     edge_scale: torch.Tensor
 
-    def __init__(self, config: RelationPathConfig, triples: torch.Tensor, n_entities: int, n_relations: int,
-                 query_dim: int) -> None:
+    def __init__(
+        self, config: RelationPathConfig, triples: torch.Tensor, n_entities: int, n_relations: int, query_dim: int
+    ) -> None:
         super().__init__()
         if triples.ndim != 2 or triples.shape[1] != 3 or triples.shape[0] == 0:
             raise DataError("the path scorer needs a non-empty (triples × 3) graph")
@@ -93,8 +95,9 @@ class RelationPathScorer(nn.Module):
         nn.init.zeros_(self.step_weights.weight)
         nn.init.constant_(self.step_weights.bias, math.log(math.e - 1.0))  # softplus(bias) = 1
 
-    def forward(self, query_vectors: torch.Tensor, anchors: torch.Tensor,
-                hidden: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self, query_vectors: torch.Tensor, anchors: torch.Tensor, hidden: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """(queries × entities) path mass; the anchor's own column is 0.
 
         `hidden` is a (pairs × 2) tensor of (query row, triple row): that triple is removed
@@ -145,8 +148,9 @@ def gallery_path_scores(model: RelationPathScorer, data: PathQuerySet, gallery: 
     return torch.cat(parts).numpy().astype(np.float32)
 
 
-def evaluate_paths(model: RelationPathScorer, data: PathQuerySet, gallery: torch.Tensor,
-                   ks: Sequence[int]) -> dict[str, float]:
+def evaluate_paths(
+    model: RelationPathScorer, data: PathQuerySet, gallery: torch.Tensor, ks: Sequence[int]
+) -> dict[str, float]:
     """Filtered Recall@K and MRR of the path score alone."""
     ranks, _ = filtered_ranks(gallery_path_scores(model, data, gallery), data.queries.relevant, data.queries.known)
     return retrieval_metrics(ranks, sorted({*ks, 1}))
@@ -175,8 +179,11 @@ def fit_paths(
     metrics = evaluate_paths(model, val, gallery, ks)
     history: list[dict[str, Any]] = [{"epoch": 0, **{f"val_{k}": round(v, 5) for k, v in metrics.items()}}]
     best_key, best_epoch, best_state = selection_key(metrics, config.selection_metric), 0, snapshot()
-    log.info("epoch  0 (untrained) val R@1 %.4f MRR %.4f", metrics[SelectionMetric.RECALL_AT_1.value],
-             metrics[SelectionMetric.MRR.value])
+    log.info(
+        "epoch  0 (untrained) val R@1 %.4f MRR %.4f",
+        metrics[SelectionMetric.RECALL_AT_1.value],
+        metrics[SelectionMetric.MRR.value],
+    )
     stop_reason = StopReason.MAX_EPOCHS
     for epoch in range(1, config.max_epochs + 1):
         if epoch - 1 - best_epoch >= config.patience:
@@ -188,11 +195,15 @@ def fit_paths(
         model.train()
         losses = []
         for start in range(0, n_queries, config.batch_size):
-            rows = order[start:start + config.batch_size]
+            rows = order[start : start + config.batch_size]
             targets, skip, _ = _batch_inputs(train.queries, rows, len(gallery), model.n_triples, generator)
             hidden = torch.tensor(
-                [(position, triple) for position, row in enumerate(rows.tolist())
-                 for triple in train.queries.own_triples[row]], dtype=torch.long,
+                [
+                    (position, triple)
+                    for position, row in enumerate(rows.tolist())
+                    for triple in train.queries.own_triples[row]
+                ],
+                dtype=torch.long,
             ).reshape(-1, 2)
             scores = model(train.queries.query_vectors[rows], train.anchors[rows], hidden)[:, gallery]
             loss = path_share_loss(scores, targets, skip)
@@ -204,13 +215,24 @@ def fit_paths(
             optimizer.step()
             losses.append(loss.item())
         metrics = evaluate_paths(model, val, gallery, ks)
-        history.append({"epoch": epoch, "train_loss": round(float(np.mean(losses)), 5),
-                        **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
-                        "seconds": round(time.perf_counter() - started, 2)})
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": round(float(np.mean(losses)), 5),
+                **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
+                "seconds": round(time.perf_counter() - started, 2),
+            }
+        )
         key = selection_key(metrics, config.selection_metric)
         if key > best_key:
             best_key, best_epoch, best_state = key, epoch, snapshot()
-        log.info("epoch %2d loss %.4f val R@1 %.4f MRR %.4f (%.1fs)%s", epoch, history[-1]["train_loss"],
-                 metrics[SelectionMetric.RECALL_AT_1.value], metrics[SelectionMetric.MRR.value],
-                 history[-1]["seconds"], " *" if best_epoch == epoch else "")
+        log.info(
+            "epoch %2d loss %.4f val R@1 %.4f MRR %.4f (%.1fs)%s",
+            epoch,
+            history[-1]["train_loss"],
+            metrics[SelectionMetric.RECALL_AT_1.value],
+            metrics[SelectionMetric.MRR.value],
+            history[-1]["seconds"],
+            " *" if best_epoch == epoch else "",
+        )
     return PathTrainingResult(history, best_epoch, stop_reason, best_state)

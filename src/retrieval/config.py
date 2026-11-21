@@ -1,4 +1,5 @@
 """Typed, validated view of `configs/retrieval/vg_coco.yaml`."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -144,8 +145,13 @@ def _graphsage_config(raw: dict[str, Any]) -> GraphSageConfig:
 # Used when a config has no adamf_mat section (the GraphSAGE-only ablation configs);
 # the same values as configs/retrieval/vg_coco.yaml.
 DEFAULT_ADAMF_MAT: dict[str, Any] = {
-    "dim": 256, "adaptive_fusion": True, "mat": True, "mu": 1.0,
-    "noise_dim": 64, "generator_hidden_dim": 512, "generator_learning_rate": 0.0001,
+    "dim": 256,
+    "adaptive_fusion": True,
+    "mat": True,
+    "mu": 1.0,
+    "noise_dim": 64,
+    "generator_hidden_dim": 512,
+    "generator_learning_rate": 0.0001,
 }
 
 

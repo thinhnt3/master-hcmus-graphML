@@ -1,4 +1,5 @@
 """Typed view of the `adamf_mat` section of a retrieval YAML."""
+
 from __future__ import annotations
 
 from typing import Any

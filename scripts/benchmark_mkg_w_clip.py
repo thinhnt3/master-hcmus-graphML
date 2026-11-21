@@ -8,6 +8,7 @@ The gallery is every entity that has images. Results are reported for val and te
 by query group and kind, by hop distance and by relation direction, and written to
 <runs_dir>/clip/benchmark.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,8 +53,11 @@ def run(config: MkgwRetrievalConfig) -> None:
         segments = segment_metrics(split_data, split_data.clip_scores, relations, data.rules.max_hops, ks)
         # How often CLIP's first choice is the entity named in the query instead of the answer.
         top = split_data.clip_scores.argmax(axis=1)
-        anchored = [(row, column_of[q["anchor_id"]]) for row, q in enumerate(split_data.queries)
-                    if q["anchor_id"] is not None and q["anchor_id"] in column_of]
+        anchored = [
+            (row, column_of[q["anchor_id"]])
+            for row, q in enumerate(split_data.queries)
+            if q["anchor_id"] is not None and q["anchor_id"] in column_of
+        ]
         anchor_first = round(float(np.mean([top[row] == column for row, column in anchored])), 4)
         report["splits"][split.value] = {
             "queries": len(split_data.queries),
@@ -63,11 +67,23 @@ def run(config: MkgwRetrievalConfig) -> None:
         }
         for name, row in segments.items():
             if row["answers"] >= _MIN_LOGGED_PAIRS and not name.startswith("relation="):
-                log.info("%-5s %-28s n=%5d R@1 %.3f R@10 %.3f MRR %.3f | in top-100 %.3f top-1000 %.3f",
-                         split.value, name, row["answers"], row["recall@1"], row["recall@10"], row["mrr"],
-                         row.get("recall@100", float("nan")), row.get("recall@1000", float("nan")))
-        log.info("%-5s anchor ranked first: %.3f of %d indirect queries whose anchor has images",
-                 split.value, anchor_first, len(anchored))
+                log.info(
+                    "%-5s %-28s n=%5d R@1 %.3f R@10 %.3f MRR %.3f | in top-100 %.3f top-1000 %.3f",
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"],
+                    row["recall@10"],
+                    row["mrr"],
+                    row.get("recall@100", float("nan")),
+                    row.get("recall@1000", float("nan")),
+                )
+        log.info(
+            "%-5s anchor ranked first: %.3f of %d indirect queries whose anchor has images",
+            split.value,
+            anchor_first,
+            len(anchored),
+        )
     out_path = config.runs_dir / "clip" / "benchmark.json"
     write_json(out_path, report)
     log.info("wrote %s", out_path)

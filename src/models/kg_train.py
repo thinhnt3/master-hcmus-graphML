@@ -1,4 +1,5 @@
 """Train the knowledge-graph entity encoder so that a query's CLIP text vector finds its answer entity."""
+
 from __future__ import annotations
 
 import logging
@@ -56,8 +57,11 @@ class KgTrainingResult:
 
 
 def gallery_loss(
-    query_vectors: torch.Tensor, gallery_vectors: torch.Tensor, targets: torch.Tensor,
-    skip: torch.Tensor, temperature: float,
+    query_vectors: torch.Tensor,
+    gallery_vectors: torch.Tensor,
+    targets: torch.Tensor,
+    skip: torch.Tensor,
+    temperature: float,
 ) -> torch.Tensor:
     """Cross-entropy of each query against the whole gallery.
 
@@ -128,7 +132,7 @@ def fit(
         model.train()
         losses = []
         for start in range(0, n_queries, config.batch_size):
-            rows = order[start:start + config.batch_size]
+            rows = order[start : start + config.batch_size]
             targets, skip, keep = _batch_inputs(train, rows, len(gallery), triples.shape[0], generator)
             loss = gallery_loss(
                 train.query_vectors[rows], model(triples[keep])[gallery], targets, skip, config.temperature
@@ -141,16 +145,27 @@ def fit(
             optimizer.step()
             losses.append(loss.item())
         metrics = evaluate(model, triples, gallery, val, ks)
-        history.append({"epoch": epoch, "train_loss": round(float(np.mean(losses)), 5),
-                        **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
-                        "seconds": round(time.perf_counter() - started, 2)})
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": round(float(np.mean(losses)), 5),
+                **{f"val_{k}": round(v, 5) for k, v in metrics.items()},
+                "seconds": round(time.perf_counter() - started, 2),
+            }
+        )
         key = selection_key(metrics, config.selection_metric)
         if best_key is None or key > best_key:
             best_key, best_epoch = key, epoch
             with torch.inference_mode():
                 best_vectors = model(triples).numpy().astype(np.float32)
             best_state = {name: value.detach().clone() for name, value in model.state_dict().items()}
-        log.info("epoch %2d loss %.4f val R@1 %.4f MRR %.4f (%.1fs)%s", epoch, history[-1]["train_loss"],
-                 metrics[SelectionMetric.RECALL_AT_1.value], metrics[SelectionMetric.MRR.value],
-                 history[-1]["seconds"], " *" if best_epoch == epoch else "")
+        log.info(
+            "epoch %2d loss %.4f val R@1 %.4f MRR %.4f (%.1fs)%s",
+            epoch,
+            history[-1]["train_loss"],
+            metrics[SelectionMetric.RECALL_AT_1.value],
+            metrics[SelectionMetric.MRR.value],
+            history[-1]["seconds"],
+            " *" if best_epoch == epoch else "",
+        )
     return KgTrainingResult(history, best_epoch, stop_reason, best_vectors, best_state)

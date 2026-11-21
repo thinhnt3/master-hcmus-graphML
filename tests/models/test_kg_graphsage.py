@@ -48,8 +48,9 @@ def test_gallery_loss_ignores_skipped_columns():
 
 def test_batch_inputs_mask_own_triples_and_other_answers():
     data = KgQuerySet(torch.eye(2), relevant=[[0, 2], [1]], known=[[3], []], own_triples=[[5, 6], []])
-    targets, skip, keep = _batch_inputs(data, torch.tensor([0, 1]), n_gallery=4, n_triples=8,
-                                        generator=torch.Generator().manual_seed(0))
+    targets, skip, keep = _batch_inputs(
+        data, torch.tensor([0, 1]), n_gallery=4, n_triples=8, generator=torch.Generator().manual_seed(0)
+    )
     assert targets[0].item() in (0, 2) and targets[1].item() == 1
     assert skip[0].tolist() == [c != targets[0].item() and c in (0, 2, 3) for c in range(4)]
     assert not skip[1].any()
@@ -76,13 +77,26 @@ def test_fit_learns_a_one_hop_pattern():
 
     def queries(films, own):
         vectors = torch.nn.functional.normalize(features[films] + 0.05 * torch.randn(len(films), 16), dim=1)
-        return KgQuerySet(vectors, relevant=[[f] for f in films], known=[[] for _ in films],
-                          own_triples=[[f] if own else [] for f in films])
+        return KgQuerySet(
+            vectors,
+            relevant=[[f] for f in films],
+            known=[[] for _ in films],
+            own_triples=[[f] if own else [] for f in films],
+        )
 
     train, val = queries(list(range(n_train)), own=True), queries(list(range(n_train, n)), own=False)
-    config = TrainingConfig(seeds=(1,), device=Device.CPU, batch_size=10, max_epochs=40, patience=40,
-                            learning_rate=0.01, weight_decay=0.0, temperature=0.1, grad_clip_norm=1.0,
-                            selection_metric=SelectionMetric.RECALL_AT_1)
+    config = TrainingConfig(
+        seeds=(1,),
+        device=Device.CPU,
+        batch_size=10,
+        max_epochs=40,
+        patience=40,
+        learning_rate=0.01,
+        weight_decay=0.0,
+        temperature=0.1,
+        grad_clip_norm=1.0,
+        selection_metric=SelectionMetric.RECALL_AT_1,
+    )
     model = KgEntityEncoder(KgSageConfig(hidden_dim=16, num_layers=1), features, n_relations=2)
     untrained = evaluate(model, triples, gallery, val, (1,))["mrr"]
     result = fit(model, triples, gallery, train, val, config, seed=1, ks=(1,))

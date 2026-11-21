@@ -1,4 +1,5 @@
 """Rebuild a trained graph encoder from its run directory, for analyses run after training."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -4,6 +4,7 @@ The explanation of a (query, entity) pair is the set of graph triples on its hea
 Fidelity removes those triples for that query and re-scores every entity, so rivals move too;
 controls remove the same number of triples drawn at random from a named pool.
 """
+
 from __future__ import annotations
 
 import random

@@ -19,6 +19,7 @@ Per-seed files go to <runs_dir>/graphsage/<run>/seed-<n>/ and the summary over s
 <runs_dir>/graphsage/<run>/benchmark.json, where <run> is the variant plus `-so<rate>` when
 structure-only rows are on and `-sel-<queries>` when the epoch is not picked on all queries.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -56,11 +57,13 @@ DEFAULT_CONFIG = "configs/retrieval/mkg_w.yaml"
 
 def _eval_queries(data: EntitySplit, query_table: EmbeddingTable, selection: SelectionQueries) -> KgQuerySet:
     """Validation queries that pick the best epoch."""
-    rows = [row for row, q in enumerate(data.queries)
-            if selection is SelectionQueries.ALL or q["group"] == selection.value]
+    rows = [
+        row for row, q in enumerate(data.queries) if selection is SelectionQueries.ALL or q["group"] == selection.value
+    ]
     vectors = torch.from_numpy(query_table.select([data.queries[row]["query_id"] for row in rows]))
-    return KgQuerySet(vectors, [data.relevant[row] for row in rows], [data.known[row] for row in rows],
-                      [[] for _ in rows])
+    return KgQuerySet(
+        vectors, [data.relevant[row] for row in rows], [data.known[row] for row in rows], [[] for _ in rows]
+    )
 
 
 def run_name(variant: Variant, config: MkgwRetrievalConfig) -> str:
@@ -98,8 +101,15 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
     train = train_query_set(queries, query_table, column_of, {triple: row for row, triple in enumerate(graph)})
     val = _eval_queries(splits[Split.VAL], query_table, config.selection_queries)
     masked = sum(bool(rows) for rows in train.own_triples)
-    log.info("run=%s graph triples=%d train queries=%d (own fact removed for %d) selection queries=%d gallery=%d",
-             run_name(variant, config), len(graph), len(train.relevant), masked, len(val.relevant), len(gallery))
+    log.info(
+        "run=%s graph triples=%d train queries=%d (own fact removed for %d) selection queries=%d gallery=%d",
+        run_name(variant, config),
+        len(graph),
+        len(train.relevant),
+        masked,
+        len(val.relevant),
+        len(gallery),
+    )
     if variant is Variant.REAL and masked == 0:
         raise DataError("no train query matched its own triple; the graph and the queries are out of sync")
 
@@ -120,11 +130,15 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
         write_json(seed_dir / "history.json", result.history)
 
         gallery_vectors = result.entity_vectors[gallery.numpy()]
-        scores = {s: query_table.select([q["query_id"] for q in d.queries]) @ gallery_vectors.T
-                  for s, d in splits.items()}
+        scores = {
+            s: query_table.select([q["query_id"] for q in d.queries]) @ gallery_vectors.T for s, d in splits.items()
+        }
         selected = select_alpha_top_k(splits[Split.VAL], scores[Split.VAL], config.alpha_grid, config.top_k_grid)
-        seeds[str(seed)] = {"best_epoch": result.best_epoch, "stop_reason": result.stop_reason.value,
-                            "selected": selected}
+        seeds[str(seed)] = {
+            "best_epoch": result.best_epoch,
+            "stop_reason": result.stop_reason.value,
+            "selected": selected,
+        }
         log.info("seed %d best epoch %d, selected on val: %s", seed, result.best_epoch, selected)
         for split, split_data in splits.items():
             fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"], int(selected["top_k"]))
@@ -138,18 +152,27 @@ def run(config: MkgwRetrievalConfig, variant: Variant) -> None:
         "model_name": config.clip.model_name,
         "graph_triples": len(graph),
         "seeds": seeds,
-        "splits": {s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])}
-                   for s in splits},
+        "splits": {
+            s.value: {"reranked": seed_summary(reranked[s]), "graph_only": seed_summary(graph_only[s])} for s in splits
+        },
     }
     write_json(out_dir / "benchmark.json", report)
     for split in splits:
         for name, row in report["splits"][split.value]["reranked"].items():
             if name.startswith(LOGGED_PREFIXES):
                 alone = report["splits"][split.value]["graph_only"][name]
-                log.info("%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
-                         split.value, name, row["answers"], row["recall@1"]["mean"], row["recall@1"]["std"],
-                         row["recall@10"]["mean"], row["mrr"]["mean"],
-                         alone["recall@1"]["mean"], alone["recall@10"]["mean"])
+                log.info(
+                    "%-5s %-26s n=%5d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"]["mean"],
+                    row["recall@1"]["std"],
+                    row["recall@10"]["mean"],
+                    row["mrr"]["mean"],
+                    alone["recall@1"]["mean"],
+                    alone["recall@10"]["mean"],
+                )
     log.info("wrote %s", out_dir / "benchmark.json")
 
 

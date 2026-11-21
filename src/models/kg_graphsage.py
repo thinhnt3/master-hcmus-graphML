@@ -1,4 +1,5 @@
 """GraphSAGE over a knowledge graph: every entity becomes one vector in the CLIP space."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

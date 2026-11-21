@@ -1,4 +1,5 @@
 """AdaMF-MAT on a knowledge graph: fusion weights, RotatE scores, losses and the training loop."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,8 +15,16 @@ N_ENTITIES, N_RELATIONS, CLIP_DIM = 12, 3, 8
 
 def _config(**changes: object) -> KgAdamfMatConfig:
     values: dict[str, object] = {
-        "dim": 6, "margin": 4.0, "epsilon": 2.0, "negatives": 5, "adversarial_temperature": 1.0,
-        "adaptive_fusion": True, "mat": True, "mu": 1.0, "noise_dim": 4, "generator_hidden_dim": 8,
+        "dim": 6,
+        "margin": 4.0,
+        "epsilon": 2.0,
+        "negatives": 5,
+        "adversarial_temperature": 1.0,
+        "adaptive_fusion": True,
+        "mat": True,
+        "mu": 1.0,
+        "noise_dim": 4,
+        "generator_hidden_dim": 8,
         "generator_learning_rate": 1e-3,
     }
     return KgAdamfMatConfig(**{**values, **changes})  # type: ignore[arg-type]
@@ -23,8 +32,13 @@ def _config(**changes: object) -> KgAdamfMatConfig:
 
 def _model(**changes: object) -> KgAdamfMat:
     torch.manual_seed(0)
-    return KgAdamfMat(_config(**changes), N_ENTITIES, N_RELATIONS, torch.randn(N_ENTITIES, CLIP_DIM),
-                      torch.randn(N_ENTITIES, CLIP_DIM))
+    return KgAdamfMat(
+        _config(**changes),
+        N_ENTITIES,
+        N_RELATIONS,
+        torch.randn(N_ENTITIES, CLIP_DIM),
+        torch.randn(N_ENTITIES, CLIP_DIM),
+    )
 
 
 def test_fusion_weights_sum_to_one_and_mean_fusion_is_uniform() -> None:
@@ -96,8 +110,9 @@ def test_fit_learns_a_small_graph() -> None:
     # A chain: relation 0 links entity i to i + 1. The model should rank the true tail first.
     train = [[i, 0, i + 1] for i in range(N_ENTITIES - 1)]
     model = _model(mat=True)
-    config = KgAdamfTrainingConfig(device=Device.CPU, batch_size=4, learning_rate=0.05, max_epochs=60, eval_every=20,
-                                   patience=3, eval_batch_size=8)
+    config = KgAdamfTrainingConfig(
+        device=Device.CPU, batch_size=4, learning_rate=0.05, max_epochs=60, eval_every=20, patience=3, eval_batch_size=8
+    )
     result = fit_kg_adamf(model, train, train, train, config, seed=1)
     assert result.history[-1]["val_mrr"] > result.history[0]["val_mrr"] or result.history[0]["val_mrr"] > 0.9
     assert max(entry["val_mrr"] for entry in result.history) > 0.6
