@@ -10,6 +10,8 @@ Cho một câu mô tả, hệ thống tìm ảnh khớp nhất. CLIP chọn ra c
 
 Báo cáo W&B: [link](https://forge.coreweave.com/wandb/thinhnt3-vnggames/vg-coco-graph-retrieval/reports/x--VmlldzoxODM0MjcyMA); mục lục ở [wandb-reports.md](wandb-reports.md).
 
+Bảng cho báo cáo, kèm mã LaTeX: [table.md](table.md).
+
 ## Tình trạng theo cấp độ
 
 | Cấp độ | Yêu cầu của đề | Tình trạng | Mục |
