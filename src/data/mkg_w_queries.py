@@ -18,6 +18,10 @@ from src.data.mkg_w_config import QueryRules, RelationTemplate
 from src.data.mkg_w_raw import Triple, display_name, first_sentence
 from src.data.schemas import Split
 
+# Chain and hand-written test sets, written by `build_mkg_w_extra_queries` under the processed directory.
+EXTRA_QUERIES_FILE = "extra_queries.json"
+
+
 class Direction(StrEnum):
     """Which end of the triple is the answer."""
 
@@ -38,6 +42,7 @@ class QueryKind(StrEnum):
     NAME = "name"
     DESCRIPTION = "description"
     RELATION = "relation"
+    CHAIN = "chain"  # two facts in a row; the entity between them is not named
 
 
 class DirectionStatus(StrEnum):
@@ -175,6 +180,71 @@ def build_indirect_queries(
                 anchor_id=anchor,
                 relation_id=relation_id,
                 direction=direction,
+            ))
+    return queries
+
+
+def build_chain_queries(
+    triples: Mapping[Split, Sequence[Triple]],
+    split: Split,
+    stats: Mapping[tuple[int, Direction], DirectionStat],
+    templates: Mapping[int, RelationTemplate],
+    names: Sequence[str],
+    has_image: Sequence[bool],
+    max_answers: int,
+) -> list[EntityQuery]:
+    """Queries that need two facts in a row: "the performer of the work that came right after X".
+
+    The first fact (anchor → middle entity) is a train triple, so it is in the graph. The second
+    (middle → answer) is a triple of `split`, so it is not. The middle entity is never named in
+    the text, and the first step must have exactly one completion over all triples, so the
+    inner phrase denotes one entity. Same relation rules, wording and answer cap as the
+    single-fact queries.
+    """
+    kept = {key for key, stat in stats.items() if stat.status is DirectionStatus.KEPT}
+    completions: dict[tuple[int, int, Direction], set[int]] = defaultdict(set)
+    for rows in triples.values():
+        for triple in rows:
+            for direction in Direction:
+                anchor, answer = _anchor_answer(triple, direction)
+                completions[(anchor, triple.relation, direction)].add(answer)
+    # Middle entity → the (anchor, relation, direction) train steps that lead to it and nowhere else.
+    steps_into: dict[int, list[tuple[int, int, Direction]]] = defaultdict(list)
+    for triple in triples[Split.TRAIN]:
+        for direction in Direction:
+            anchor, middle = _anchor_answer(triple, direction)
+            key = (anchor, triple.relation, direction)
+            if (triple.relation, direction) in kept and len(completions[key]) == 1:
+                steps_into[middle].append(key)
+
+    split_answers: dict[tuple[int, int, Direction], set[int]] = defaultdict(set)
+    for triple in triples[split]:
+        for direction in Direction:
+            if (triple.relation, direction) in kept:
+                middle, answer = _anchor_answer(triple, direction)
+                split_answers[(middle, triple.relation, direction)].add(answer)
+
+    queries: list[EntityQuery] = []
+    for (middle, relation_id, direction), answers in sorted(split_answers.items()):
+        all_answers = completions[(middle, relation_id, direction)]
+        if len(all_answers) > max_answers:
+            continue
+        outer = getattr(templates[relation_id], direction.value)
+        for anchor, first_relation, first_direction in sorted(steps_into[middle]):
+            relevant = sorted(a for a in answers if has_image[a] and a != anchor)
+            if not relevant:
+                continue
+            inner = getattr(templates[first_relation], first_direction.value)
+            queries.append(EntityQuery(
+                query_id=(f"chain-{anchor}-{first_relation}-{first_direction.value}"
+                          f"-{relation_id}-{direction.value}-{split.value}"),
+                text=outer.format(anchor=inner.format(anchor=display_name(names[anchor]))),
+                group=QueryGroup.INDIRECT,
+                kind=QueryKind.CHAIN,
+                split=split,
+                relevant_ids=tuple(relevant),
+                known_ids=tuple(sorted(all_answers - set(relevant) - {anchor})),
+                anchor_id=anchor,
             ))
     return queries
 

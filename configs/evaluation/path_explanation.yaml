@@ -1,0 +1,13 @@
+# Explanation sub-graphs of the relation path scorer on MKG-W, and their fidelity, sparsity and
+# relation validity. Frozen models; nothing is trained or selected here.
+retrieval_config: configs/retrieval/mkg_w.yaml
+split: test
+# Queries are drawn from those of the split that name an anchor (the relation queries).
+sample_queries: 200
+sample_seed: 2026
+# The explanation is the triples on this many heaviest walks from the anchor to the entity.
+max_paths: 3
+# Random groups of as many triples as the explanation, per control pool.
+random_repeats: 20
+random_seed: 731
+output: runs/mkg_w/path_explanation/test.json

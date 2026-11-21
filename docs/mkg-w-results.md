@@ -1,7 +1,5 @@
 # MKG-W: truy hồi ảnh của thực thể bằng CLIP + đồ thị tri thức
 
-> Kết quả ở đây đã chạy xong; code, config và lệnh chạy lại của phần MKG-W (các `scripts/*mkg_w*`, `configs/retrieval/mkg_w.yaml`) nằm ở nhánh `feat/mkg-w-caption-subset`, chưa gộp vào `main`.
-
 Dataset thứ hai của đề tài. Cho một câu hỏi, hệ thống tìm thực thể có ảnh khớp nhất. CLIP chấm mọi thực thể theo ảnh của nó, sau đó đồ thị tri thức (thực thể và quan hệ giữa chúng) được dùng để xếp hạng lại:
 
 ```
@@ -246,7 +244,7 @@ python -m scripts.build_mkg_w_extra_queries                    # câu chain và 
 python -m scripts.benchmark_mkg_w_extra_queries                # bảng "Kiểm tra lại"
 python -m scripts.train_mkg_w_adamf_mat                        # AdaMF-MAT, khoảng 40-60 phút mỗi seed trên CPU
 
-pytest                                                         # 398 test, không cần mạng
+pytest                                                         # 458 test, không cần mạng
 ```
 
 Tham số thí nghiệm: `configs/retrieval/mkg_w.yaml`.
