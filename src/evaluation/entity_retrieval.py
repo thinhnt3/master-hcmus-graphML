@@ -4,6 +4,7 @@ An entity's score for a query is the best score among its images. Ranks are filt
 link prediction: when ranking one correct entity, the query's other correct entities are
 left out, so a query is not punished for ranking a different right answer first.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -35,7 +36,7 @@ def best_image_scores(
     Computed in query chunks so the (queries × images) matrix is never held in full.
     """
     parts = [
-        entity_scores(query_vectors[start:start + chunk] @ image_vectors.T, group_starts)
+        entity_scores(query_vectors[start : start + chunk] @ image_vectors.T, group_starts)
         for start in range(0, query_vectors.shape[0], chunk)
     ]
     return np.concatenate(parts)

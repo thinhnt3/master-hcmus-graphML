@@ -19,6 +19,7 @@ Differences from the released code:
 - negatives are uniform corruptions of the head or the tail, alternating by batch, without
   the Bernoulli trick or the removal of accidental true triples.
 """
+
 from __future__ import annotations
 
 import math
@@ -38,14 +39,14 @@ MODALITIES = ("structure", "image", "text")
 class KgAdamfMatConfig:
     """Architecture, loss and adversarial settings; the switches are the paper's ablations."""
 
-    dim: int                # size of a relation phase vector; entity embeddings are twice that
+    dim: int  # size of a relation phase vector; entity embeddings are twice that
     margin: float
-    epsilon: float          # with the margin, sets the range of the initial embeddings
-    negatives: int          # corrupted triples per true triple
+    epsilon: float  # with the margin, sets the range of the initial embeddings
+    negatives: int  # corrupted triples per true triple
     adversarial_temperature: float  # sharpness of the self-adversarial weights of the negatives
-    adaptive_fusion: bool   # False: the joint embedding is the mean of the modalities
-    mat: bool               # False: no generator, plain training
-    mu: float               # weight of the adversarial terms in the encoder's loss
+    adaptive_fusion: bool  # False: the joint embedding is the mean of the modalities
+    mat: bool  # False: no generator, plain training
+    mu: float  # weight of the adversarial terms in the encoder's loss
     noise_dim: int
     generator_hidden_dim: int
     generator_learning_rate: float
@@ -56,10 +57,13 @@ class KgAdamfMatConfig:
         if min(self.dim, self.negatives, self.noise_dim, self.generator_hidden_dim) < 1:
             raise ConfigError("adamf_mat.dim, negatives, noise_dim and generator_hidden_dim must be >= 1")
         if min(self.margin, self.epsilon, self.adversarial_temperature, self.mu, self.generator_learning_rate) <= 0:
-            raise ConfigError("adamf_mat.margin, epsilon, adversarial_temperature, mu and "
-                              "generator_learning_rate must be > 0; switch MAT off with mat: false")
+            raise ConfigError(
+                "adamf_mat.margin, epsilon, adversarial_temperature, mu and "
+                "generator_learning_rate must be > 0; switch MAT off with mat: false"
+            )
         if "structure" not in self.modalities or tuple(m for m in MODALITIES if m in self.modalities) != tuple(
-                self.modalities):
+            self.modalities
+        ):
             raise ConfigError(f"adamf_mat.modalities must keep 'structure' and follow the order {MODALITIES}")
         # The generators make the image and text embeddings from the structure one.
         if self.mat and tuple(self.modalities) != MODALITIES:
@@ -110,8 +114,14 @@ class KgAdamfMat(nn.Module):
     image_vectors: torch.Tensor
     text_vectors: torch.Tensor
 
-    def __init__(self, config: KgAdamfMatConfig, n_entities: int, n_relations: int, image_vectors: torch.Tensor,
-                 text_vectors: torch.Tensor) -> None:
+    def __init__(
+        self,
+        config: KgAdamfMatConfig,
+        n_entities: int,
+        n_relations: int,
+        image_vectors: torch.Tensor,
+        text_vectors: torch.Tensor,
+    ) -> None:
         super().__init__()
         if image_vectors.shape[0] != n_entities or text_vectors.shape[0] != n_entities:
             raise DataError("image and text vectors need one row per entity")
@@ -122,8 +132,11 @@ class KgAdamfMat(nn.Module):
         self.relations = nn.Embedding(n_relations, config.dim)
         # Initial ranges of RotatE; a relation value spans one full turn over its range.
         self.relation_range = (config.margin + config.epsilon) / config.dim
-        nn.init.uniform_(self.entities.weight, -(config.margin + config.epsilon) / entity_dim,
-                         (config.margin + config.epsilon) / entity_dim)
+        nn.init.uniform_(
+            self.entities.weight,
+            -(config.margin + config.epsilon) / entity_dim,
+            (config.margin + config.epsilon) / entity_dim,
+        )
         nn.init.uniform_(self.relations.weight, -self.relation_range, self.relation_range)
         # Frozen lookup tables; restored from the embedding store, not saved in checkpoints.
         self.register_buffer("image_vectors", image_vectors.float(), persistent=False)
@@ -199,8 +212,11 @@ class KgAdamfMat(nn.Module):
         heads, relations, tails = triples.unbind(dim=1)
         h, t = self.joint(heads).unsqueeze(1), self.joint(tails).unsqueeze(1)
         fake_h, fake_t = self.synthetic_joint(heads).unsqueeze(1), self.synthetic_joint(tails).unsqueeze(1)
-        return [self.score(fake_h, relations, t), self.score(h, relations, fake_t),
-                self.score(fake_h, relations, fake_t)]
+        return [
+            self.score(fake_h, relations, t),
+            self.score(h, relations, fake_t),
+            self.score(fake_h, relations, fake_t),
+        ]
 
     def encoder_loss(self, triples: torch.Tensor, negatives: torch.Tensor, corrupt_head: bool) -> torch.Tensor:
         """Negative-sampling loss, plus mu times the loss of losing to the synthetic triples.
@@ -231,8 +247,9 @@ class KgAdamfMat(nn.Module):
         return torch.stack(losses).sum()
 
     @torch.no_grad()
-    def candidate_scores(self, anchors: torch.Tensor, relations: torch.Tensor, anchor_is_head: torch.Tensor,
-                         candidates: torch.Tensor) -> torch.Tensor:
+    def candidate_scores(
+        self, anchors: torch.Tensor, relations: torch.Tensor, anchor_is_head: torch.Tensor, candidates: torch.Tensor
+    ) -> torch.Tensor:
         """(rows × candidates) scores of every candidate completing (anchor, relation, ?) or (?, relation, anchor)."""
         pool = self.joint(candidates).unsqueeze(0)
         fixed = self.joint(anchors).unsqueeze(1)

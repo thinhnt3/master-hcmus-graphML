@@ -127,7 +127,7 @@ class DirectedSAGELayer(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super().__init__()
-        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")   # messages along the edge
+        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages along the edge
         self.backward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages against the edge
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
@@ -135,13 +135,13 @@ class DirectedSAGELayer(nn.Module):
 
 
 # man(0) -> (riding)(1) -> bicycle(2)
-x = torch.randn(3, 8)                               # one row per node
-man_rides_bike = torch.tensor([[0, 1], [1, 2]])     # row 0: source nodes, row 1: target nodes
+x = torch.randn(3, 8)  # one row per node
+man_rides_bike = torch.tensor([[0, 1], [1, 2]])  # row 0: source nodes, row 1: target nodes
 bike_rides_man = torch.tensor([[2, 1], [1, 0]])
 
 layer = DirectedSAGELayer(8, 4)
-layer(x, man_rides_bike)   # shape (3, 4)
-layer(x, bike_rides_man)   # a different result: direction is visible to the model
+layer(x, man_rides_bike)  # shape (3, 4)
+layer(x, bike_rides_man)  # a different result: direction is visible to the model
 ```
 
 `edge_index` là ma trận 2 × số cạnh: hàng trên là đỉnh nguồn, hàng dưới là đỉnh đích. `edge_index.flip(0)` đổi chỗ hai hàng, tức đảo chiều mọi cạnh. Với một `SAGEConv` duy nhất chạy trên cạnh hai chiều, hai đồ thị trên cho cùng kết quả; với lớp có hướng thì khác nhau (đã kiểm bằng chạy thử).

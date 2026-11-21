@@ -467,7 +467,7 @@ def test_hard_negative_groups_keep_each_image_once_and_put_partners_together():
     assert sorted(order) == list(range(8))
     start = order.index(0)
     if start + 1 < len(order) and order[start + 1] in (1, 2, 3):
-        assert set(order[start:start + 4]) == {0, 1, 2, 3}
+        assert set(order[start : start + 4]) == {0, 1, 2, 3}
 
 
 def test_swapped_graphs_change_one_named_predicate_and_never_keep_it():

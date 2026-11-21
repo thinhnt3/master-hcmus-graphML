@@ -10,6 +10,7 @@ variation means the weights do not adapt to the image: the fusion is a fixed wei
 Unnormalized runs can offset a small weight by a large norm, so read the effective share.
 Writes <runs_dir>/analysis/adamf_weights-<run>.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,7 +40,7 @@ def weight_stats(model: Any, graphs: list[Any]) -> dict[str, dict[str, float]]:
     """Statistics of the fusion weights and embedding norms over `graphs`, per modality."""
     weights, norms = [], []
     for start in range(0, len(graphs), BATCH_SIZE):
-        embeddings = model.modality_embeddings(Batch.from_data_list(graphs[start:start + BATCH_SIZE]))
+        embeddings = model.modality_embeddings(Batch.from_data_list(graphs[start : start + BATCH_SIZE]))
         weights.append(model.modality_weights(*embeddings))
         norms.append(torch.stack([e.norm(dim=-1) for e in embeddings], dim=1))
     w, n = torch.cat(weights), torch.cat(norms)
@@ -75,7 +76,10 @@ def main() -> int:
         )
         for name in args.run:
             report: dict[str, Any] = {
-                "run_name": name, "split": Split.VAL.value, "images": len(val.graphs), "seeds": {}
+                "run_name": name,
+                "split": Split.VAL.value,
+                "images": len(val.graphs),
+                "seeds": {},
             }
             for seed in config.training.seeds:
                 run_dir = config.runs_dir / "adamf_mat" / name / f"seed{seed}"

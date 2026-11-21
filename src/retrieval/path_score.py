@@ -1,4 +1,5 @@
 """Graph score without training: how strongly train-graph paths connect a query's anchor to each entity."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -31,9 +32,7 @@ def normalized_adjacency(edges: Sequence[tuple[int, int]], n_entities: int) -> s
     return sparse.diags(scale) @ adjacency @ sparse.diags(scale)
 
 
-def path_scores(
-    adjacency: sparse.csr_matrix, anchors: Sequence[int], max_hops: int, decay: float
-) -> np.ndarray:
+def path_scores(adjacency: sparse.csr_matrix, anchors: Sequence[int], max_hops: int, decay: float) -> np.ndarray:
     """(anchors × entities) score: sum over n = 1..max_hops of decay^n · (weight of n-edge walks).
 
     Each row is divided by its largest value, so scores lie in [0, 1] and the best-connected
@@ -47,7 +46,7 @@ def path_scores(
     total = decay * walk
     for hop in range(2, max_hops + 1):
         walk = np.asarray(walk @ adjacency)
-        total += decay ** hop * walk
+        total += decay**hop * walk
     total[np.arange(len(anchor_rows)), anchor_rows] = 0.0
     peak = total.max(axis=1, keepdims=True)
     return np.divide(total, peak, out=np.zeros_like(total), where=peak > 0).astype(np.float32)

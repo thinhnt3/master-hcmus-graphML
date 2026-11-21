@@ -15,8 +15,9 @@ CONFIG = GnnExplainerConfig(epochs=20, learning_rate=0.01, temperature=0.07)
 
 def _encoder(ablation=Ablation.FULL):
     torch.manual_seed(0)
-    config = GraphSageConfig(hidden_dim=16, num_layers=3, directed=True, image_node=ImageNodeFeature.LEARNED,
-                             ablation=ablation)
+    config = GraphSageConfig(
+        hidden_dim=16, num_layers=3, directed=True, image_node=ImageNodeFeature.LEARNED, ablation=ablation
+    )
     return GraphImageEncoder(config, torch.randn(3, DIM), torch.randn(2, DIM))
 
 

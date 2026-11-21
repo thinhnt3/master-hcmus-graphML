@@ -33,9 +33,7 @@ DESCRIPTION = (
 )
 ORDER = [wr.OrderBy(name=wr.Metric("Name"), ascending=True)]
 # Figures of the explanation evaluation are static files in the repository, served from its main branch.
-FIGURE_URL = (
-    "https://raw.githubusercontent.com/thinhnt3/master-hcmus-graphML/main/reports/explanation-quality/figures"
-)
+FIGURE_URL = "https://raw.githubusercontent.com/thinhnt3/master-hcmus-graphML/main/reports/explanation-quality/figures"
 
 
 def _runset(entity: str, project: str, role: str, section: str, name: str) -> wr.Runset:

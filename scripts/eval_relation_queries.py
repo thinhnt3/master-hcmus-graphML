@@ -16,6 +16,7 @@ here. Results are also split into generic predicates (on, in, has, ...) and the 
 --runs-dir and --run score runs kept elsewhere (e.g. the main checkout).
 Writes <runs_dir>/analysis/<out>.json (default relation_queries).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -69,8 +70,9 @@ _DECIMALS = 4
 Group = tuple[np.ndarray, Sequence[Sequence[int]]]  # query rows, and the confuser columns of every query
 
 
-def _metrics(scores: np.ndarray, data: SplitData, confusers: Sequence[Sequence[int]], rows: np.ndarray,
-             ks: Sequence[int]) -> dict[str, float]:
+def _metrics(
+    scores: np.ndarray, data: SplitData, confusers: Sequence[Sequence[int]], rows: np.ndarray, ks: Sequence[int]
+) -> dict[str, float]:
     """Full-gallery and confuser metrics of the given query rows."""
     full = retrieval_metrics(ranks_of_relevant(scores[rows], data.relevant_columns[rows]), ks)
     among = confuser_ranks(scores[rows], data.relevant_columns[rows], [confusers[r] for r in rows])
@@ -106,7 +108,8 @@ def main() -> int:
     parser.add_argument("--run", action="append", metavar="METHOD:RUN", help="score these instead; repeatable")
     parser.add_argument("--out", default="relation_queries", help="report name under <runs_dir>/analysis")
     parser.add_argument(
-        "--save-ranks", action="store_true",
+        "--save-ranks",
+        action="store_true",
         help="also write <out>.ranks.npz: per seed and query, the confuser rank (for paired bootstrap)",
     )
     args = parser.parse_args()
@@ -120,9 +123,7 @@ def main() -> int:
         all_queries = read_json(processed / QUERIES_DIR / "queries.json")
         table = load_table(config.model_embeddings_dir() / QUERIES_DIR, "queries")
         inputs: GraphInputs = load_graph_inputs(config)
-        predicate_text = {
-            int(p["predicate_id"]): p["text"] for p in read_json(processed / "graph" / "predicates.json")
-        }
+        predicate_text = {int(p["predicate_id"]): p["text"] for p in read_json(processed / "graph" / "predicates.json")}
         graph_of = {int(g["vg_image_id"]): g for g in inputs.image_graphs}
         image_row = inputs.image_table.row_of()
 
@@ -173,8 +174,10 @@ def main() -> int:
                     if kind is not QueryKind.RELATION:
                         continue
                     masked_graphs = [
-                        image_graph_to_data(remove_triplet(graph_of[q["relevant_ids"][0]], q["triplet"]),
-                                            image_row[q["relevant_ids"][0]])
+                        image_graph_to_data(
+                            remove_triplet(graph_of[q["relevant_ids"][0]], q["triplet"]),
+                            image_row[q["relevant_ids"][0]],
+                        )
                         for q in queries
                     ]
                     masked_vectors = encode_graphs(model, masked_graphs, config.training).numpy()
@@ -182,8 +185,7 @@ def main() -> int:
                     rows = np.arange(len(queries))
                     masked[rows, data.relevant_columns] = (data.query_vectors * masked_vectors).sum(axis=1)
                     record(name, "graph_only_masked", kind, masked)
-                    record(name, "reranked_masked", kind,
-                           rerank_scores(clip, masked, choice["alpha"], choice["top_k"]))
+                    record(name, "reranked_masked", kind, rerank_scores(clip, masked, choice["alpha"], choice["top_k"]))
                 log.info("scored %s seed %d", name, seed)
         if not results:
             raise DataError("nothing scored")
@@ -201,8 +203,10 @@ def main() -> int:
                 method: {
                     setting: {
                         kind: {
-                            group: {m: {k: round(v, _DECIMALS) for k, v in s.items()}
-                                    for m, s in aggregate_runs(runs).items()}
+                            group: {
+                                m: {k: round(v, _DECIMALS) for k, v in s.items()}
+                                for m, s in aggregate_runs(runs).items()
+                            }
                             for group, runs in groups.items()
                         }
                         for kind, groups in by_kind.items()
@@ -218,10 +222,12 @@ def main() -> int:
             # Keys "method|setting|group" → (seeds, queries) ranks; relevant image ids for clustering.
             relation_queries, relation_data, groups = kinds[QueryKind.RELATION]
             arrays: dict[str, Any] = {key: np.stack(r) for key, r in saved_ranks.items()}
-            arrays.update({
-                f"image_ids|{g}": np.asarray(relation_data.image_ids)[relation_data.relevant_columns[rows]]
-                for g, (rows, _) in groups.items()
-            })
+            arrays.update(
+                {
+                    f"image_ids|{g}": np.asarray(relation_data.image_ids)[relation_data.relevant_columns[rows]]
+                    for g, (rows, _) in groups.items()
+                }
+            )
             np.savez_compressed(out.with_suffix(".ranks.npz"), allow_pickle=False, **arrays)
         log.info("wrote %s", out)
     except AppError:

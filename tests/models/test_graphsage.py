@@ -86,8 +86,9 @@ def test_two_layers_know_each_objects_role_and_three_layers_know_who_goes_with_w
 def test_sub_graphs_in_one_batch_do_not_influence_each_other():
     encoder = _encoder()
     together = encoder(_batch((MAN_RIDES_BIKE, 0), (DOG_ONLY, 1), (EMPTY, 2), (NO_RELATION, 3)))
-    alone = torch.cat([encoder(_batch((g, r))) for g, r in
-                       ((MAN_RIDES_BIKE, 0), (DOG_ONLY, 1), (EMPTY, 2), (NO_RELATION, 3))])
+    alone = torch.cat(
+        [encoder(_batch((g, r))) for g, r in ((MAN_RIDES_BIKE, 0), (DOG_ONLY, 1), (EMPTY, 2), (NO_RELATION, 3))]
+    )
     assert torch.allclose(together, alone, atol=1e-6)
 
 

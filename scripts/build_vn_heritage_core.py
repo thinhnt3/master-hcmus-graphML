@@ -5,6 +5,7 @@ Reads the full build (`data/processed/vn_heritage`) and the cached admin ancestr
 Run from the repository root:
     python -m scripts.build_vn_heritage_core
 """
+
 from __future__ import annotations
 
 import argparse
@@ -205,7 +206,9 @@ def _extra_labels(cfg: CoreConfig, wanted: set[str], languages: tuple[str, ...])
 
 
 def _extra_knowledge(
-    cfg: CoreConfig, entities: dict[str, dict[str, Any]], labels: dict[str, dict[str, str]],
+    cfg: CoreConfig,
+    entities: dict[str, dict[str, Any]],
+    labels: dict[str, dict[str, str]],
     languages: tuple[str, ...],
 ) -> tuple[list[Triple], int]:
     """Extra triples of all places; adds the labels of their targets to `labels` in place.
@@ -238,13 +241,18 @@ def _fill_cache(path: Path, wanted: set[str], fetch: Callable[[set[str]], dict[s
 
 
 def _target_kinds(
-    cfg: CoreConfig, wikidata: WikidataClient, places: dict[str, dict[str, Any]],
-    entities: dict[str, dict[str, Any]], knowledge: list[Triple], candidates: set[str],
+    cfg: CoreConfig,
+    wikidata: WikidataClient,
+    places: dict[str, dict[str, Any]],
+    entities: dict[str, dict[str, Any]],
+    knowledge: list[Triple],
+    candidates: set[str],
 ) -> dict[str, str]:
     """Kind of each mention target that has one: a place, a known Wikidata class, or its graph role."""
     outside = {qid for qid in candidates if qid.startswith("Q") and qid not in entities}
     fetched = _fill_cache(
-        cfg.raw_dir / "link_item_classes.json", outside,
+        cfg.raw_dir / "link_item_classes.json",
+        outside,
         lambda qids: {q: "|".join(c) for q, c in wikidata.claim_items(qids, cfg.class_property).items()},
     )
     pointing = Counter((tail, relation) for _, relation, tail in knowledge)
@@ -265,8 +273,11 @@ def _target_kinds(
 
 
 def _article_mentions(
-    cfg: CoreConfig, places: dict[str, dict[str, Any]], entities: dict[str, dict[str, Any]],
-    knowledge: list[Triple], labels: dict[str, dict[str, str]],
+    cfg: CoreConfig,
+    places: dict[str, dict[str, Any]],
+    entities: dict[str, dict[str, Any]],
+    knowledge: list[Triple],
+    labels: dict[str, dict[str, str]],
 ) -> list[Mention]:
     """Mentions taken from the body links of each place's article; labels new targets in place."""
     site = f"{cfg.article_language}wiki"
@@ -297,8 +308,15 @@ def _article_mentions(
     candidates = {title_to_qid[r.title] for records in links.values() for r in records if r.title in title_to_qid}
     kinds = _target_kinds(cfg, wikidata, places, entities, knowledge, candidates)
     mentions = collect_mentions(
-        links, title_to_qid, kinds, graph_nodes, {(head, tail) for head, _, tail in knowledge},
-        cfg.cues, cfg.skip_after, cfg.min_articles, cfg.max_share,
+        links,
+        title_to_qid,
+        kinds,
+        graph_nodes,
+        {(head, tail) for head, _, tail in knowledge},
+        cfg.cues,
+        cfg.skip_after,
+        cfg.min_articles,
+        cfg.max_share,
     )
     # A target that only Wikipedia introduced is labelled with its article title.
     for title, qid in sorted(title_to_qid.items()):
@@ -324,8 +342,9 @@ def build(cfg: CoreConfig) -> dict[str, Any]:
     base = cfg.mention_relation
 
     image_counts = Counter(image["place_qid"] for image in images)
-    counted = knowledge + (mention_triples(mentions, RelationScheme.GENERIC, base)
-                           if cfg.count_mentions_toward_selection else [])
+    counted = knowledge + (
+        mention_triples(mentions, RelationScheme.GENERIC, base) if cfg.count_mentions_toward_selection else []
+    )
     core = set(select_core({q: p["labels"] for q, p in places.items()}, counted, image_counts, rules))
     if not core:
         raise DataError("no place passes the core selection; lower min_triples or min_images")
@@ -336,8 +355,12 @@ def build(cfg: CoreConfig) -> dict[str, Any]:
     parents: dict[str, list[str]] = admin_graph["parents"]
     admin_units = {tail for _, relation, tail in claims if relation in rules.admin_relations}
     hierarchy, skipped = admin_hierarchy(
-        admin_units, parents, admin_graph["classes"], rules.province_classes,
-        {qid for qid, names in labels.items() if any(names.values())}, rules.hierarchy_relation,
+        admin_units,
+        parents,
+        admin_graph["classes"],
+        rules.province_classes,
+        {qid for qid, names in labels.items() if any(names.values())},
+        rules.hierarchy_relation,
     )
     existing = set(claims)
     hierarchy = [edge for edge in hierarchy if edge not in existing]
@@ -384,9 +407,15 @@ def build(cfg: CoreConfig) -> dict[str, Any]:
 
 
 def _stats(
-    places: list[dict[str, Any]], images: list[dict[str, Any]], core_triples: list[Triple],
-    hierarchy: list[Triple], node_ids: set[str], groups: dict[str, str], skipped: int,
-    extra_unlabelled: int, rules: CoreRules,
+    places: list[dict[str, Any]],
+    images: list[dict[str, Any]],
+    core_triples: list[Triple],
+    hierarchy: list[Triple],
+    node_ids: set[str],
+    groups: dict[str, str],
+    skipped: int,
+    extra_unlabelled: int,
+    rules: CoreRules,
 ) -> dict[str, Any]:
     split_of = {place["qid"]: place["split"] for place in places}
     degree = Counter(head for head, _, _ in core_triples)
@@ -407,8 +436,11 @@ def _stats(
         "triples_per_place_min": min(degree[qid] for qid in split_of),
         "triples_per_place_mean": round(len(core_triples) / len(places), 2),
         "split_groups_with_several_places": sum(1 for n in Counter(groups.values()).values() if n > 1),
-        "selection": {"min_triples": rules.min_triples, "min_images": rules.min_images,
-                      "label_language": rules.label_language},
+        "selection": {
+            "min_triples": rules.min_triples,
+            "min_images": rules.min_images,
+            "label_language": rules.label_language,
+        },
     }
 
 

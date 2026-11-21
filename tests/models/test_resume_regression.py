@@ -1,4 +1,5 @@
 """Regression for the metadata-only completion check, reproduced explicitly in history."""
+
 import pytest
 
 from src.core.exceptions import TrainingError

@@ -7,6 +7,7 @@ Eligible means the base build's rules (`select_candidates`: a scene graph with a
 min_relations relations, not excluded). Karpathy-test images stay out of train, as in the
 base split, so no test-pool image is ever trained on.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,7 +43,8 @@ def main() -> int:
         base = read_json(args.base)
         held_out = set(base[Split.VAL.value]) | set(base[Split.TEST.value])
         train = sorted(
-            c.vg_image_id for c in candidates
+            c.vg_image_id
+            for c in candidates
             if c.karpathy_split is not KarpathySplit.TEST and c.vg_image_id not in held_out
         )
         split = {
@@ -51,14 +53,19 @@ def main() -> int:
             Split.TEST.value: base[Split.TEST.value],
         }
         validate_no_overlap(split)
-        write_json(config.paths.split_file, {
-            "config": {"base_split": args.base, **config.split.to_dict()},
-            "inputs_sha256": {str(p): sha256_of(p) for p in (images_path, graphs_path)},
-            "candidates": len(candidates),
-            **split,
-        }, indent=None)
-        log.info("train=%d val=%d test=%d → %s", len(train), len(split["val"]), len(split["test"]),
-                 config.paths.split_file)
+        write_json(
+            config.paths.split_file,
+            {
+                "config": {"base_split": args.base, **config.split.to_dict()},
+                "inputs_sha256": {str(p): sha256_of(p) for p in (images_path, graphs_path)},
+                "candidates": len(candidates),
+                **split,
+            },
+            indent=None,
+        )
+        log.info(
+            "train=%d val=%d test=%d → %s", len(train), len(split["val"]), len(split["test"]), config.paths.split_file
+        )
     except AppError:
         log.exception("full split failed")
         return 1

@@ -1,4 +1,5 @@
 """Train the graph encoder with in-batch InfoNCE against frozen CLIP caption vectors."""
+
 from __future__ import annotations
 
 import logging
@@ -183,7 +184,7 @@ def _grouped_order(
             continue
         used[image] = True
         free = [p for p in partners[image] if not used[p]]
-        picks = [free[i] for i in torch.randperm(len(free), generator=generator)[:group_size - 1].tolist()]
+        picks = [free[i] for i in torch.randperm(len(free), generator=generator)[: group_size - 1].tolist()]
         for p in picks:
             used[p] = True
         grouped += [image, *picks]
@@ -327,8 +328,13 @@ def train_epoch(
     """
     model.train()
     batches = epoch_batches(
-        len(data.graphs), data.caption_vectors.shape[1], config.batch_size, seed, epoch,
-        data.partners, config.hard_negative_group,
+        len(data.graphs),
+        data.caption_vectors.shape[1],
+        config.batch_size,
+        seed,
+        epoch,
+        data.partners,
+        config.hard_negative_group,
     )
     encoder_parameters = _encoder_parameters(model)
     adversary = _adversary(model) if generator_optimizer is not None else None
@@ -360,7 +366,7 @@ def encode_graphs(model: nn.Module, graphs: Sequence[Data], config: TrainingConf
     model.eval()
     device = config.device.value
     parts = [
-        model(Batch.from_data_list(list(graphs[i:i + config.batch_size])).to(device)).cpu()
+        model(Batch.from_data_list(list(graphs[i : i + config.batch_size])).to(device)).cpu()
         for i in range(0, len(graphs), config.batch_size)
     ]
     return torch.cat(parts)
@@ -422,9 +428,7 @@ def fit(
     """
     metric_ks = sorted({*ks, 1})
     model.to(config.device.value)
-    optimizer = torch.optim.AdamW(
-        _encoder_parameters(model), lr=config.learning_rate, weight_decay=config.weight_decay
-    )
+    optimizer = torch.optim.AdamW(_encoder_parameters(model), lr=config.learning_rate, weight_decay=config.weight_decay)
     adversary = _adversary(model)
     generator_optimizer = (
         torch.optim.AdamW(adversary.generator_parameters(), lr=adversary.generator_learning_rate, weight_decay=0.0)
@@ -461,8 +465,14 @@ def fit(
             break
         started = time.monotonic()
         losses = train_epoch(
-            model, optimizer, train, config, seed, epoch,
-            show_progress=show_progress, generator_optimizer=generator_optimizer,
+            model,
+            optimizer,
+            train,
+            config,
+            seed,
+            epoch,
+            show_progress=show_progress,
+            generator_optimizer=generator_optimizer,
         )
         train_loss = losses["train_loss"]
         metrics = evaluate(model, val, config, metric_ks)
@@ -472,34 +482,46 @@ def fit(
         is_best = best_key is None or key > best_key
         if is_best:
             best_key, best_epoch = key, epoch
-        history.append({
-            "epoch": epoch,
-            **losses,
-            "val_loss": metrics["loss"],
-            **{f"val_{name}": value for name, value in metrics.items() if name != "loss"},
-            "learning_rate": optimizer.param_groups[0]["lr"],
-            "seconds": round(time.monotonic() - started, _SECONDS_DECIMALS),
-            "is_best": is_best,
-        })
+        history.append(
+            {
+                "epoch": epoch,
+                **losses,
+                "val_loss": metrics["loss"],
+                **{f"val_{name}": value for name, value in metrics.items() if name != "loss"},
+                "learning_rate": optimizer.param_groups[0]["lr"],
+                "seconds": round(time.monotonic() - started, _SECONDS_DECIMALS),
+                "is_best": is_best,
+            }
+        )
         model_state = {name: tensor.detach().cpu().clone() for name, tensor in model.state_dict().items()}
         if is_best:
             run.save_best({"model": model_state, "epoch": epoch, "seed": seed, "metrics": metrics})
-        run.save_last({
-            "model": model_state,
-            "optimizer": optimizer.state_dict(),
-            **({"generator_optimizer": generator_optimizer.state_dict()} if generator_optimizer is not None else {}),
-            "seed": seed,
-            "history": history,
-            "best_epoch": best_epoch,
-            "best_key": list(best_key) if best_key is not None else None,
-            "rng_state": torch.get_rng_state(),
-        })
+        run.save_last(
+            {
+                "model": model_state,
+                "optimizer": optimizer.state_dict(),
+                **(
+                    {"generator_optimizer": generator_optimizer.state_dict()} if generator_optimizer is not None else {}
+                ),
+                "seed": seed,
+                "history": history,
+                "best_epoch": best_epoch,
+                "best_key": list(best_key) if best_key is not None else None,
+                "rng_state": torch.get_rng_state(),
+            }
+        )
         run.save_history(history)
         if on_epoch is not None:
             on_epoch(history[-1])
         log.info(
             "epoch %3d  train loss %.4f  val loss %.4f  val R@1 %.4f  MRR %.4f  lr %.2g  %.1fs%s",
-            epoch, train_loss, metrics["loss"], metrics["recall@1"], metrics["mrr"],
-            history[-1]["learning_rate"], history[-1]["seconds"], "  *best*" if is_best else "",
+            epoch,
+            train_loss,
+            metrics["loss"],
+            metrics["recall@1"],
+            metrics["mrr"],
+            history[-1]["learning_rate"],
+            history[-1]["seconds"],
+            "  *best*" if is_best else "",
         )
     return TrainingResult(history=history, best_epoch=best_epoch, stop_reason=stop_reason)

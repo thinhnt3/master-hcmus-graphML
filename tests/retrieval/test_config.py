@@ -11,7 +11,10 @@ REPO_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "retrieval" / "v
 
 def _raw(**clip_overrides):
     clip = {
-        "model_name": "openai/clip-vit-base-patch32", "device": "auto", "image_batch_size": 64, "text_batch_size": 256,
+        "model_name": "openai/clip-vit-base-patch32",
+        "device": "auto",
+        "image_batch_size": 64,
+        "text_batch_size": 256,
     }
     clip.update(clip_overrides)
     return {
@@ -22,12 +25,24 @@ def _raw(**clip_overrides):
         "runs_dir": "runs",
         "graphsage": {"hidden_dim": 64, "num_layers": 3, "directed": True, "image_node": "learned"},
         "adamf_mat": {
-            "dim": 32, "adaptive_fusion": True, "mat": True, "mu": 1.0,
-            "noise_dim": 8, "generator_hidden_dim": 16, "generator_learning_rate": 0.0001,
+            "dim": 32,
+            "adaptive_fusion": True,
+            "mat": True,
+            "mu": 1.0,
+            "noise_dim": 8,
+            "generator_hidden_dim": 16,
+            "generator_learning_rate": 0.0001,
         },
         "training": {
-            "seeds": [13, 37], "device": "cpu", "batch_size": 8, "max_epochs": 5, "patience": 2,
-            "learning_rate": 0.001, "weight_decay": 0, "temperature": 0.07, "grad_clip_norm": 1.0,
+            "seeds": [13, 37],
+            "device": "cpu",
+            "batch_size": 8,
+            "max_epochs": 5,
+            "patience": 2,
+            "learning_rate": 0.001,
+            "weight_decay": 0,
+            "temperature": 0.07,
+            "grad_clip_norm": 1.0,
             "selection_metric": "recall@1",
         },
         "wandb": {"mode": "disabled", "project": "p"},

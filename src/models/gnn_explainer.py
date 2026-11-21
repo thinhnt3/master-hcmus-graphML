@@ -4,6 +4,7 @@ GNNExplainer learns a soft mask over the edges of the image's sub-graph so that 
 graph keeps the graph score (as the training logit) while using as few edges as possible. The ranking it gives does
 not come from deleting relations, so deletion-based fidelity tests it independently.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping

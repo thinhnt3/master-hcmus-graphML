@@ -1,4 +1,5 @@
 """Evaluation data for one split and scoring of a method on it. No file I/O here."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence

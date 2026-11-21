@@ -5,6 +5,7 @@ An image is correct for a query when it shows one of the query's answer entities
 of entities that are not answers. Other correct images are left out, so a query is not
 punished for ranking a different right image first.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence

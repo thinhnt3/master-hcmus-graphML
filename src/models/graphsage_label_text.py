@@ -5,6 +5,7 @@ from the image's CLIP vector, read out at the image node), plus the label-text m
 AdaMF-MAT built the same way, concatenated before the output projection. No fusion weights,
 no generator: if this closes the gap to AdaMF-MAT, the gap comes from the label-text branch.
 """
+
 from __future__ import annotations
 
 import torch

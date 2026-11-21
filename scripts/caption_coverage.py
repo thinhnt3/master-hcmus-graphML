@@ -9,6 +9,7 @@
 A caption names a triplet when it contains the predicate and one accepted name of each
 object. Writes <runs_dir>/analysis/caption_coverage.json. Needs nltk with WordNet.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -82,14 +83,25 @@ def main() -> int:
                 for caption in captions:
                     graph, text = graph_of[int(caption["relevant_ids"][0])], caption["text"]
                     named += any(
-                        int(s) != int(o) and names(text, predicate[int(p)])
-                        and names_any(text, accepted[int(s)]) and names_any(text, accepted[int(o)])
+                        int(s) != int(o)
+                        and names(text, predicate[int(p)])
+                        and names_any(text, accepted[int(s)])
+                        and names_any(text, accepted[int(o)])
                         for s, p, o in graph["triplets"]
                     )
-                counts[mode] = {"captions": len(captions), "naming_a_triplet": named,
-                                "share": round(named / len(captions), 4)}
-                log.info("%s %-9s %d / %d captions name a triplet (%.1f%%)",
-                         split, mode, named, len(captions), 100 * named / len(captions))
+                counts[mode] = {
+                    "captions": len(captions),
+                    "naming_a_triplet": named,
+                    "share": round(named / len(captions), 4),
+                }
+                log.info(
+                    "%s %-9s %d / %d captions name a triplet (%.1f%%)",
+                    split,
+                    mode,
+                    named,
+                    len(captions),
+                    100 * named / len(captions),
+                )
             report["splits"][split] = counts
         write_json(config.runs_dir / "analysis" / "caption_coverage.json", report)
     except AppError:

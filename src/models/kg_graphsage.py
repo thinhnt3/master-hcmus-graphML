@@ -1,4 +1,5 @@
 """GraphSAGE over a knowledge graph: every entity becomes one vector in the CLIP space."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,10 +16,14 @@ class KgSageConfig:
 
     hidden_dim: int
     num_layers: int
+    # Share of entities that, at each training step, are encoded from their neighbours alone.
+    structure_only_rate: float = 0.0
 
     def __post_init__(self) -> None:
         if self.hidden_dim < 1 or self.num_layers < 1:
             raise ConfigError("kg_graphsage.hidden_dim and kg_graphsage.num_layers must be >= 1")
+        if not 0.0 <= self.structure_only_rate < 1.0:
+            raise ConfigError(f"kg_graphsage.structure_only_rate must lie in [0, 1), got {self.structure_only_rate}")
 
 
 def mean_at(messages: torch.Tensor, targets: torch.Tensor, n_nodes: int) -> torch.Tensor:
@@ -47,14 +52,19 @@ class RelationSAGELayer(nn.Module):
         self.relation = nn.Embedding(n_relations, in_dim)
         nn.init.normal_(self.relation.weight, std=in_dim**-0.5)
 
-    def forward(self, x: torch.Tensor, triples: torch.Tensor) -> torch.Tensor:
-        """New node states from `triples`, a (triples × 3) tensor of head, relation, tail ids."""
+    def forward(self, x: torch.Tensor, triples: torch.Tensor, keep_own: torch.Tensor | None = None) -> torch.Tensor:
+        """New node states from `triples`, a (triples × 3) tensor of head, relation, tail ids.
+
+        `keep_own` is 0 for nodes whose own state is left out, so only their neighbours speak.
+        """
         heads, relations, tails = triples.unbind(dim=1)
         relation_states = self.relation(relations)
         to_tail = mean_at(x[heads] + relation_states, tails, x.shape[0])
         to_head = mean_at(x[tails] + relation_states, heads, x.shape[0])
-        result: torch.Tensor = self.own(x) + self.along(to_tail) + self.against(to_head)
-        return result
+        own: torch.Tensor = self.own(x)
+        if keep_own is not None:
+            own = own * keep_own.unsqueeze(1)
+        return own + self.along(to_tail) + self.against(to_head)
 
 
 class KgEntityEncoder(nn.Module):
@@ -62,6 +72,10 @@ class KgEntityEncoder(nn.Module):
 
     Entities start from frozen CLIP text vectors of their names. Only the layers and the
     final projection are trained.
+
+    With `structure_only_rate > 0`, a random share of entities is encoded without its own
+    state at each training step. The name vector alone already answers name queries, and
+    that shortcut lets the model ignore the edges; these rows can only be solved through them.
     """
 
     entity_features: torch.Tensor
@@ -83,8 +97,11 @@ class KgEntityEncoder(nn.Module):
     def forward(self, triples: torch.Tensor) -> torch.Tensor:
         """Unit vector of every entity, shape (entities, clip dim), using only the given triples as edges."""
         x = self.entity_features
+        keep_own = None
+        if self.training and self.config.structure_only_rate > 0:
+            keep_own = (torch.rand(x.shape[0], device=x.device) >= self.config.structure_only_rate).to(x.dtype)
         for position, layer in enumerate(self.layers):
-            x = layer(x, triples)
+            x = layer(x, triples, keep_own)
             # No ReLU after the last layer: CLIP vectors have negative components, so must these.
             if position < len(self.layers) - 1:
                 x = torch.relu(x)

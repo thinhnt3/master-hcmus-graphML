@@ -1,4 +1,5 @@
 """Ranks and splits of the image gallery."""
+
 from __future__ import annotations
 
 import numpy as np

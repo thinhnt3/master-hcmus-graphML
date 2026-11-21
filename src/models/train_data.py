@@ -1,4 +1,5 @@
 """Assemble the graphs and caption vectors of one split for training and evaluation."""
+
 from __future__ import annotations
 
 from collections import defaultdict

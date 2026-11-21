@@ -3,6 +3,7 @@
 Baseline for the learned graph score. It answers how far the graph alone can rank images
 when matching is done on words. No file I/O here.
 """
+
 from __future__ import annotations
 
 import math

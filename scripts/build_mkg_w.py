@@ -6,6 +6,7 @@ Run from the repository root:
     python -m scripts.build_mkg_w --stage images
     python -m scripts.build_mkg_w --stage build
 """
+
 from __future__ import annotations
 
 import argparse
@@ -77,36 +78,50 @@ def run_images(config: MkgwConfig) -> None:
         folder_of_entity = match_folders(dict(enumerate(names)), members)
         log.info("archive: %d folders, %d matched to entities", len(members), len(folder_of_entity))
         files, unreadable = extract_images(archive, folder_of_entity, members, out_dir / "images")
-    write_json(out_dir / "image_index.json", {
-        "archive_folders": len(members),
-        "matched_folders": len(folder_of_entity),
-        "entities_with_images": len(files),
-        "images": sum(len(v) for v in files.values()),
-        "unreadable": unreadable,
-        "files": {str(entity_id): paths for entity_id, paths in files.items()},
-    }, indent=None)
-    log.info("kept %d images of %d entities; %d files did not decode",
-             sum(len(v) for v in files.values()), len(files), len(unreadable))
+    write_json(
+        out_dir / "image_index.json",
+        {
+            "archive_folders": len(members),
+            "matched_folders": len(folder_of_entity),
+            "entities_with_images": len(files),
+            "images": sum(len(v) for v in files.values()),
+            "unreadable": unreadable,
+            "files": {str(entity_id): paths for entity_id, paths in files.items()},
+        },
+        indent=None,
+    )
+    log.info(
+        "kept %d images of %d entities; %d files did not decode",
+        sum(len(v) for v in files.values()),
+        len(files),
+        len(unreadable),
+    )
 
 
-def _direction_rows(stats: dict[tuple[int, Direction], DirectionStat], pids: list[str],
-                    labels: dict[int, str], queries: list[EntityQuery]) -> list[dict[str, Any]]:
+def _direction_rows(
+    stats: dict[tuple[int, Direction], DirectionStat],
+    pids: list[str],
+    labels: dict[int, str],
+    queries: list[EntityQuery],
+) -> list[dict[str, Any]]:
     per_direction: Counter[tuple[int, Direction, Split]] = Counter()
     for query in queries:
         if query.relation_id is not None and query.direction is not None:
             per_direction[(query.relation_id, query.direction, query.split)] += 1
     rows = []
     for (relation_id, direction), stat in sorted(stats.items(), key=lambda kv: (-kv[1].train_triples, kv[0][1].value)):
-        rows.append({
-            "relation": pids[relation_id],
-            "label": labels.get(relation_id, ""),
-            "direction": direction.value,
-            "train_triples": stat.train_triples,
-            "unique_answers": stat.unique_answers,
-            "prior_hits": stat.prior_hits,
-            "status": stat.status.value,
-            "queries": {s.value: per_direction[(relation_id, direction, s)] for s in Split},
-        })
+        rows.append(
+            {
+                "relation": pids[relation_id],
+                "label": labels.get(relation_id, ""),
+                "direction": direction.value,
+                "train_triples": stat.train_triples,
+                "unique_answers": stat.unique_answers,
+                "prior_hits": stat.prior_hits,
+                "status": stat.status.value,
+                "queries": {s.value: per_direction[(relation_id, direction, s)] for s in Split},
+            }
+        )
     return rows
 
 
@@ -115,8 +130,7 @@ def run_build(config: MkgwConfig) -> None:
     qids, names = _entity_names(config)
     pids = read_id_file(config.raw_path("mkg_w_relation2id"))
     triples: dict[Split, list[Triple]] = {
-        split: read_triples(config.raw_path(source), len(qids), len(pids))
-        for split, source in _TRIPLE_SOURCES.items()
+        split: read_triples(config.raw_path(source), len(qids), len(pids)) for split, source in _TRIPLE_SOURCES.items()
     }
     index_path = config.paths.processed_dir / "image_index.json"
     if not index_path.exists():
@@ -142,18 +156,32 @@ def run_build(config: MkgwConfig) -> None:
         raise DataError("duplicate query ids")
 
     out_dir = config.paths.processed_dir
-    write_json(out_dir / "entities.json", [
-        {"entity_id": i, "qid": qids[i], "name": display_name(names[i]),
-         "description": descriptions.get(i), "image_files": image_files.get(i, [])}
-        for i in range(len(qids))
-    ], indent=None)
-    write_json(out_dir / "relations.json", [
-        {"relation_id": i, "pid": pid, "label": templates[i].label if i in templates else None}
-        for i, pid in enumerate(pids)
-    ])
-    write_json(out_dir / "triples.json", {
-        split.value: [[t.head, t.relation, t.tail] for t in rows] for split, rows in triples.items()
-    }, indent=None)
+    write_json(
+        out_dir / "entities.json",
+        [
+            {
+                "entity_id": i,
+                "qid": qids[i],
+                "name": display_name(names[i]),
+                "description": descriptions.get(i),
+                "image_files": image_files.get(i, []),
+            }
+            for i in range(len(qids))
+        ],
+        indent=None,
+    )
+    write_json(
+        out_dir / "relations.json",
+        [
+            {"relation_id": i, "pid": pid, "label": templates[i].label if i in templates else None}
+            for i, pid in enumerate(pids)
+        ],
+    )
+    write_json(
+        out_dir / "triples.json",
+        {split.value: [[t.head, t.relation, t.tail] for t in rows] for split, rows in triples.items()},
+        indent=None,
+    )
     write_json(out_dir / "queries.json", [q.to_dict() for q in queries], indent=None)
 
     counts: Counter[tuple[str, str, str]] = Counter((q.group.value, q.kind.value, q.split.value) for q in queries)
@@ -161,35 +189,47 @@ def run_build(config: MkgwConfig) -> None:
         f"{group}/{kind}": {s.value: counts[(group, kind, s.value)] for s in Split}
         for group, kind in sorted({(g, k) for g, k, _ in counts})
     }
-    outputs = {name: sha256_of(out_dir / name)
-               for name in ("entities.json", "relations.json", "triples.json", "queries.json")}
-    write_json(config.paths.split_file, {
-        "config": {"query_rules": config.rules.to_dict(), "direct_split": config.direct_split.to_dict()},
-        "inputs_sha256": {spec.name: sha256_of(config.paths.raw_dir / spec.target)
-                          for spec in config.sources if spec.name != "mkg_w_images"},
-        "outputs_sha256": outputs,
-        "query_counts": query_counts,
-        "direct_entities": {split.value: ids for split, ids in entity_split.items()},
-    }, indent=None)
+    outputs = {
+        name: sha256_of(out_dir / name) for name in ("entities.json", "relations.json", "triples.json", "queries.json")
+    }
+    write_json(
+        config.paths.split_file,
+        {
+            "config": {"query_rules": config.rules.to_dict(), "direct_split": config.direct_split.to_dict()},
+            "inputs_sha256": {
+                spec.name: sha256_of(config.paths.raw_dir / spec.target)
+                for spec in config.sources
+                if spec.name != "mkg_w_images"
+            },
+            "outputs_sha256": outputs,
+            "query_counts": query_counts,
+            "direct_entities": {split.value: ids for split, ids in entity_split.items()},
+        },
+        indent=None,
+    )
     answer_sizes = Counter(len(q.relevant_ids) + len(q.known_ids) for q in indirect)
     hop_counts: Counter[tuple[str, Split]] = Counter(
         (str(q.hops) if q.hops else f"over_{config.rules.max_hops}_or_none", q.split) for q in indirect
     )
-    write_yaml(config.paths.card_file, {
-        "entities": len(qids),
-        "entities_with_images": len(image_files),
-        "images": sum(len(v) for v in image_files.values()),
-        "entities_with_description": len(descriptions),
-        "relations": len(pids),
-        "triples": {split.value: len(rows) for split, rows in triples.items()},
-        "query_rules": config.rules.to_dict(),
-        "query_counts": query_counts,
-        "indirect_queries_by_answer_count": {str(k): answer_sizes[k] for k in sorted(answer_sizes)},
-        "indirect_queries_by_hops": {
-            key: {s.value: hop_counts[(key, s)] for s in Split} for key in sorted({k for k, _ in hop_counts})
+    write_yaml(
+        config.paths.card_file,
+        {
+            "entities": len(qids),
+            "entities_with_images": len(image_files),
+            "images": sum(len(v) for v in image_files.values()),
+            "entities_with_description": len(descriptions),
+            "relations": len(pids),
+            "triples": {split.value: len(rows) for split, rows in triples.items()},
+            "query_rules": config.rules.to_dict(),
+            "query_counts": query_counts,
+            "indirect_queries_by_answer_count": {str(k): answer_sizes[k] for k in sorted(answer_sizes)},
+            "indirect_queries_by_hops": {
+                key: {s.value: hop_counts[(key, s)] for s in Split} for key in sorted({k for k, _ in hop_counts})
+            },
+            "directions": _direction_rows(stats, pids, {i: t.label for i, t in templates.items()}, indirect),
         },
-        "directions": _direction_rows(stats, pids, {i: t.label for i, t in templates.items()}, indirect),
-    }, header=_CARD_HEADER)
+        header=_CARD_HEADER,
+    )
     for key, row in query_counts.items():
         log.info("%-22s %s", key, row)
     log.info("outputs sha256: %s", outputs)

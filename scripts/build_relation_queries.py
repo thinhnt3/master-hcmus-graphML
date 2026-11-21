@@ -9,6 +9,7 @@ for the selection rule and the templates) and the CLIP table
 <embeddings>/<model>/relation_queries/<name>.{npy,ids.json} with <name>.meta.json, where
 <name> is `queries` for test and `queries_<split>` otherwise.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -55,8 +56,11 @@ def main() -> int:
         predicates = {int(p["predicate_id"]): p["text"] for p in read_json(processed / "graph" / "predicates.json")}
         queries = build_relation_queries(read_json(graph_file), concepts, predicates, QUERY_SEED, split)
         relation = [q for q in queries if q["kind"] == QueryKind.RELATION.value]
-        log.info("%d relation queries (+ as many objects twins); top predicates %s", len(relation),
-                 Counter(predicates[q["triplet"][1]] for q in relation).most_common(8))
+        log.info(
+            "%d relation queries (+ as many objects twins); top predicates %s",
+            len(relation),
+            Counter(predicates[q["triplet"][1]] for q in relation).most_common(8),
+        )
 
         out_file = processed / QUERIES_DIR / f"{name}.json"
         write_json(out_file, queries)
@@ -65,13 +69,16 @@ def main() -> int:
         table = EmbeddingTable(ids=tuple(q["query_id"] for q in queries), vectors=vectors)
         out_dir = config.model_embeddings_dir() / QUERIES_DIR
         save_table(out_dir, name, table)
-        write_json(out_dir / f"{name}.meta.json", {
-            "model_name": config.clip.model_name,
-            "seed": QUERY_SEED,
-            "templates": {str(k): v for k, v in TEMPLATES.items()},
-            "inputs_sha256": {str(p): sha256_of(p) for p in (graph_file, out_file)},
-            "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)},
-        })
+        write_json(
+            out_dir / f"{name}.meta.json",
+            {
+                "model_name": config.clip.model_name,
+                "seed": QUERY_SEED,
+                "templates": {str(k): v for k, v in TEMPLATES.items()},
+                "inputs_sha256": {str(p): sha256_of(p) for p in (graph_file, out_file)},
+                "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)},
+            },
+        )
         log.info("wrote %s and %s", out_file, out_dir)
     except AppError:
         log.exception("building relation queries failed")

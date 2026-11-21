@@ -8,6 +8,7 @@ Seeds stay paired (same seed index in both), queries are resampled by relevant i
 Reports the accuracy difference A − B in percentage points with a 95 % interval. A
 setting can also be compared with its masked version (`...|graph_only_masked`).
 """
+
 from __future__ import annotations
 
 import argparse

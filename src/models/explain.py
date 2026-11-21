@@ -1,4 +1,5 @@
 """Explain a graph score: how much each relation of the image contributes to it."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -46,8 +47,7 @@ def explain_graph_score(
         raise DataError(f"query vector must be one-dimensional, got shape {tuple(query_vector.shape)}")
     triplets = [tuple(int(v) for v in t) for t in image_graph["triplets"]]
     variants = [image_graph] + [
-        {**image_graph, "triplets": triplets[:position] + triplets[position + 1:]}
-        for position in range(len(triplets))
+        {**image_graph, "triplets": triplets[:position] + triplets[position + 1 :]} for position in range(len(triplets))
     ]
 
     # Share the same chunked scorer with the fidelity interventions.

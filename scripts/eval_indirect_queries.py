@@ -11,6 +11,7 @@ those edges. Reported for each kind: Recall@K over the 1,500 test images, and to
 accuracy among the relevant image and its confusers. Alpha and top_k are the ones each
 seed selected on validation captions. Writes <runs_dir>/analysis/indirect_queries.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -118,10 +119,14 @@ def main() -> int:
                 for suffix, graph_table in settings.items():
                     graph = {k: graph_vector_scores(kinds[k][0], graph_table) for k in KINDS}
                     record(method, f"graph_only{suffix}", graph)
-                    record(method, f"reranked{suffix}", {
-                        k: rerank_scores(clip_scores(kinds[k][0]), graph[k], choice["alpha"], choice["top_k"])
-                        for k in KINDS
-                    })
+                    record(
+                        method,
+                        f"reranked{suffix}",
+                        {
+                            k: rerank_scores(clip_scores(kinds[k][0]), graph[k], choice["alpha"], choice["top_k"])
+                            for k in KINDS
+                        },
+                    )
                 log.info("scored %s seed %d", method, seed)
 
         report = {
@@ -133,8 +138,7 @@ def main() -> int:
                 method: {
                     setting: {
                         kind: {
-                            m: {k: round(v, _DECIMALS) for k, v in s.items()}
-                            for m, s in aggregate_runs(runs).items()
+                            m: {k: round(v, _DECIMALS) for k, v in s.items()} for m, s in aggregate_runs(runs).items()
                         }
                         for kind, runs in by_kind.items()
                     }

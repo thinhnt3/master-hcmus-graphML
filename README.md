@@ -503,7 +503,7 @@ python -m scripts.train_graphsage                        # huấn luyện 3 seed
 python -m scripts.run_benchmark --method graphsage       # CLIP + GraphSAGE
 python -m scripts.explain_retrieval --sample 5           # kết quả kèm relation giải thích
 
-pytest                                                   # 402 test, không cần mạng
+pytest                                                   # 458 test, không cần mạng
 ```
 
 Lưu ý:

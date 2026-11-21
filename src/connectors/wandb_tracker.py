@@ -1,4 +1,5 @@
 """Weights & Biases run tracking. All calls to the W&B service go through this module."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -57,9 +58,7 @@ class WandbTracker:
             reinit="finish_previous",
             # Only the settings and metrics passed in are reported: no host name, account
             # e-mail, hardware details, git remote or console output.
-            settings=wandb.Settings(
-                x_disable_meta=True, x_disable_machine_info=True, disable_git=True, console="off"
-            ),
+            settings=wandb.Settings(x_disable_meta=True, x_disable_machine_info=True, disable_git=True, console="off"),
         )
 
     @property

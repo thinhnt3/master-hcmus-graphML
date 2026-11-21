@@ -9,6 +9,7 @@ it. Validation and test graphs must come out identical to the base ones, so only
 amount of training data differs between the two variants. Writes
 <full processed>/graph/{concepts,predicates,image_graphs}.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,7 +37,8 @@ def main() -> int:
         base_dir, full_dir = base.paths.processed_dir, full.paths.processed_dir
         split_of = {int(r["vg_image_id"]): Split(r["split"]) for r in read_json(base_dir / "images.json")}
         base_train = [
-            SceneGraph.from_dict(g) for g in read_json(base_dir / "scene_graphs.json")
+            SceneGraph.from_dict(g)
+            for g in read_json(base_dir / "scene_graphs.json")
             if split_of[int(g["vg_image_id"])] is Split.TRAIN
         ]
         vocabulary = build_vocabulary(
@@ -66,8 +68,14 @@ def main() -> int:
         write_json(out / "concepts.json", concepts, indent=None)
         write_json(out / "predicates.json", predicates, indent=None)
         write_json(out / "image_graphs.json", image_graphs, indent=None)
-        log.info("%d graphs (%d train) over %d concepts and %d predicates; %d held-out graphs match the base",
-                 len(image_graphs), len(image_graphs) - len(held_out), len(concepts), len(predicates), len(held_out))
+        log.info(
+            "%d graphs (%d train) over %d concepts and %d predicates; %d held-out graphs match the base",
+            len(image_graphs),
+            len(image_graphs) - len(held_out),
+            len(concepts),
+            len(predicates),
+            len(held_out),
+        )
     except AppError:
         log.exception("building the full graphs failed")
         return 1

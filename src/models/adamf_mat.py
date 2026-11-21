@@ -23,6 +23,7 @@ Differences from the paper, all forced by the retrieval setting:
   synthetic head compete for the caption in a two-way softmax, which is the paper's
   "real scores above synthetic" on the scale of the InfoNCE logits.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -49,8 +50,11 @@ def label_text_vectors(concept_vectors: torch.Tensor, batch: Batch) -> torch.Ten
     """
     is_object = batch.node_kind == NodeKind.OBJECT
     return scatter(
-        concept_vectors[batch.feature_row[is_object]], batch.batch[is_object],
-        dim=0, dim_size=batch.num_graphs, reduce="mean",
+        concept_vectors[batch.feature_row[is_object]],
+        batch.batch[is_object],
+        dim=0,
+        dim_size=batch.num_graphs,
+        reduce="mean",
     )
 
 
@@ -60,8 +64,8 @@ class AdamfMatConfig:
 
     dim: int
     adaptive_fusion: bool  # False: the joint embedding is the mean of the modalities ("w/o AdaMF")
-    mat: bool              # False: no generator, plain training ("w/o MAT")
-    mu: float              # weight of the adversarial term in the encoder's loss
+    mat: bool  # False: no generator, plain training ("w/o MAT")
+    mu: float  # weight of the adversarial term in the encoder's loss
     noise_dim: int
     generator_hidden_dim: int
     generator_learning_rate: float

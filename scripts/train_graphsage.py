@@ -311,18 +311,23 @@ def run(
         concepts = read_json(processed / "graph" / "concepts.json")
         predicate_text = {int(p["predicate_id"]): p["text"] for p in read_json(processed / "graph" / "predicates.json")}
         mentions = relation_mentions(
-            image_graphs, train_ids, [q for q in queries if q["split"] == Split.TRAIN.value],
-            {int(c["concept_id"]): (c["text"],) for c in concepts}, predicate_text,
+            image_graphs,
+            train_ids,
+            [q for q in queries if q["split"] == Split.TRAIN.value],
+            {int(c["concept_id"]): (c["text"],) for c in concepts},
+            predicate_text,
         )
         train = replace(train, relation_mentions=mentions)
         named = sum(1 for per_image in mentions for per_caption in per_image if per_caption)
-        log.info("predicate swap: %d of %d train captions name a triplet of their image",
-                 named, sum(len(per_image) for per_image in mentions))
+        log.info(
+            "predicate swap: %d of %d train captions name a triplet of their image",
+            named,
+            sum(len(per_image) for per_image in mentions),
+        )
     if config.training.hard_negative_group > 1:
         partners = hard_negative_partners(image_graphs, train_ids, HARD_NEGATIVE_PARTNERS)
         train = replace(train, partners=partners)
-        log.info("hard negatives: %d of %d train images have partners",
-                 sum(1 for p in partners if p), len(partners))
+        log.info("hard negatives: %d of %d train images have partners", sum(1 for p in partners if p), len(partners))
     val, _ = build_retrieval_set(Split.VAL, images, queries, image_graphs, image_table, query_table)
     graph_of = {int(g["vg_image_id"]): g for g in image_graphs}
     relation_file = processed / RELATION_QUERIES_DIR / "queries_val.json"
@@ -331,8 +336,11 @@ def run(
         relation_table = load_table(embeddings_dir / RELATION_QUERIES_DIR, "queries_val")
         relation_queries = [q for q in read_json(relation_file) if q["kind"] == QueryKind.RELATION.value]
         relation_validator = RelationValidator(
-            relation_queries, relation_table.select([q["query_id"] for q in relation_queries]),
-            graph_of, image_table.row_of(), config.training,
+            relation_queries,
+            relation_table.select([q["query_id"] for q in relation_queries]),
+            graph_of,
+            image_table.row_of(),
+            config.training,
         )
         log.info("relation validation: %d queries", len(relation_queries))
     elif config.training.selection_metric is SelectionMetric.RELATION:
@@ -363,9 +371,7 @@ def run(
         run_dir = RunDirectory(config.runs_dir / encoder.value / name / f"seed{seed}")
         if resume and run_dir.is_finished():
             # A result marker alone does not guarantee reusable local artifacts.
-            run_dir.validate_finished(
-                _settings(config, config_path, name, seed, data, encoder)
-            )
+            run_dir.validate_finished(_settings(config, config_path, name, seed, data, encoder))
             log.info("seed %d already finished in %s; skipped", seed, run_dir.path)
             continue
         resume_seed = resume and run_dir.has_progress()
@@ -489,8 +495,14 @@ def main() -> int:
             )
         seeds = args.seed or list(config.training.seeds)
         run(
-            config, args.config, args.name or encoder.default_run_name(config), seeds, handlers, encoder,
-            resume=args.resume, overwrite=args.overwrite,
+            config,
+            args.config,
+            args.name or encoder.default_run_name(config),
+            seeds,
+            handlers,
+            encoder,
+            resume=args.resume,
+            overwrite=args.overwrite,
         )
     except AppError:
         log.exception("training failed")

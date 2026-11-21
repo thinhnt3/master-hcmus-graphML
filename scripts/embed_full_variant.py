@@ -8,6 +8,7 @@ and test are identical to the base variant); only the extra train images and cap
 encoded. Concepts and predicates are the base tables (same vocabulary). Writes the tables
 and a meta.json that `verify_inputs_unchanged` accepts.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -60,14 +61,17 @@ def main() -> int:
         text_of = {q["query_id"]: q["text"] for q in queries}
         tables = {
             "images": _extend(
-                load_table(base_dir, "images"), list(image_ids),
+                load_table(base_dir, "images"),
+                list(image_ids),
                 lambda ids: encode_in_batches(
-                    [image_path(processed / "images", i) for i in ids], encoder.encode_image_files,
+                    [image_path(processed / "images", i) for i in ids],
+                    encoder.encode_image_files,
                     full.clip.image_batch_size,
                 ),
             ),
             "queries": _extend(
-                load_table(base_dir, "queries"), [q["query_id"] for q in queries],
+                load_table(base_dir, "queries"),
+                [q["query_id"] for q in queries],
                 lambda ids: encode_in_batches(
                     [text_of[i] for i in ids], encoder.encode_texts, full.clip.text_batch_size
                 ),
@@ -77,18 +81,25 @@ def main() -> int:
         }
         for name, table in tables.items():
             save_table(out_dir, name, table)
-        inputs = [processed / "images.json", processed / "queries.json",
-                  processed / "graph" / "concepts.json", processed / "graph" / "predicates.json"]
-        write_json(out_dir / META_FILE, {
-            "model_name": full.clip.model_name,
-            "device": encoder.device,
-            "base_embeddings": str(base_dir),
-            "tables": {
-                name: {"rows": len(t.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
-                for name, t in tables.items()
+        inputs = [
+            processed / "images.json",
+            processed / "queries.json",
+            processed / "graph" / "concepts.json",
+            processed / "graph" / "predicates.json",
+        ]
+        write_json(
+            out_dir / META_FILE,
+            {
+                "model_name": full.clip.model_name,
+                "device": encoder.device,
+                "base_embeddings": str(base_dir),
+                "tables": {
+                    name: {"rows": len(t.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
+                    for name, t in tables.items()
+                },
+                "inputs_sha256": {str(Path(p)): sha256_of(p) for p in inputs},
             },
-            "inputs_sha256": {str(Path(p)): sha256_of(p) for p in inputs},
-        })
+        )
         log.info("wrote %s", out_dir)
     except AppError:
         log.exception("embedding the full variant failed")

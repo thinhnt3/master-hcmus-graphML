@@ -1,4 +1,5 @@
 """Files of one training run: checkpoints, history and settings, written atomically."""
+
 from __future__ import annotations
 
 import shutil
@@ -23,8 +24,16 @@ TRACKER_ID_FILE = "tracker_run_id.txt"
 TRACKER_DIR = "wandb"
 # Everything a run may leave behind; removed when a run directory is started again.
 _RUN_ENTRIES = (
-    LAST_FILE, BEST_FILE, HISTORY_FILE, RESULT_FILE, SETTINGS_FILE, LOG_FILE,
-    f"{GRAPH_VECTORS}.npy", f"{GRAPH_VECTORS}.ids.json", TRACKER_ID_FILE, TRACKER_DIR,
+    LAST_FILE,
+    BEST_FILE,
+    HISTORY_FILE,
+    RESULT_FILE,
+    SETTINGS_FILE,
+    LOG_FILE,
+    f"{GRAPH_VECTORS}.npy",
+    f"{GRAPH_VECTORS}.ids.json",
+    TRACKER_ID_FILE,
+    TRACKER_DIR,
 )
 # Files whose presence means the directory already holds training progress.
 _PROGRESS_FILES = (LAST_FILE, BEST_FILE, HISTORY_FILE, RESULT_FILE)

@@ -31,6 +31,7 @@ Results go to <runs_dir>/clip/, <runs_dir>/graphsage/<graph>/ and
 <runs_dir>/adamf_mat/<model>/<graph>/: benchmark_images.json for the image gallery and
 benchmark.json for the place gallery. The adamf stage scores places only.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -109,7 +110,7 @@ class Gallery(StrEnum):
 class GalleryGrid:
     """Search grids that depend on the size of the gallery."""
 
-    top_ks: tuple[int, ...]        # candidates reranked
+    top_ks: tuple[int, ...]  # candidates reranked
     candidate_ks: tuple[int, ...]  # extra recall cut-offs of the CLIP report
 
 
@@ -118,8 +119,11 @@ def report_name(gallery: Gallery) -> str:
     return "benchmark_images.json" if gallery is Gallery.IMAGE else "benchmark.json"
 
 
-def gallery_grids(config: MkgwRetrievalConfig, raw: Mapping[str, Any], galleries: Sequence[Gallery],
-                  ) -> dict[Gallery, GalleryGrid]:
+def gallery_grids(
+    config: MkgwRetrievalConfig,
+    raw: Mapping[str, Any],
+    galleries: Sequence[Gallery],
+) -> dict[Gallery, GalleryGrid]:
     """Grids of each requested gallery: `benchmark` for places, `image_gallery` for images."""
     grids: dict[Gallery, GalleryGrid] = {}
     for gallery in galleries:
@@ -130,8 +134,11 @@ def gallery_grids(config: MkgwRetrievalConfig, raw: Mapping[str, Any], galleries
         values: dict[str, tuple[int, ...]] = {}
         for key in ("top_k_grid", "candidate_ks"):
             value = section.get(key)
-            if (not isinstance(value, list) or not value
-                    or not all(isinstance(v, int) and not isinstance(v, bool) and v >= 1 for v in value)):
+            if (
+                not isinstance(value, list)
+                or not value
+                or not all(isinstance(v, int) and not isinstance(v, bool) and v >= 1 for v in value)
+            ):
                 raise ConfigError(f"image_gallery.{key} must be a non-empty list of integers >= 1")
             values[key] = tuple(value)
         grids[gallery] = GalleryGrid(values["top_k_grid"], values["candidate_ks"])
@@ -152,11 +159,19 @@ def embed(config: MkgwRetrievalConfig, data: QueryConfig, image_dir: Path) -> No
     log.info("model=%s device=%s dim=%d", config.clip.model_name, encoder.device, encoder.dim)
     text_batch = config.clip.text_batch_size
     jobs: dict[str, tuple[list[Any], list[Any], Any, int]] = {
-        "entities": ([e["entity_id"] for e in entities], [e["name"] for e in entities],
-                     encoder.encode_texts, text_batch),
+        "entities": (
+            [e["entity_id"] for e in entities],
+            [e["name"] for e in entities],
+            encoder.encode_texts,
+            text_batch,
+        ),
         "queries": ([q["query_id"] for q in queries], [q["text"] for q in queries], encoder.encode_texts, text_batch),
-        "images": (image_ids, [image_dir / file for file in image_ids], encoder.encode_image_files,
-                   config.clip.image_batch_size),
+        "images": (
+            image_ids,
+            [image_dir / file for file in image_ids],
+            encoder.encode_image_files,
+            config.clip.image_batch_size,
+        ),
     }
     out_dir = config.model_embeddings_dir()
     tables = {}
@@ -164,16 +179,19 @@ def embed(config: MkgwRetrievalConfig, data: QueryConfig, image_dir: Path) -> No
         tables[name] = EmbeddingTable(ids=tuple(ids), vectors=encode_in_batches(items, encode, batch_size))
         save_table(out_dir, name, tables[name])
         log.info("%s: %s", name, tables[name].vectors.shape)
-    write_json(out_dir / META_FILE, {
-        "model_name": config.clip.model_name,
-        "device": encoder.device,
-        "dim": encoder.dim,
-        "tables": {
-            name: {"rows": len(table.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
-            for name, table in tables.items()
+    write_json(
+        out_dir / META_FILE,
+        {
+            "model_name": config.clip.model_name,
+            "device": encoder.device,
+            "dim": encoder.dim,
+            "tables": {
+                name: {"rows": len(table.ids), "sha256": {p.name: sha256_of(p) for p in table_paths(out_dir, name)}}
+                for name, table in tables.items()
+            },
+            "inputs_sha256": {str(p): sha256_of(p) for p in inputs.values()},
         },
-        "inputs_sha256": {str(p): sha256_of(p) for p in inputs.values()},
-    })
+    )
     log.info("wrote %s", out_dir)
 
 
@@ -189,8 +207,9 @@ def _load_splits(
     image_table = load_table(embeddings_dir, "images")
     query_table = load_table(embeddings_dir, "queries")
     build = build_image_split if gallery is Gallery.IMAGE else build_entity_split
-    splits: dict[Split, EntitySplit] = {s: build(s, entities, queries, image_table, query_table)
-                                        for s in (Split.VAL, Split.TEST)}
+    splits: dict[Split, EntitySplit] = {
+        s: build(s, entities, queries, image_table, query_table) for s in (Split.VAL, Split.TEST)
+    }
     return entities, relations, queries, splits
 
 
@@ -202,7 +221,10 @@ def _column_entities(split_data: EntitySplit, entities: Sequence[Mapping[str, An
 
 
 def _segments(
-    split_data: EntitySplit, scores: np.ndarray, relations: Sequence[Mapping[str, Any]], data: QueryConfig,
+    split_data: EntitySplit,
+    scores: np.ndarray,
+    relations: Sequence[Mapping[str, Any]],
+    data: QueryConfig,
     ks: Sequence[int],
 ) -> dict[str, dict[str, float]]:
     """Report segments of the shared benchmark plus one per density tier of the indirect queries."""
@@ -224,15 +246,28 @@ def run_clip(config: MkgwRetrievalConfig, data: QueryConfig, gallery: Gallery, g
     """Rank the gallery for every val and test query with CLIP cosine; write the report."""
     entities, relations, _, splits = _load_splits(config, data, gallery)
     ks = sorted({*config.recall_ks, *grid.candidate_ks})
-    report: dict[str, Any] = {"model_name": config.clip.model_name, "gallery": gallery.value,
-                              "gallery_size": int(splits[Split.TEST].clip_scores.shape[1]), "splits": {}}
+    report: dict[str, Any] = {
+        "model_name": config.clip.model_name,
+        "gallery": gallery.value,
+        "gallery_size": int(splits[Split.TEST].clip_scores.shape[1]),
+        "splits": {},
+    }
     for split, split_data in splits.items():
         segments = _segments(split_data, split_data.clip_scores, relations, data, ks)
         report["splits"][split.value] = {"queries": len(split_data.queries), "segments": segments}
         for name, row in segments.items():
             if name.startswith(_LOGGED_PREFIXES):
-                log.info("%-5s %-5s %-26s n=%4d R@1 %.3f R@5 %.3f R@10 %.3f MRR %.3f", gallery.value, split.value,
-                         name, row["answers"], row["recall@1"], row["recall@5"], row["recall@10"], row["mrr"])
+                log.info(
+                    "%-5s %-5s %-26s n=%4d R@1 %.3f R@5 %.3f R@10 %.3f MRR %.3f",
+                    gallery.value,
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"],
+                    row["recall@5"],
+                    row["recall@10"],
+                    row["mrr"],
+                )
     out_path = config.runs_dir / "clip" / report_name(gallery)
     write_json(out_path, report)
     log.info("wrote %s", out_path)
@@ -299,14 +334,21 @@ def _train_queries(
 def _summary(per_seed: Sequence[Mapping[str, Mapping[str, float]]]) -> dict[str, Any]:
     """Mean and std over seeds of each metric, per report segment."""
     return {
-        name: {"answers": per_seed[0][name]["answers"],
-               **aggregate_runs([{m: seed[name][m] for m in _METRICS} for seed in per_seed])}
+        name: {
+            "answers": per_seed[0][name]["answers"],
+            **aggregate_runs([{m: seed[name][m] for m in _METRICS} for seed in per_seed]),
+        }
         for name in per_seed[0]
     }
 
 
-def run_graphsage(config: MkgwRetrievalConfig, data: QueryConfig, graph_name: str, reuse_vectors: bool,
-                  grids: Mapping[Gallery, GalleryGrid]) -> None:
+def run_graphsage(
+    config: MkgwRetrievalConfig,
+    data: QueryConfig,
+    graph_name: str,
+    reuse_vectors: bool,
+    grids: Mapping[Gallery, GalleryGrid],
+) -> None:
     """Train one encoder per seed on one graph variant; score it alone and fused with CLIP per gallery.
 
     With `reuse_vectors` the entity vectors of an earlier run are scored again instead of
@@ -327,8 +369,9 @@ def run_graphsage(config: MkgwRetrievalConfig, data: QueryConfig, graph_name: st
         previous = read_json(place_report)["seeds"] if place_report.is_file() else {}
         for seed in config.training.seeds:
             vectors[seed] = np.load(out_dir / f"seed-{seed}" / "entity_vectors.npy")
-            trained[seed] = {key: previous[str(seed)][key] for key in ("best_epoch", "stop_reason")
-                             if str(seed) in previous}
+            trained[seed] = {
+                key: previous[str(seed)][key] for key in ("best_epoch", "stop_reason") if str(seed) in previous
+            }
     else:
         entity_features = torch.from_numpy(load_table(embeddings_dir, "entities").select(list(range(len(entities)))))
         column_of = gallery_columns(entities)
@@ -336,10 +379,20 @@ def run_graphsage(config: MkgwRetrievalConfig, data: QueryConfig, graph_name: st
         triples = torch.tensor(graph, dtype=torch.long).reshape(-1, 3)
         train = _train_queries(queries, query_table, column_of, fact_rows)
         val_data = place_splits[Split.VAL]
-        val = KgQuerySet(torch.from_numpy(query_table.select([q["query_id"] for q in val_data.queries])),
-                         val_data.relevant, val_data.known, [[] for _ in val_data.queries])
-        log.info("graph=%s triples=%d train queries=%d (own fact removed for %d) places=%d", graph_name, len(graph),
-                 len(train.relevant), sum(bool(rows) for rows in train.own_triples), len(places))
+        val = KgQuerySet(
+            torch.from_numpy(query_table.select([q["query_id"] for q in val_data.queries])),
+            val_data.relevant,
+            val_data.known,
+            [[] for _ in val_data.queries],
+        )
+        log.info(
+            "graph=%s triples=%d train queries=%d (own fact removed for %d) places=%d",
+            graph_name,
+            len(graph),
+            len(train.relevant),
+            sum(bool(rows) for rows in train.own_triples),
+            len(places),
+        )
         for seed in config.training.seeds:
             seed_everything(seed)  # weights are drawn when the model is built
             model = KgEntityEncoder(config.graphsage, entity_features, len(relations))
@@ -362,14 +415,14 @@ def run_graphsage(config: MkgwRetrievalConfig, data: QueryConfig, graph_name: st
         graph_only: dict[Split, list[dict[str, dict[str, float]]]] = {s: [] for s in splits}
         for seed in config.training.seeds:
             column_vectors = vectors[seed][columns]
-            scores = {s: query_table.select([q["query_id"] for q in d.queries]) @ column_vectors.T
-                      for s, d in splits.items()}
+            scores = {
+                s: query_table.select([q["query_id"] for q in d.queries]) @ column_vectors.T for s, d in splits.items()
+            }
             selected = select_alpha_top_k(splits[Split.VAL], scores[Split.VAL], config.alpha_grid, grid.top_ks)
             seeds[str(seed)] = {**trained[seed], "selected": selected}
             log.info("%s seed %d selected on val: %s", gallery.value, seed, selected)
             for split, split_data in splits.items():
-                fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"],
-                                      int(selected["top_k"]))
+                fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"], int(selected["top_k"]))
                 reranked[split].append(_segments(split_data, fused, relations, data, config.recall_ks))
                 graph_only[split].append(_segments(split_data, scores[split], relations, data, config.recall_ks))
 
@@ -380,18 +433,28 @@ def run_graphsage(config: MkgwRetrievalConfig, data: QueryConfig, graph_name: st
             "model_name": config.clip.model_name,
             "graph_triples": len(graph),
             "seeds": seeds,
-            "splits": {s.value: {"reranked": _summary(reranked[s]), "graph_only": _summary(graph_only[s])}
-                       for s in splits},
+            "splits": {
+                s.value: {"reranked": _summary(reranked[s]), "graph_only": _summary(graph_only[s])} for s in splits
+            },
         }
         write_json(out_dir / report_name(gallery), report)
         for split in splits:
             for name, row in report["splits"][split.value]["reranked"].items():
                 if name.startswith(_LOGGED_PREFIXES):
                     alone = report["splits"][split.value]["graph_only"][name]
-                    log.info("%-5s %-5s %-26s n=%4d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f "
-                             "R@10 %.3f", gallery.value, split.value, name, row["answers"], row["recall@1"]["mean"],
-                             row["recall@1"]["std"], row["recall@10"]["mean"], row["mrr"]["mean"],
-                             alone["recall@1"]["mean"], alone["recall@10"]["mean"])
+                    log.info(
+                        "%-5s %-5s %-26s n=%4d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
+                        gallery.value,
+                        split.value,
+                        name,
+                        row["answers"],
+                        row["recall@1"]["mean"],
+                        row["recall@1"]["std"],
+                        row["recall@10"]["mean"],
+                        row["mrr"]["mean"],
+                        alone["recall@1"]["mean"],
+                        alone["recall@10"]["mean"],
+                    )
         log.info("wrote %s", out_dir / report_name(gallery))
 
 
@@ -410,17 +473,25 @@ def _link_scores(model: KgAdamfMat, data: EntitySplit, gallery: np.ndarray, batc
     rows = [row for row, q in enumerate(data.queries) if q["anchor_id"] is not None]
     scores = np.zeros(data.clip_scores.shape, dtype=np.float32)
     for start in range(0, len(rows), batch_size):
-        batch = rows[start:start + batch_size]
+        batch = rows[start : start + batch_size]
         queries = [data.queries[row] for row in batch]
-        raw = score(np.array([q["anchor_id"] for q in queries]), np.array([q["relation_id"] for q in queries]),
-                    np.array([q["direction"] == "tail" for q in queries]))[:, gallery]
+        raw = score(
+            np.array([q["anchor_id"] for q in queries]),
+            np.array([q["relation_id"] for q in queries]),
+            np.array([q["direction"] == "tail" for q in queries]),
+        )[:, gallery]
         low, high = raw.min(axis=1, keepdims=True), raw.max(axis=1, keepdims=True)
         scores[batch] = (raw - low) / np.maximum(high - low, 1e-12)
     return scores
 
 
-def run_adamf(config: MkgwRetrievalConfig, data: QueryConfig, model_config: KgAdamfMatConfig,
-              training: KgAdamfTrainingConfig, graph_name: str) -> None:
+def run_adamf(
+    config: MkgwRetrievalConfig,
+    data: QueryConfig,
+    model_config: KgAdamfMatConfig,
+    training: KgAdamfTrainingConfig,
+    graph_name: str,
+) -> None:
     """Train one AdaMF-MAT model per seed on one graph variant; score link prediction and retrieval."""
     entities, relations, _, splits = _load_splits(config, data)
     embeddings_dir = config.model_embeddings_dir()
@@ -439,8 +510,15 @@ def run_adamf(config: MkgwRetrievalConfig, data: QueryConfig, model_config: KgAd
     known = [*graph_triples(graph_name.removesuffix(_SHUFFLED), all_triples, config.path_shuffle_seed), *val, *test]
     completions = known_completions(known)
     out_dir = config.runs_dir / "adamf_mat" / model_config.run_name() / graph_name
-    log.info("model=%s graph=%s triples=%d val=%d test=%d gallery=%d", model_config.run_name(), graph_name,
-             len(graph), len(val), len(test), len(gallery))
+    log.info(
+        "model=%s graph=%s triples=%d val=%d test=%d gallery=%d",
+        model_config.run_name(),
+        graph_name,
+        len(graph),
+        len(val),
+        len(test),
+        len(gallery),
+    )
 
     seeds: dict[str, Any] = {}
     link: list[dict[str, float]] = []
@@ -457,10 +535,18 @@ def run_adamf(config: MkgwRetrievalConfig, data: QueryConfig, model_config: KgAd
         link.append(link_prediction_metrics(score_fn(model), test, completions, training.eval_batch_size))
         scores = {s: _link_scores(model, d, gallery, training.eval_batch_size) for s, d in splits.items()}
         selected = select_alpha_top_k(splits[Split.VAL], scores[Split.VAL], config.alpha_grid, config.top_k_grid)
-        seeds[str(seed)] = {"best_epoch": result.best_epoch, "stop_reason": result.stop_reason.value,
-                            "selected": selected}
-        log.info("seed %d best epoch %d, test link prediction %s, selected on val: %s", seed, result.best_epoch,
-                 {k: round(v, 4) for k, v in link[-1].items()}, selected)
+        seeds[str(seed)] = {
+            "best_epoch": result.best_epoch,
+            "stop_reason": result.stop_reason.value,
+            "selected": selected,
+        }
+        log.info(
+            "seed %d best epoch %d, test link prediction %s, selected on val: %s",
+            seed,
+            result.best_epoch,
+            {k: round(v, 4) for k, v in link[-1].items()},
+            selected,
+        )
         for split, split_data in splits.items():
             fused = rerank_scores(split_data.clip_scores, scores[split], selected["alpha"], int(selected["top_k"]))
             reranked[split].append(_segments(split_data, fused, relations, data, config.recall_ks))
@@ -473,20 +559,28 @@ def run_adamf(config: MkgwRetrievalConfig, data: QueryConfig, model_config: KgAd
         "graph_triples": len(graph),
         "seeds": seeds,
         "link_prediction": aggregate_runs(link),
-        "splits": {s.value: {"reranked": _summary(reranked[s]), "graph_only": _summary(graph_only[s])}
-                   for s in splits},
+        "splits": {s.value: {"reranked": _summary(reranked[s]), "graph_only": _summary(graph_only[s])} for s in splits},
     }
     write_json(out_dir / "benchmark.json", report)
-    log.info("test link prediction over seeds: %s",
-             {k: round(v["mean"], 4) for k, v in report["link_prediction"].items()})
+    log.info(
+        "test link prediction over seeds: %s", {k: round(v["mean"], 4) for k, v in report["link_prediction"].items()}
+    )
     for split in splits:
         for name, row in report["splits"][split.value]["reranked"].items():
             if name.startswith(_LOGGED_PREFIXES):
                 alone = report["splits"][split.value]["graph_only"][name]
-                log.info("%-5s %-26s n=%4d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
-                         split.value, name, row["answers"], row["recall@1"]["mean"], row["recall@1"]["std"],
-                         row["recall@10"]["mean"], row["mrr"]["mean"],
-                         alone["recall@1"]["mean"], alone["recall@10"]["mean"])
+                log.info(
+                    "%-5s %-26s n=%4d rerank R@1 %.3f±%.3f R@10 %.3f MRR %.3f | graph only R@1 %.3f R@10 %.3f",
+                    split.value,
+                    name,
+                    row["answers"],
+                    row["recall@1"]["mean"],
+                    row["recall@1"]["std"],
+                    row["recall@10"]["mean"],
+                    row["mrr"]["mean"],
+                    alone["recall@1"]["mean"],
+                    alone["recall@10"]["mean"],
+                )
     log.info("wrote %s", out_dir / "benchmark.json")
 
 
@@ -494,15 +588,27 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", default=DEFAULT_CONFIG)
     parser.add_argument("--stage", required=True, choices=["embed", "clip", "graphsage", "adamf"])
-    parser.add_argument("--graphs", nargs="+", default=[_CLAIMS],
-                        help="graph variants of the graphsage and adamf stages")
-    parser.add_argument("--structure-only", action="store_true",
-                        help="adamf stage: no image or text modality and no MAT, i.e. plain RotatE")
-    parser.add_argument("--gallery", nargs="+", default=[g.value for g in Gallery],
-                        choices=[g.value for g in Gallery], help="galleries of the clip and graphsage stages")
+    parser.add_argument(
+        "--graphs", nargs="+", default=[_CLAIMS], help="graph variants of the graphsage and adamf stages"
+    )
+    parser.add_argument(
+        "--structure-only",
+        action="store_true",
+        help="adamf stage: no image or text modality and no MAT, i.e. plain RotatE",
+    )
+    parser.add_argument(
+        "--gallery",
+        nargs="+",
+        default=[g.value for g in Gallery],
+        choices=[g.value for g in Gallery],
+        help="galleries of the clip and graphsage stages",
+    )
     parser.add_argument("--image-dir", help="override paths.image_dir of the query config")
-    parser.add_argument("--reuse-vectors", action="store_true",
-                        help="graphsage stage: score the saved entity vectors again instead of training")
+    parser.add_argument(
+        "--reuse-vectors",
+        action="store_true",
+        help="graphsage stage: score the saved entity vectors again instead of training",
+    )
     parser.add_argument("--split-seed", type=int, help="use the task built with the same --split-seed")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
