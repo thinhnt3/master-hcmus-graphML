@@ -1,60 +1,162 @@
 # 3. Mô hình: từ đồ thị cảnh đến điểm đồ thị
 
-Trong dự án này, GraphSAGE là **bộ mã hoá biến một đồ thị thành một vector**. Nó không sinh đồ thị từ ảnh, vì đồ thị đã có sẵn từ Visual Genome (xem tài liệu 2). Việc của GraphSAGE là đọc đồ thị của một ảnh và trả về một vector 512 số, nằm trong cùng không gian với vector câu của CLIP.
+> **Nói đơn giản.** Mỗi ảnh có sẵn một sơ đồ ghi trong ảnh có vật gì, và vật nào làm gì với vật nào. GraphSAGE đọc sơ đồ đó qua 3 vòng “hỏi hàng xóm”, rồi tóm cả sơ đồ thành một dãy 512 số, gọi là **vector đồ thị**. Mô hình được luyện để vector này giống vector CLIP của câu mô tả đúng. **Điểm đồ thị** chính là độ giống nhau giữa hai vector đó.
 
-## Đồ thị con của một ảnh
+GraphSAGE ở đây là bộ mã hoá **biến một đồ thị thành một vector**. Nó không tự nhìn ảnh và không sinh đồ thị: đồ thị có sẵn từ nhãn do người gán của Visual Genome (xem [tài liệu 2](02-du-lieu.md)).
 
-Mỗi ảnh là một đồ thị nhỏ, tách riêng khỏi các ảnh khác:
+Phần GraphSAGE đi qua sáu bước:
+
+| Bước | Việc | Ví von |
+|---|---|---|
+| [1](#bước-1-đồ-thị-con-của-một-ảnh) | Dựng đồ thị của ảnh | Vẽ sơ đồ: trong ảnh có gì, ai làm gì với ai |
+| [2](#bước-2-mỗi-đỉnh-bắt-đầu-bằng-một-dãy-số) | Gán dãy số ban đầu cho từng đỉnh | Mỗi ô trong sơ đồ có một “hồ sơ” ban đầu |
+| [3](#bước-3-ba-vòng-hỏi-hàng-xóm) | Ba vòng hỏi hàng xóm | Cả lớp hỏi bạn ngồi cạnh, ba lượt |
+| [4](#bước-4-tóm-cả-đồ-thị-thành-một-vector) | Tóm thành một vector | Đỉnh ảnh viết bản tóm tắt |
+| [5](#bước-5-học-bằng-trò-chơi-ghép-cặp) | Học | Trò chơi ghép ảnh với câu của nó |
+| [6](#bước-6-chấm-điểm-lúc-tìm-ảnh) | Chấm điểm lúc tìm ảnh | So bản tóm tắt với câu hỏi |
+
+## Bước 1. Đồ thị con của một ảnh
+
+> **Nói đơn giản.** Sơ đồ của một ảnh được vẽ thành các ô (**đỉnh**) nối nhau bằng mũi tên (**cạnh**). Mỗi quan hệ, như “cắt”, cũng thành một ô nhỏ nằm giữa hai vật.
+
+Ví dụ thật: ảnh test 2350042, có câu mô tả “Woman is just about to cut birthday cake as friends are around.” Người gán nhãn đã ghi các vật (woman, cake, candle, knife…) và các quan hệ (woman cutting cake, candle on cake…). Mỗi ảnh có một đồ thị nhỏ của riêng nó:
 
 ![Đồ thị con của ảnh 2350042](images/do-thi-con-anh-2350042.svg)
 
 Đồ thị có ba loại đỉnh:
 
-- **Đỉnh ảnh:** mỗi ảnh có một đỉnh, nối tới mọi đối tượng bằng cạnh "chứa".
-- **Đỉnh đối tượng:** mỗi khái niệm có trong ảnh là một đỉnh.
-- **Đỉnh phụ:** mỗi relation là một đỉnh, mang nhãn vị từ và đặt giữa chủ thể với đối tượng, ví dụ `woman → (cutting) → cake`.
+- **Đỉnh ảnh:** mỗi ảnh một đỉnh, có cạnh “chứa” tới mọi vật của ảnh.
+- **Đỉnh đối tượng:** mỗi khái niệm có trong ảnh là một đỉnh. Hai người phụ nữ trong ảnh vẫn chung một đỉnh `woman`.
+- **Đỉnh phụ (relation):** mỗi quan hệ thành một đỉnh mang tên vị từ, đặt giữa chủ thể và đối tượng: `woman → (cutting) → cake`. Chiều mũi tên cho biết ai là chủ thể (woman), ai là đối tượng (cake).
 
-Vì sao cần đỉnh phụ? Lớp GraphSAGE chỉ đọc được vector trên đỉnh, không đọc được nhãn trên cạnh. Nếu chỉ nối `woman — cake`, mô hình không phân biệt được "woman cutting cake" với "woman next to cake". Khi vị từ được đặt thành một đỉnh, nó có vector riêng và được đưa vào tính toán. Về ý nghĩa, relation vẫn là quan hệ giữa hai đối tượng; đỉnh phụ chỉ là cách lưu.
+**Vì sao cần đỉnh phụ?** GraphSAGE chỉ đọc được nội dung của đỉnh, không đọc được chữ ghi trên mũi tên. Nếu chỉ nối `woman — cake`, mô hình không phân biệt được “woman cutting cake” với “woman next to cake”. Khi vị từ thành một đỉnh, nó có vector riêng và được đưa vào tính toán. Về ý nghĩa, relation vẫn là quan hệ giữa hai vật; đỉnh phụ chỉ là cách lưu.
 
-Các đồ thị con không nối với nhau, nên qua đồ thị, ảnh test không thể ảnh hưởng tới ảnh train.
+**Mỗi ảnh một đồ thị riêng.** Các đồ thị không nối với nhau, nên qua đồ thị, ảnh test không thể ảnh hưởng tới ảnh train.
 
-**Vector ban đầu của từng loại đỉnh:**
+Code: `src/models/graph_data.py`. Kiến thức nền: [A4. Đồ thị](phu-luc-a-kien-thuc-nen.md#a4-đồ-thị-đỉnh-cạnh-có-hướng-edge_index), [A5. Đồ thị cảnh](phu-luc-a-kien-thuc-nen.md#a5-đồ-thị-cảnh-visual-genome-và-wordnet).
+
+## Bước 2. Mỗi đỉnh bắt đầu bằng một dãy số
+
+> **Nói đơn giản.** Máy tính không hiểu chữ, nên trước khi tính, mỗi đỉnh được đổi thành một dãy 512 con số, gọi là **vector**.
 
 | Đỉnh | Vector ban đầu |
 |---|---|
-| Đối tượng | Vector CLIP văn bản của chữ trên đỉnh, ví dụ "woman" |
-| Đỉnh phụ | Vector CLIP văn bản của vị từ, ví dụ "cutting" |
-| Ảnh, trong mô hình chính | Một vector học được, **dùng chung cho mọi ảnh**. Đỉnh ảnh không biết gì về điểm ảnh, nên vector đồ thị chỉ đến từ cấu trúc của đồ thị |
-| Ảnh, trong biến thể | Vector CLIP của chính ảnh đó. Biến thể này thường cho số cao hơn, nhưng điểm đồ thị của nó đã lẫn thông tin CLIP của ảnh |
+| Đối tượng | Vector CLIP văn bản của chữ trên đỉnh, ví dụ “woman” |
+| Đỉnh phụ | Vector CLIP văn bản của vị từ, ví dụ “cutting” |
+| Ảnh, trong mô hình chính | Một vector học được, **dùng chung cho mọi ảnh** |
+| Ảnh, trong biến thể | Vector CLIP của chính ảnh đó |
 
-Mô hình chính dùng đỉnh ảnh chung để trả lời rõ ràng câu hỏi: phần cải thiện có thật sự đến từ đồ thị không?
+Lấy vector từ CLIP có lợi: CLIP đã học nghĩa của chữ, nên hai chữ gần nghĩa như “cake” và “pie” bắt đầu bằng hai vector gần nhau.
 
-## Ba tầng GraphSAGE
+**Vì sao đỉnh ảnh của mô hình chính dùng vector chung?** Vì như vậy, đỉnh ảnh không biết gì về ảnh của mình; mọi thông tin phải đi tới nó qua đồ thị. Nhờ đó trả lời rõ được câu hỏi: phần cải thiện có thật sự đến từ đồ thị không? Biến thể dùng vector CLIP của ảnh thường cho số cao hơn, nhưng điểm đồ thị của nó đã lẫn thông tin CLIP của ảnh.
 
-Ở mỗi tầng, mọi đỉnh lấy trung bình vector của các hàng xóm rồi trộn với vector của chính nó. Sau mỗi tầng, đỉnh ảnh "nhìn" xa thêm một bước:
+## Bước 3. Ba vòng hỏi hàng xóm
+
+> **Nói đơn giản.** Ở mỗi vòng, mọi đỉnh cùng lúc cập nhật vector của mình bằng cách trộn vector của chính nó với trung bình vector của các đỉnh kề bên. Sau mỗi vòng, đỉnh ảnh “nghe” xa thêm một bước. Mỗi vòng là một **tầng** GraphSAGE; mô hình có 3 tầng.
+
+**Ví von.** Cả lớp ngồi theo sơ đồ chỗ ngồi. Mỗi vòng, ai cũng hỏi các bạn ngồi cạnh rồi ghi lại điều mới biết. Sau vòng 1, mỗi bạn biết về các bạn ngồi cạnh; sau vòng 2, biết cả bạn của bạn; sau vòng 3, biết xa thêm một bước nữa.
+
+Cụ thể, ở mỗi vòng, vector mới của một đỉnh được trộn từ ba thứ:
+
+1. vector hiện tại của chính nó;
+2. trung bình vector của các đỉnh **trỏ tới nó**;
+3. trung bình vector của các đỉnh **nó trỏ tới**.
+
+Tỉ lệ trộn không do người đặt, mà do mô hình tự học ở bước 5. Hai chiều mũi tên được trộn bằng **hai bộ tỉ lệ khác nhau**; nếu dùng chung, “man riding horse” và “horse riding man” sẽ cho cùng một vector.
+
+Hình dưới dùng đồ thị rút gọn: ảnh → woman, ảnh → cake, woman → (cutting) → cake. Ô tô màu là những gì đã tới được đỉnh ảnh:
 
 ![Ba tầng GraphSAGE](images/graphsage-3-tang.svg)
 
-- **Tầng 1:** ảnh biết mình có những vật gì.
-- **Tầng 2:** ảnh biết vai của từng vật trong relation: `woman` là chủ thể của một `cutting`, còn `cake` là đối tượng của một `cutting`. Nếu ảnh chỉ có một relation `cutting` thì hai tầng là đủ.
-- **Tầng 3:** ảnh biết hai đầu của cùng một relation đi với nhau. Tầng này cần thiết khi một ảnh có nhiều relation cùng vị từ. Ví dụ, "man riding bicycle, woman riding horse" phải cho vector khác với "man riding horse, woman riding bicycle". Với chỉ hai tầng, hai ảnh này cho cùng một vector; điều này được kiểm bằng test `test_two_layers_know_each_objects_role_and_three_layers_know_who_goes_with_whom`.
+| Sau vòng | Đỉnh ảnh biết thêm | Vì sao |
+|---|---|---|
+| 0 (ban đầu) | Chưa biết gì về ảnh này | Nó chỉ có vector chung cho mọi ảnh |
+| 1 | Ảnh có woman và cake | Đỉnh ảnh nghe các đỉnh nó trỏ tới, tức các vật |
+| 2 | woman là chủ thể của một “cutting”; cake là đối tượng của một “cutting” | Ở vòng 1, mỗi vật đã nghe đỉnh cutting nằm cạnh nó; ở vòng 2, đỉnh ảnh nghe lại các vật |
+| 3 | woman và cake là hai đầu của **cùng một** “cutting”: chính woman cắt chính cake | Ở vòng 1, đỉnh cutting đã nghe cả hai đầu; tin đó tới các vật ở vòng 2, tới đỉnh ảnh ở vòng 3 |
 
-**Có hướng.** Nếu thông tin truyền qua cạnh theo cả hai chiều với cùng một bộ trọng số, "man riding horse" và "horse riding man" sẽ cho cùng một vector. Vì vậy mỗi tầng có hai lớp `SAGEConv` (lấy từ thư viện PyTorch Geometric): một lớp gom tin theo chiều cạnh, một lớp gom tin ngược chiều cạnh, rồi cộng kết quả lại. Config có cờ `directed: false` để tắt hướng khi làm ablation.
+**Vì sao cần đúng 3 vòng?** Nếu ảnh chỉ có một relation `cutting` thì 2 vòng là đủ. Vòng 3 cần khi một ảnh có nhiều relation cùng vị từ: “man riding bicycle, woman riding horse” phải cho vector khác “man riding horse, woman riding bicycle”. Chỉ với 2 vòng, hai ảnh này cho cùng một vector; điều này được kiểm bằng test `test_two_layers_know_each_objects_role_and_three_layers_know_who_goes_with_whom`.
 
-**Đầu ra.**
+<details>
+<summary>Công thức một vòng và chi tiết cài đặt</summary>
 
-- Giữa các tầng có ReLU. Sau tầng cuối thì không, vì vector CLIP có cả số âm.
-- Sau tầng 3, vector của đỉnh ảnh đi qua một tầng chiếu tuyến tính rồi được chuẩn hoá về độ dài 1. Kết quả là **vector đồ thị** của ảnh.
-- Mô hình có 3,41 triệu tham số học được, với chiều ẩn 512.
+Với $\mathbf{h}_i^{(\ell)}$ là vector của đỉnh $i$ sau $\ell$ vòng:
 
-## Huấn luyện
+$$
+\mathbf{h}_i^{(\ell+1)}=\sigma\Bigl(W_1^{(\ell)}\mathbf{h}_i^{(\ell)}+W_2^{(\ell)}\operatorname*{mean}_{j\to i}\mathbf{h}_j^{(\ell)}+W_3^{(\ell)}\operatorname*{mean}_{i\to j}\mathbf{h}_j^{(\ell)}\Bigr)
+$$
+
+- $j\to i$ là các đỉnh trỏ tới $i$; $i\to j$ là các đỉnh mà $i$ trỏ tới. $W_1, W_2, W_3$ là các ma trận học được, mỗi vòng một bộ riêng. Hệ số tự do được bỏ qua cho gọn.
+- $\sigma$ là ReLU ở vòng 1 và 2. Vòng 3 không có ReLU, vì vector CLIP có cả số âm.
+- Trong code, mỗi vòng là `DirectedSAGELayer` (`src/models/graphsage.py`): tổng của hai lớp `SAGEConv` của PyTorch Geometric, một lớp gom tin theo chiều cạnh, một lớp ngược chiều cạnh. Phần vector của chính đỉnh có ở cả hai lớp; cộng lại thành $W_1$. Config có cờ `directed: false` để tắt hướng khi làm ablation.
+- Mỗi `SAGEConv` là GraphSAGE biến thể trung bình, xem [A8](phu-luc-a-kien-thuc-nen.md#a8-mạng-nơ-ron-đồ-thị-gcn-gat-graphsage). Một tầng tính bằng số cụ thể có ở [B3](phu-luc-b-tinh-tay-tu-dau-den-cuoi.md#b3-graphsage-tầng-1).
+
+</details>
+
+## Bước 4. Tóm cả đồ thị thành một vector
+
+> **Nói đơn giản.** Sau vòng 3, đỉnh ảnh đã nghe được cả đồ thị. Vector của nó, sau một phép biến đổi cuối, là bản tóm tắt của cả ảnh.
+
+- Vector của đỉnh ảnh sau vòng 3 đi qua một **tầng chiếu** tuyến tính để về cùng không gian với CLIP, rồi được chuẩn hoá về độ dài 1. Kết quả là **vector đồ thị** của ảnh, gồm 512 số.
+- Toàn bộ mô hình có 3,41 triệu tham số học được, với chiều ẩn 512.
+- Sau khi huấn luyện, vector đồ thị của cả 10.000 ảnh được tính một lần rồi lưu lại.
+
+<details>
+<summary>Công thức</summary>
+
+$$
+\mathbf{g}=\frac{P\mathbf{h}_{\text{img}}^{(3)}}{\lVert P\mathbf{h}_{\text{img}}^{(3)}\rVert}
+$$
+
+$P$ là tầng chiếu, $\mathbf{h}_{\text{img}}^{(3)}$ là vector của đỉnh ảnh sau vòng 3. Chuẩn hoá được giải thích ở [A7](phu-luc-a-kien-thuc-nen.md#a7-tầng-tuyến-tính-relu-và-chuẩn-hoá); tính bằng số ở [B5](phu-luc-b-tinh-tay-tu-dau-den-cuoi.md#b5-tầng-chiếu-và-chuẩn-hoá-vector-đồ-thị).
+
+</details>
+
+## Bước 5. Học bằng trò chơi ghép cặp
+
+> **Nói đơn giản.** Lúc đầu, các tỉ lệ trộn là ngẫu nhiên nên vector đồ thị chưa mang nghĩa gì. Mô hình học bằng một trò chơi ghép: trong một nhóm ảnh và câu, mỗi ảnh phải nhận ra câu của mình, và mỗi câu phải nhận ra ảnh của mình.
 
 ![Huấn luyện bằng InfoNCE](images/huan-luyen-infonce.svg)
 
-- **Batch.** Mỗi batch gồm 256 ảnh train. Mỗi ảnh có một vector đồ thị (do GraphSAGE tạo) và một vector caption (do CLIP tạo, từ 1 trong 5 caption được chọn ngẫu nhiên ở mỗi vòng).
-- **Hàm mất mát.** Một bảng điểm 256 × 256 so mọi vector đồ thị với mọi vector caption. **InfoNCE** đẩy điểm của cặp đúng (trên đường chéo) lên cao hơn mọi cặp sai. Việc này làm theo cả hai chiều: từ ảnh tìm caption, và từ caption tìm ảnh.
-- **Phần được học.** CLIP đóng băng. Chỉ GraphSAGE, tầng chiếu và vector dùng chung của đỉnh ảnh được cập nhật.
-- **Dừng sớm.** Sau mỗi vòng, đo R@1 của riêng điểm đồ thị trên 1.500 ảnh validation. Vòng tốt nhất được lưu thành `best.pt`. Huấn luyện dừng khi 5 vòng liên tiếp không tốt hơn, tối đa 50 vòng.
+1. **Lấy một nhóm (batch).** 256 ảnh train, mỗi ảnh một lần, kèm một câu mô tả của chính nó, chọn ngẫu nhiên 1 trong 5 câu ở mỗi vòng.
+2. **Lập bảng điểm 256 × 256.** So vector đồ thị của mọi ảnh với vector CLIP của mọi câu.
+3. **Chỉnh tỉ lệ trộn.** Đẩy điểm của cặp đúng (đường chéo) lên cao hơn mọi cặp sai, theo cả hai chiều: từ ảnh tìm câu, và từ câu tìm ảnh. Cách học này gọi là **InfoNCE** (học tương phản).
+4. **Lặp lại và dừng sớm.** Sau mỗi vòng, đo R@1 của riêng điểm đồ thị trên 1.500 ảnh validation; vòng tốt nhất được lưu thành `best.pt`. Dừng khi 5 vòng liên tiếp không tốt hơn, tối đa 50 vòng.
+
+CLIP đóng băng. Chỉ GraphSAGE, tầng chiếu và vector dùng chung của đỉnh ảnh được cập nhật.
+
+Thu nhỏ còn 4 ảnh để dễ hình dung (số minh hoạ; ô in đậm là cặp đúng). Trước khi học, ô của cặp đúng không nổi bật; ở hàng ảnh A, ô cao nhất còn rơi vào câu của B:
+
+| Trước khi học | câu của A | câu của B | câu của C | câu của D |
+|---|---|---|---|---|
+| ảnh A | **0,21** | 0,35 | 0,18 | 0,27 |
+| ảnh B | 0,30 | **0,12** | 0,25 | 0,22 |
+| ảnh C | 0,16 | 0,28 | **0,24** | 0,31 |
+| ảnh D | 0,26 | 0,19 | 0,33 | **0,20** |
+
+Sau khi học, trong mỗi hàng và mỗi cột, ô của cặp đúng đều cao nhất:
+
+| Sau khi học | câu của A | câu của B | câu của C | câu của D |
+|---|---|---|---|---|
+| ảnh A | **0,62** | 0,21 | 0,15 | 0,18 |
+| ảnh B | 0,19 | **0,58** | 0,22 | 0,12 |
+| ảnh C | 0,14 | 0,20 | **0,66** | 0,17 |
+| ảnh D | 0,22 | 0,16 | 0,13 | **0,60** |
+
+<details>
+<summary>Công thức InfoNCE</summary>
+
+Với $\mathbf{g}_a$ là vector đồ thị của ảnh $a$, $\mathbf{t}_b$ là vector CLIP của câu $b$, $S_{ab}=\mathbf{g}_a\cdot\mathbf{t}_b$, batch có $B$ cặp và nhiệt độ $\tau$:
+
+$$
+\mathcal{L}=\frac{1}{2B}\sum_{a=1}^{B}\Bigl[-\log\frac{e^{S_{aa}/\tau}}{\sum_{b}e^{S_{ab}/\tau}}-\log\frac{e^{S_{aa}/\tau}}{\sum_{b}e^{S_{ba}/\tau}}\Bigr]
+$$
+
+Mỗi hàng của bảng giống một câu hỏi trắc nghiệm có $B$ lựa chọn, đáp án nằm ở đường chéo. Số hạng thứ nhất phạt khi ảnh không chọn đúng câu, số hạng thứ hai phạt khi câu không chọn đúng ảnh. Nhiệt độ τ = 0,07 làm chênh lệch giữa các ô rõ hơn. Giải thích chi tiết ở [A10](phu-luc-a-kien-thuc-nen.md#a10-softmax-cross-entropy-nhiệt-độ-và-infonce); tính bằng số ở [B10](phu-luc-b-tinh-tay-tu-dau-den-cuoi.md#b10-huấn-luyện-loss-infonce-cho-batch-gồm-a-và-b). Code: hàm `info_nce` trong `src/models/train.py`.
+
+</details>
+
+### Chi tiết cho người chạy code
 
 | Tham số | Giá trị | Ghi chú |
 |---|---|---|
@@ -75,6 +177,20 @@ Huấn luyện được thiết kế để chạy lại cho ra đúng kết qu�
 - Nếu bị ngắt, `--resume` chạy tiếp và cho đúng kết quả như khi chạy liền mạch.
 - Nếu loss thành NaN, huấn luyện dừng trước khi cập nhật trọng số.
 - Cùng một seed cho ra cùng một `history.json`.
+
+## Bước 6. Chấm điểm lúc tìm ảnh
+
+> **Nói đơn giản.** Khi có câu truy vấn, điểm đồ thị của một ảnh là độ giống nhau (cosine) giữa vector đồ thị của ảnh và vector CLIP của câu. Điểm này được trộn với điểm CLIP theo α; mục [Chấm điểm và xếp hạng lại](#chấm-điểm-và-xếp-hạng-lại) ngay dưới đây giải thích chi tiết.
+
+**Đồ thị giúp được bao nhiêu?** R@1 trên test:
+
+| Cách chấm | R@1 |
+|---|---|
+| Chỉ dùng điểm đồ thị | 27,78 ± 0,63% (lượt 17/11) |
+| Chỉ dùng CLIP | 43,89% |
+| Trộn CLIP với điểm đồ thị | 48,20 ± 0,05% (lượt 17/11); 48,12 ± 0,23% (lượt chạy lại 18/11) |
+
+Một mình, điểm đồ thị yếu hơn CLIP nhiều. Nhưng nó mạnh ở chỗ CLIP yếu (ai làm gì với ai), nên trộn lại tốt hơn cả hai. Thí nghiệm bỏ hết relation, chỉ giữ đối tượng, làm R@1 giảm 0,56 điểm phần trăm (khoảng 95%: 0,05 đến 1,06): relation có giúp, dù không nhiều. Riêng nhãn vị từ cụ thể (cutting, riding…) thì chưa chứng minh được là giúp rõ ràng. Chi tiết ở mục [Ablation](#ablation-và-kiểm-tra-lời-giải-thích) và [tài liệu 4](04-ket-qua.md).
 
 ## Chấm điểm và xếp hạng lại
 
