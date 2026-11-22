@@ -27,7 +27,7 @@ Tài liệu giải thích đầy đủ, có hình minh hoạ và phụ lục cô
 | 3 | Fidelity, sparsity trên ≥ 10 truy vấn | Có | [Đánh giá giải thích](#kết-quả-đánh-giá-giải-thích-cấp-độ-3) |
 | 3 | Validity | Một phần: nhãn do AI chấm, chưa có người chấm | [Đánh giá giải thích](#kết-quả-đánh-giá-giải-thích-cấp-độ-3) |
 | 3 | MMKG tự xây, chạy phương pháp của cấp độ 1/2 trên đó | Có: VN Heritage | [VN Heritage](#kết-quả-trên-vn-heritage-mmkg-tự-xây) |
-| 4 | Cải tiến riêng | Chưa làm | |
+| 4 | Cải tiến riêng: α theo truy vấn (hướng a) | Một phần: code và test xong, chưa chạy trên 2 tập công khai | [Cấp độ 4](#cấp-độ-4-α-theo-truy-vấn) |
 
 Việc còn mở của từng phần nằm ở các mục "Chưa có" và "Chưa làm" bên dưới.
 
@@ -480,6 +480,21 @@ Thêm 902 cạnh rút từ bài Wikipedia vào đồ thị Wikidata, dưới b�
 - Giới hạn: cạnh từ bài trùng cặp với một claim đã bị bỏ khi build, nên chưa thử vai trò "bài nhắc lại đúng sự kiện bị hỏi".
 
 Cách dựng dữ liệu, phép đếm ảnh chen nhau, mốc phụ AdaMF-MAT, phần chưa có và lệnh chạy lại: [docs/vn-heritage-results.md](docs/vn-heritage-results.md). Báo cáo về bộ dữ liệu (quy trình xây, cấu trúc đồ thị, rò rỉ, giấy phép): [plans/reports/vn-heritage-261120-0033-mmkg-report.html](plans/reports/vn-heritage-261120-0033-mmkg-report.html).
+
+## Cấp độ 4: α theo truy vấn
+
+Đề xuất cải tiến của nhóm theo hướng (a) của đề: cơ chế kết hợp điểm thích nghi. Ở cấp độ 1 và 2, bước xếp hạng lại dùng **một** α cho mọi câu truy vấn. Ở đây, các câu được chia thành 2, 3 hoặc 4 nhóm theo độ tự tin của CLIP (điểm của ảnh hạng 1 trừ điểm của ảnh hạng 2), và mỗi nhóm chọn α, k riêng trên validation bằng đúng hàm quét chính thức. Chia nhóm ngẫu nhiên là đối chứng; so với α cố định bằng bootstrap ghép cặp như phần ablation.
+
+Không nhầm với trọng số thích nghi của AdaMF: AdaMF trộn ba embedding của một ảnh bên trong bộ mã hoá ảnh, còn α theo truy vấn trộn điểm CLIP với điểm đồ thị ở bước xếp hạng lại, theo từng câu truy vấn.
+
+Trạng thái: code và test xong, chưa có kết quả. Cần chạy trước `train_graphsage` và `run_benchmark --method graphsage` cho config ghi ở `retrieval_config` của từng tập:
+
+```bash
+python -m scripts.evaluate_query_alpha                                                    # VG ∩ COCO
+python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha_mkg_w.yaml  # MKG-W caption subset
+```
+
+Giả thuyết, cách đọc kết quả và giới hạn: [docs/query-alpha.md](docs/query-alpha.md). Bản giải thích cho người mới, có ví dụ tự kéo thử: mở `docs/query-alpha.html` bằng trình duyệt.
 
 ## Cách hoạt động
 
