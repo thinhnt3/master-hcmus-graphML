@@ -1,5 +1,6 @@
-# Query-adaptive fusion: a separate validation-selected (alpha, top_k) per bucket of queries.
-# Run: python -m scripts.evaluate_adaptive_fusion
+# Query-adaptive alpha: a separate validation-selected (alpha, top_k) per bucket of queries.
+# Dataset 1, VG ∩ COCO. Dataset 2 (MKG-W caption subset): configs/evaluation/query_alpha_mkg_w.yaml.
+# Run: python -m scripts.evaluate_query_alpha
 # All paths are relative to the repository root.
 
 # Retrieval config of the trained run to fuse: gives the CLIP model, the run name and seeds,
@@ -27,4 +28,4 @@ feature_seed: 2026
 bootstrap_repeats: 2000
 bootstrap_seed: 310
 
-output: runs/analysis/adaptive_fusion.json
+output: runs/analysis/query_alpha.json

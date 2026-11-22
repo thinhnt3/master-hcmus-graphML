@@ -1,17 +1,19 @@
-# Kết hợp điểm thích nghi theo từng truy vấn
+# α theo truy vấn
 
 Đề xuất cải tiến của nhóm, thuộc hướng (a) của Cấp độ 4 trong đề: *cơ chế xếp hạng lại hoặc kết hợp điểm thích nghi*.
 
+**Không nhầm với AdaMF.** Trọng số thích nghi của AdaMF (trong AdaMF-MAT, Cấp độ 2) trộn ba embedding của một ảnh bên trong bộ mã hoá ảnh. α theo truy vấn trộn **điểm** CLIP với **điểm** đồ thị ở bước xếp hạng lại, và thích nghi theo **từng câu truy vấn**. Bước xếp hạng lại của cả GraphSAGE lẫn AdaMF-MAT hiện đều dùng một α cố định; α theo truy vấn thay chính α đó.
+
 **Trạng thái:** code và test đã xong, **chưa có kết quả**. Chạy theo mục [Cách chạy](#cách-chạy), rồi điền số vào [bảng kết quả](#bảng-kết-quả-điền-sau-khi-chạy).
 
-**Bản dễ đọc cho người mới:** mở `docs/adaptive-fusion.html` bằng trình duyệt (không cần mạng). Trang có phần tóm tắt 2 phút, giải thích GraphSAGE từng bước, ví dụ tự kéo thử, hình minh hoạ, từ điển thuật ngữ và phần hỏi đáp.
+**Bản dễ đọc cho người mới:** mở `docs/query-alpha.html` bằng trình duyệt (không cần mạng). Trang có phần tóm tắt 2 phút, giải thích GraphSAGE từng bước, ví dụ tự kéo thử, hình minh hoạ, từ điển thuật ngữ và phần hỏi đáp.
 
 | Thành phần | File |
 |---|---|
-| Thuật toán | `src/retrieval/adaptive_fusion.py` |
-| Script chạy | `scripts/evaluate_adaptive_fusion.py` |
-| Config | `configs/evaluation/adaptive_fusion.yaml` |
-| Test | `tests/retrieval/test_adaptive_fusion.py` |
+| Thuật toán | `src/retrieval/query_alpha.py` |
+| Script chạy | `scripts/evaluate_query_alpha.py` |
+| Config | `configs/evaluation/query_alpha.yaml` (VG ∩ COCO), `configs/evaluation/query_alpha_mkg_w.yaml` (MKG-W caption subset) |
+| Test | `tests/retrieval/test_query_alpha.py` |
 
 **Mục lục:** [Ý tưởng](#ý-tưởng) · [Giả thuyết](#giả-thuyết) · [Cách làm](#cách-làm) · [Ví dụ tính tay](#ví-dụ-tính-tay) · [Vì sao không rò rỉ dữ liệu test](#vì-sao-không-rò-rỉ-dữ-liệu-test) · [Đi qua code](#đi-qua-code) · [Cách chạy](#cách-chạy) · [Đọc file kết quả](#đọc-file-kết-quả) · [Bảng kết quả](#bảng-kết-quả-điền-sau-khi-chạy) · [Giới hạn và hướng mở rộng](#giới-hạn-và-hướng-mở-rộng) · [Kiến thức nền](#kiến-thức-nền)
 
@@ -96,7 +98,7 @@ Không α nào vừa nhỏ hơn 0,833 vừa lớn hơn 0,952.
 
 **Bước 4: α cố định**, tức một α cho cả 8 truy vấn, chọn bằng hàm quét chính thức. Mỗi α chỉ đúng được nhiều nhất một loại, nên R@1 tốt nhất là 4/8 = 50%. Có hai vùng đạt 50%: α ≤ 0,83 (đúng loại phân vân) và α ≥ 0,96 (đúng loại chắc chắn). Ở cả hai vùng, loại bị sai có ảnh đúng ở hạng 2, nên MRR đều bằng (4 · 1 + 4 · 0,5) / 8 = 0,75. Hoà cả R@1 lẫn MRR, luật hoà chọn α lớn hơn: **α = 1,0, k = 2**. Nghĩa là trong ví dụ này, α cố định bỏ hẳn điểm đồ thị.
 
-**Bước 5: hai nhóm** (`fit_adaptive_fusion`). Mỗi nhóm chạy hàm quét chính thức trên 4 truy vấn của mình:
+**Bước 5: hai nhóm** (`fit_query_alpha`). Mỗi nhóm chạy hàm quét chính thức trên 4 truy vấn của mình:
 
 - Nhóm 0 (phân vân): mọi α ≤ 0,83 đều đạt R@1 = 100%. Luật hoà chọn α lớn nhất: **α = 0,83, k = 2**.
 - Nhóm 1 (chắc chắn): mọi α ≥ 0,96 đều đạt 100%. Luật hoà chọn **α = 1,0, k = 2**.
@@ -112,11 +114,11 @@ Không α nào vừa nhỏ hơn 0,833 vừa lớn hơn 0,952.
 
 Chia nhóm đạt R@1 = 100% trên 8 truy vấn, so với 50% của α cố định. Để ý α = 0,83 của nhóm 0 nằm sát ngưỡng 0,833: trong các α tốt như nhau, luật hoà luôn chọn α gần CLIP nhất.
 
-**Bước 6: chấm test** (`adaptive_scores`). Truy vấn test dùng mốc 0,035 của validation, không tính mốc mới. Ví dụ, truy vấn test có điểm CLIP 0,30 · 0,27 · 0,00 có margin 0,03 ≤ 0,035, nên vào nhóm 0 và dùng α = 0,83, k = 2. Test `test_scoring_another_split_uses_the_validation_edges` kiểm đúng điều này: ba truy vấn có margin 0,01, 0,02 và 0,03 đều vào nhóm 0, dù trung vị của riêng ba truy vấn đó là 0,02.
+**Bước 6: chấm test** (`query_alpha_scores`). Truy vấn test dùng mốc 0,035 của validation, không tính mốc mới. Ví dụ, truy vấn test có điểm CLIP 0,30 · 0,27 · 0,00 có margin 0,03 ≤ 0,035, nên vào nhóm 0 và dùng α = 0,83, k = 2. Test `test_scoring_another_split_uses_the_validation_edges` kiểm đúng điều này: ba truy vấn có margin 0,01, 0,02 và 0,03 đều vào nhóm 0, dù trung vị của riêng ba truy vấn đó là 0,02.
 
 ## Vì sao không rò rỉ dữ liệu test
 
-- **Mốc chia và (α, k) chỉ lấy từ validation.** Hàm `fit_adaptive_fusion` từ chối mọi tập khác validation.
+- **Mốc chia và (α, k) chỉ lấy từ validation.** Hàm `fit_query_alpha` từ chối mọi tập khác validation.
 - **Margin không dùng nhãn.** Nó chỉ dùng điểm CLIP của chính truy vấn, thông tin vốn có sẵn lúc chạy thật.
 - **Mốc α cố định là bộ xếp hạng chính thức.** Script chọn (α, k) bằng đúng hàm quét chính thức trên toàn bộ validation, so với lựa chọn trong file benchmark của `run_benchmark` cho từng seed, và **dừng nếu khác**. Nhờ vậy mọi so sánh đều dùng đúng mốc chính thức.
 - **Test chấm một lần,** sau khi đã chốt mọi thứ trên validation.
@@ -127,13 +129,13 @@ Mỗi điều trên đều có test kiểm; danh sách đầy đủ ở mục [C
 
 ```mermaid
 flowchart TB
-    subgraph VAL["Validation: chọn tham số, fit_adaptive_fusion"]
+    subgraph VAL["Validation: chọn tham số, fit_query_alpha"]
         V1["Điểm CLIP<br/>và điểm đồ thị"] --> V2["Đặc trưng mỗi truy vấn<br/>query_feature"]
         V2 --> V3["Mốc chia = phân vị<br/>bucket_edges"]
         V3 --> V4["Xếp nhóm<br/>assign_buckets"]
         V4 --> V5["Quét α, k cho từng nhóm<br/>sweep_alpha_and_k"]
     end
-    subgraph TEST["Test: chấm một lần, adaptive_scores"]
+    subgraph TEST["Test: chấm một lần, query_alpha_scores"]
         T1["Đặc trưng của<br/>truy vấn test"] --> T2["Xếp nhóm bằng<br/>mốc của validation"]
         T2 --> T3["Trộn điểm với α, k của nhóm<br/>rerank_scores"]
         T3 --> T4["So với α cố định<br/>paired_analysis"]
@@ -144,7 +146,7 @@ flowchart TB
 
 ### Module thuật toán
 
-`src/retrieval/adaptive_fusion.py` chỉ gồm hàm thuần: không đọc ghi file, trừ phần đọc config. Vì vậy mọi hàm đều test được bằng dữ liệu dựng tay.
+`src/retrieval/query_alpha.py` chỉ gồm hàm thuần: không đọc ghi file, trừ phần đọc config. Vì vậy mọi hàm đều test được bằng dữ liệu dựng tay.
 
 | Hàm / lớp | Làm gì |
 |---|---|
@@ -154,11 +156,11 @@ flowchart TB
 | `query_feature(feature, ...)` | Gọi đúng hàm đặc trưng theo tên; báo lỗi nếu gặp đặc trưng chưa có code |
 | `bucket_edges(values, n_buckets)` | Mốc chia: các phân vị mức 1/B, …, (B − 1)/B của đặc trưng trên validation. Mốc trùng nhau được gộp, nên khi nhiều giá trị bằng nhau có thể ra ít nhóm hơn yêu cầu |
 | `assign_buckets(values, edges)` | Số thứ tự nhóm của từng giá trị, đánh số từ 0. Nhóm 0 chứa giá trị nhỏ hơn hoặc bằng mốc đầu tiên; nhóm cuối chứa giá trị lớn hơn mốc cuối cùng; giá trị nằm đúng trên một mốc thuộc nhóm phía dưới mốc đó |
-| `fit_adaptive_fusion(...)` | Bước chọn tham số. Kiểm tra tập đầu vào là validation và kích thước ma trận điểm khớp; tính đặc trưng, mốc chia, nhóm; rồi với mỗi nhóm gọi hàm quét chính thức `sweep_alpha_and_k` trên đúng các truy vấn của nhóm. Nhóm có ít hơn `min_bucket_queries` truy vấn bị từ chối. Trả về `AdaptiveFusion` |
+| `fit_query_alpha(...)` | Bước chọn tham số. Kiểm tra tập đầu vào là validation và kích thước ma trận điểm khớp; tính đặc trưng, mốc chia, nhóm; rồi với mỗi nhóm gọi hàm quét chính thức `sweep_alpha_and_k` trên đúng các truy vấn của nhóm. Nhóm có ít hơn `min_bucket_queries` truy vấn bị từ chối. Trả về `QueryAlpha` |
 | `_subset(data, rows)` | Giữ nguyên bộ ảnh, chỉ giữ các truy vấn của một nhóm, để đưa vào hàm quét |
-| `AdaptiveFusion` | Kết quả đã chọn: đặc trưng, seed, mốc chia, và một `SweepPoint` (α, k, chỉ số trên validation) cho mỗi nhóm. Tự kiểm tra số setting bằng số mốc cộng 1. `to_dict()` tạo phần `fit` trong file kết quả |
-| `adaptive_scores(fusion, ...)` | Bước chấm điểm. Tính đặc trưng của các truy vấn cần chấm, xếp nhóm bằng **mốc của validation**, rồi trộn điểm từng nhóm bằng `rerank_scores` với (α, k) của nhóm đó. Không chọn hay tính lại gì trên tập đang chấm |
-| `AdaptiveFusionConfig` | Đọc file YAML và kiểm tra từng trường; xem [Các trường trong config](#các-trường-trong-config) |
+| `QueryAlpha` | Kết quả đã chọn: đặc trưng, seed, mốc chia, và một `SweepPoint` (α, k, chỉ số trên validation) cho mỗi nhóm. Tự kiểm tra số setting bằng số mốc cộng 1. `to_dict()` tạo phần `fit` trong file kết quả |
+| `query_alpha_scores(fusion, ...)` | Bước chấm điểm. Tính đặc trưng của các truy vấn cần chấm, xếp nhóm bằng **mốc của validation**, rồi trộn điểm từng nhóm bằng `rerank_scores` với (α, k) của nhóm đó. Không chọn hay tính lại gì trên tập đang chấm |
+| `QueryAlphaConfig` | Đọc file YAML và kiểm tra từng trường; xem [Các trường trong config](#các-trường-trong-config) |
 
 ### Code chính thức được dùng lại
 
@@ -176,15 +178,15 @@ Tính năng không tự viết lại luật chọn tham số, luật trộn đi�
 
 ### Script, từng bước
 
-Hàm `run` trong `scripts/evaluate_adaptive_fusion.py` làm lần lượt:
+Hàm `run` trong `scripts/evaluate_query_alpha.py` làm lần lượt:
 
-1. **Đọc config.** `AdaptiveFusionConfig` đọc `configs/evaluation/adaptive_fusion.yaml`, rồi `RetrievalConfig` đọc config ghi ở `retrieval_config`: mô hình CLIP, tên run, 3 seed, lưới α và k.
+1. **Đọc config.** `QueryAlphaConfig` đọc `configs/evaluation/query_alpha.yaml`, rồi `RetrievalConfig` đọc config ghi ở `retrieval_config`: mô hình CLIP, tên run, 3 seed, lưới α và k.
 2. **Nạp vector CLIP và dựng dữ liệu.** `verify_inputs_unchanged` báo lỗi nếu file đầu vào của vector đã thay đổi kể từ lúc tạo vector. Sau đó dựng dữ liệu validation và test (`build_split_data`) và ma trận điểm CLIP (`clip_scores`).
 3. **Đọc file benchmark** `runs/benchmark/graphsage-<run>.json`. `validate_artifact_inputs` từ chối file benchmark cũ, tức file được tạo từ những đầu vào nay đã đổi.
 4. **Với mỗi seed:**
    1. `validate_run` từ chối run có kiến trúc, seed, mô hình CLIP hoặc dữ liệu huấn luyện không khớp với config. Sau đó nạp `graph_vectors` và tính ma trận điểm đồ thị (`graph_vector_scores`).
    2. **Mốc α cố định.** `sweep_alpha_and_k` chọn một (α, k) trên toàn bộ validation; `_check_official` so với lựa chọn trong file benchmark và dừng nếu khác. Rồi chấm validation và test bằng `rerank_scores` với (α, k) đó.
-   3. **Mỗi cách chia**, tức mỗi đặc trưng × mỗi số nhóm: `fit_adaptive_fusion` trên validation, rồi `adaptive_scores` cho validation và test. `_bucket_rows` tính cho từng nhóm số truy vấn, R@1 của cách chia và R@1 của α cố định trên cùng các truy vấn đó.
+   3. **Mỗi cách chia**, tức mỗi đặc trưng × mỗi số nhóm: `fit_query_alpha` trên validation, rồi `query_alpha_scores` cho validation và test. `_bucket_rows` tính cho từng nhóm số truy vấn, R@1 của cách chia và R@1 của α cố định trên cùng các truy vấn đó.
 5. **Gộp qua seed.** `aggregate_runs` tính trung bình và độ lệch chuẩn; `paired_analysis` so từng cách chia với α cố định trên test.
 6. **Ghi file kết quả** bằng `write_json`, gồm:
    - `results`: kết quả của α cố định và của từng cách chia;
@@ -200,26 +202,26 @@ Hàm `run` trong `scripts/evaluate_adaptive_fusion.py` làm lần lượt:
 | Một nhóm có ít hơn `min_bucket_queries` truy vấn validation | `ConfigError` | Bớt số nhóm trong `n_buckets` hoặc giảm `min_bucket_queries` |
 | Config sai: đặc trưng lạ, số nhóm nhỏ hơn 2 hoặc bị trùng, trường thiếu hay sai kiểu | `ConfigError` | Sửa file YAML |
 
-Các lỗi trên đều thuộc `AppError`: script ghi lỗi ra log, trả exit code 1 và **không ghi** file kết quả. Ngoài ra `fit_adaptive_fusion` từ chối chọn tham số trên tập khác validation (`DataError`). Script không bao giờ gọi như vậy, nhưng chặn này giữ cho ai dùng lại hàm cũng không thể vô tình chọn tham số trên test.
+Các lỗi trên đều thuộc `AppError`: script ghi lỗi ra log, trả exit code 1 và **không ghi** file kết quả. Ngoài ra `fit_query_alpha` từ chối chọn tham số trên tập khác validation (`DataError`). Script không bao giờ gọi như vậy, nhưng chặn này giữ cho ai dùng lại hàm cũng không thể vô tình chọn tham số trên test.
 
 ### Các trường trong config
 
 | Trường | Ý nghĩa | Mặc định |
 |---|---|---|
-| `retrieval_config` | Config của run cần đánh giá: mô hình CLIP, tên run, các seed, lưới α và k | `configs/retrieval/ablations/full.yaml` |
+| `retrieval_config` | Config của run cần đánh giá: mô hình CLIP, tên run, các seed, lưới α và k | `configs/retrieval/ablations/full.yaml`; với MKG-W là `configs/retrieval/mkg_w_captions.yaml` |
 | `features` | Các đặc trưng chia nhóm sẽ chạy, không trùng nhau | `[clip_margin, random]` |
 | `n_buckets` | Các số nhóm sẽ thử; mỗi số ≥ 2 và không trùng. α cố định luôn được chạy nên không ghi ở đây | `[2, 3, 4]` |
-| `min_bucket_queries` | Số truy vấn validation tối thiểu để một nhóm được chọn (α, k) riêng | `500` |
+| `min_bucket_queries` | Số truy vấn validation tối thiểu để một nhóm được chọn (α, k) riêng | `500`; với MKG-W là `200` |
 | `feature_seed` | Seed của đối chứng ngẫu nhiên; không ảnh hưởng `clip_margin` | `2026` |
 | `bootstrap_repeats` | Số lần lấy mẫu lại trong bootstrap ghép cặp | `2000` |
 | `bootstrap_seed` | Seed của bootstrap | `310` |
-| `output` | File JSON kết quả | `runs/analysis/adaptive_fusion.json` |
+| `output` | File JSON kết quả | `runs/analysis/query_alpha.json`; với MKG-W là `runs/analysis/query_alpha_mkg_w.json` |
 
-Với 7.500 truy vấn validation và B = 4, mỗi nhóm có khoảng 1.875 truy vấn, vượt xa mức 500.
+Với 7.500 truy vấn validation và B = 4, mỗi nhóm có khoảng 1.875 truy vấn, vượt xa mức 500. MKG-W caption subset chỉ có 880 câu validation (440 mục × 2 caption): với B = 4, mỗi nhóm khoảng 220 câu, nên config của tập này đặt mức 200.
 
 ### Các test
 
-Chạy bằng `pytest tests/retrieval/test_adaptive_fusion.py`, không cần dữ liệu thật.
+Chạy bằng `pytest tests/retrieval/test_query_alpha.py`, không cần dữ liệu thật.
 
 | Test | Kiểm điều gì |
 |---|---|
@@ -236,7 +238,7 @@ Chạy bằng `pytest tests/retrieval/test_adaptive_fusion.py`, không cần d�
 | `test_alpha_one_in_every_bucket_keeps_the_clip_ranking` | α = 1 ở mọi nhóm giữ nguyên thứ hạng CLIP |
 | `test_a_fitted_fusion_needs_one_setting_per_bucket` | Số setting phải bằng số nhóm |
 | `test_config_rejects_invalid_values` (11 trường hợp) | Config sai bị từ chối |
-| `test_shipped_config_is_valid` | File config đi kèm hợp lệ |
+| `test_shipped_configs_are_valid` | Hai file config đi kèm (VG ∩ COCO, MKG-W) hợp lệ, và đọc được config retrieval mà chúng trỏ tới |
 | `test_script_compares_every_bucketing_with_the_fixed_baseline` | Chạy cả script trên dữ liệu dựng tay: có đủ các mục kết quả, và chênh lệch ghép cặp tính đúng chiều (+50 điểm %) |
 | `test_script_stops_when_one_bucket_differs_from_the_benchmark` | File benchmark ghi (α, k) khác thì script trả exit 1 và không ghi file kết quả |
 
@@ -244,14 +246,15 @@ Bộ test cũng đã được kiểm bằng cách cố ý gài lỗi vào code, 
 
 ## Cách chạy
 
-Điều kiện: máy phải có vector CLIP (`data/processed/vg_coco/embeddings/`), và đã chạy `train_graphsage` lẫn `run_benchmark --method graphsage` cho config ghi ở `retrieval_config`. Mặc định là `configs/retrieval/ablations/full.yaml`, tức mô hình chính.
+Điều kiện: máy phải có vector CLIP (`data/processed/vg_coco/embeddings/`), và đã chạy `train_graphsage` lẫn `run_benchmark --method graphsage` cho config ghi ở `retrieval_config`. Mặc định là `configs/retrieval/ablations/full.yaml`, tức mô hình chính. Với MKG-W caption subset là `configs/retrieval/mkg_w_captions.yaml`: vector ở `data/processed/mkg_w_captions/embeddings/`, run ở `runs/mkg_w_captions/`.
 
 ```bash
-python -m scripts.evaluate_adaptive_fusion                 # dùng configs/evaluation/adaptive_fusion.yaml
-pytest tests/retrieval/test_adaptive_fusion.py             # test, không cần dữ liệu thật
+python -m scripts.evaluate_query_alpha                                                       # VG ∩ COCO
+python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha_mkg_w.yaml  # MKG-W caption subset
+pytest tests/retrieval/test_query_alpha.py             # test, không cần dữ liệu thật
 ```
 
-Script không huấn luyện lại và không cần GPU. Với config mặc định, mỗi seed quét lưới α, k trên toàn bộ validation 7 lần: 1 lần cho α cố định, cộng 2 đặc trưng × 3 số nhóm. Một lần quét trên 7.500 truy vấn validation mất khoảng 25–30 giây trên CPU (đo trên Apple M3), nên cả lượt chạy 3 seed mất khoảng 10–15 phút. Kết quả được ghi ra `runs/analysis/adaptive_fusion.json`; thư mục này bị `.gitignore` bỏ qua, nên muốn commit thì dùng `git add -f`.
+Script không huấn luyện lại và không cần GPU. Với config mặc định, mỗi seed quét lưới α, k trên toàn bộ validation 7 lần: 1 lần cho α cố định, cộng 2 đặc trưng × 3 số nhóm. Một lần quét trên 7.500 truy vấn validation mất khoảng 25–30 giây trên CPU (đo trên Apple M3), nên cả lượt chạy 3 seed mất khoảng 10–15 phút. MKG-W caption subset nhỏ hơn nhiều (880 câu validation, 440 ảnh) nên chạy nhanh hơn. Kết quả được ghi ra `runs/analysis/query_alpha.json` và `runs/analysis/query_alpha_mkg_w.json`; thư mục này bị `.gitignore` bỏ qua, nên muốn commit thì dùng `git add -f`.
 
 ## Đọc file kết quả
 
@@ -266,17 +269,19 @@ Script không huấn luyện lại và không cần GPU. Với config mặc đ�
 
 ## Bảng kết quả (điền sau khi chạy)
 
-| Cách chia | Số nhóm | R@1 test (± độ lệch chuẩn) | Chênh lệch với α cố định | Khoảng 95% |
-|---|---|---|---|---|
-| α cố định | 1 | | — | — |
-| Theo margin của CLIP | 2 | | | |
-| Theo margin của CLIP | 3 | | | |
-| Theo margin của CLIP | 4 | | | |
-| Ngẫu nhiên (đối chứng) | 2 | | | |
-| Ngẫu nhiên (đối chứng) | 3 | | | |
-| Ngẫu nhiên (đối chứng) | 4 | | | |
+Mỗi ô R@1 ghi trung bình ± độ lệch chuẩn qua 3 seed; mỗi ô chênh lệch ghi `delta_r1_pp` và khoảng 95%.
 
-Kết quả **ủng hộ H1** khi cả ba điều sau cùng đúng:
+| Cách chia | Số nhóm | VG ∩ COCO: R@1 test | VG ∩ COCO: chênh lệch, khoảng 95% | MKG-W: R@1 test | MKG-W: chênh lệch, khoảng 95% |
+|---|---|---|---|---|---|
+| α cố định | 1 | | — | | — |
+| Theo margin của CLIP | 2 | | | | |
+| Theo margin của CLIP | 3 | | | | |
+| Theo margin của CLIP | 4 | | | | |
+| Ngẫu nhiên (đối chứng) | 2 | | | | |
+| Ngẫu nhiên (đối chứng) | 3 | | | | |
+| Ngẫu nhiên (đối chứng) | 4 | | | | |
+
+Kết quả **ủng hộ H1** khi cả ba điều sau cùng đúng, trên cả hai tập:
 
 1. Chia theo margin cho chênh lệch dương, với khoảng 95% không chứa 0.
 2. Chia ngẫu nhiên không cho mức tăng tương tự.
@@ -288,8 +293,8 @@ Nếu chỉ validation tăng còn test không tăng, cách chia đang khớp qu�
 
 - **Nhiều nhóm hơn thì nhiều tham số hơn**, nên dễ khớp quá mức với validation. Đối chứng ngẫu nhiên và kết quả trên test là hai cách kiểm điều này. Tham số `min_bucket_queries` (mặc định 500) chặn các nhóm quá nhỏ.
 - **Margin chỉ là một đặc trưng.** Có thể thêm: độ lệch giữa thứ hạng CLIP và thứ hạng đồ thị; số từ chỉ quan hệ trong câu; hoặc học α(q) bằng một hàm logistic trên validation.
-- **Cấp độ 4 hướng (a) yêu cầu thực nghiệm trên ít nhất 2 tập công khai.** Code không phụ thuộc tập dữ liệu, chỉ cần config retrieval của tập kia, nên chạy lại được ngay khi có tập thứ hai.
-- **Hiện script chỉ đọc run GraphSAGE** ghi trong `retrieval_config`. Muốn áp dụng cho mô hình khác, ví dụ AdaMF-MAT, cần thêm phần đọc vector của mô hình đó; hàm `fit_adaptive_fusion` và `adaptive_scores` thì dùng lại được nguyên vẹn.
+- **Cấp độ 4 hướng (a) yêu cầu thực nghiệm trên ít nhất 2 tập công khai.** Hai tập là VG ∩ COCO và MKG-W caption subset. Tập sau được dựng theo đúng khuôn của tập trước, nên dùng chung script, chỉ khác config.
+- **Hiện script chỉ đọc run GraphSAGE** ghi trong `retrieval_config`. Muốn áp dụng cho mô hình khác, ví dụ AdaMF-MAT, cần thêm phần đọc vector của mô hình đó; hàm `fit_query_alpha` và `query_alpha_scores` thì dùng lại được nguyên vẹn.
 
 ## Kiến thức nền
 
@@ -324,7 +329,7 @@ Ví dụ với 4 giá trị 1, 2, 3, 4 và B = 4 (n − 1 = 3):
 Hai trường hợp đặc biệt, đều có test:
 
 - **Giá trị nằm đúng trên mốc thuộc nhóm dưới.** Với mốc 2,5, các giá trị 1,0; 2,5; 2,6; 9,0 lần lượt vào nhóm 0, 0, 1, 1.
-- **Nhiều giá trị bằng nhau làm các mốc trùng nhau, và mốc trùng được gộp lại.** Sáu giá trị đều bằng 5,0 với B = 3 cho hai mốc cùng bằng 5,0, gộp thành một mốc. Khi đó nhóm trên rỗng, nên `fit_adaptive_fusion` từ chối. Margin của CLIP là số thực liên tục, nên trường hợp này gần như không xảy ra với dữ liệu thật.
+- **Nhiều giá trị bằng nhau làm các mốc trùng nhau, và mốc trùng được gộp lại.** Sáu giá trị đều bằng 5,0 với B = 3 cho hai mốc cùng bằng 5,0, gộp thành một mốc. Khi đó nhóm trên rỗng, nên `fit_query_alpha` từ chối. Margin của CLIP là số thực liên tục, nên trường hợp này gần như không xảy ra với dữ liệu thật.
 
 ### Bootstrap ghép cặp theo cụm
 

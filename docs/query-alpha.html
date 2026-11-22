@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kết hợp điểm thích nghi</title>
-<meta name="description" content="Giải thích dễ hiểu tính năng kết hợp điểm thích nghi theo từng truy vấn: ý tưởng, ví dụ tự kéo thử, code hoạt động thế nào và cách đọc kết quả.">
+<title>α theo truy vấn</title>
+<meta name="description" content="Giải thích dễ hiểu tính năng α theo truy vấn, tức chọn tỉ lệ trộn điểm riêng cho từng nhóm câu truy vấn: ý tưởng, ví dụ tự kéo thử, code hoạt động thế nào và cách đọc kết quả.">
 <script>
   try {
-    var savedTheme = localStorage.getItem("adaptive-fusion-theme");
+    var savedTheme = localStorage.getItem("query-alpha-theme");
     if (savedTheme === "light" || savedTheme === "dark") document.documentElement.dataset.theme = savedTheme;
   } catch (e) {}
 </script>
@@ -372,12 +372,12 @@
 <header class="hero">
   <div class="hero-inner">
     <p class="kicker">Tài liệu tính năng · Cấp độ 4, hướng (a) của đề: cơ chế kết hợp điểm thích nghi</p>
-    <h1>Kết hợp điểm thích nghi theo từng truy vấn</h1>
+    <h1>α theo truy vấn</h1>
     <p class="lead">Mỗi câu tìm kiếm được trộn điểm theo một tỉ lệ hợp với chính nó, thay vì một tỉ lệ chung cho mọi câu.</p>
     <ul class="badges" aria-label="Trạng thái">
       <li class="badge">✓ Code và test đã xong</li>
       <li class="badge">⏳ Chưa có kết quả trên dữ liệu thật</li>
-      <li class="badge">Bản HTML của <code>docs/adaptive-fusion.md</code></li>
+      <li class="badge">Bản HTML của <code>docs/query-alpha.md</code></li>
     </ul>
     <button type="button" class="btn theme-toggle" id="theme-toggle">Giao diện: tự động</button>
   </div>
@@ -851,7 +851,7 @@
         <p>Nguyên tắc vàng: <b>không được nhìn đề thi khi ôn bài.</b> Mọi thứ được chọn trên validation; test chỉ được chấm một lần.</p>
       </div>
       <ul class="check-list">
-        <li><b>Vạch cắt và α, k chỉ lấy từ validation.</b> Hàm <code>fit_adaptive_fusion</code> từ chối mọi tập khác validation.</li>
+        <li><b>Vạch cắt và α, k chỉ lấy từ validation.</b> Hàm <code>fit_query_alpha</code> từ chối mọi tập khác validation.</li>
         <li><b>Margin không dùng đáp án.</b> Nó chỉ dùng điểm CLIP của chính câu đó, thông tin vốn có sẵn lúc dùng thật.</li>
         <li><b>Mốc so sánh là đúng bộ xếp hạng chính thức.</b> Script tự chọn lại α, k chung bằng hàm chính thức và so với file benchmark của dự án cho từng seed. Khác dù một chút là dừng ngay.</li>
         <li><b>Test chỉ chấm một lần,</b> sau khi mọi thứ đã chốt trên validation.</li>
@@ -871,10 +871,10 @@
         <table>
           <thead><tr><th>Thành phần</th><th>File</th></tr></thead>
           <tbody>
-            <tr><td>Thuật toán</td><td><code>src/retrieval/adaptive_fusion.py</code></td></tr>
-            <tr><td>Script chạy</td><td><code>scripts/evaluate_adaptive_fusion.py</code></td></tr>
-            <tr><td>Config</td><td><code>configs/evaluation/adaptive_fusion.yaml</code></td></tr>
-            <tr><td>Test</td><td><code>tests/retrieval/test_adaptive_fusion.py</code></td></tr>
+            <tr><td>Thuật toán</td><td><code>src/retrieval/query_alpha.py</code></td></tr>
+            <tr><td>Script chạy</td><td><code>scripts/evaluate_query_alpha.py</code></td></tr>
+            <tr><td>Config</td><td><code>configs/evaluation/query_alpha.yaml</code> (VG ∩ COCO), <code>configs/evaluation/query_alpha_mkg_w.yaml</code> (MKG-W)</td></tr>
+            <tr><td>Test</td><td><code>tests/retrieval/test_query_alpha.py</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -883,7 +883,7 @@
       <div class="lanes">
         <div class="lane">
           <h4>Giai đoạn ôn luyện, trên validation</h4>
-          <p class="lane-sub">Hàm <code>fit_adaptive_fusion</code></p>
+          <p class="lane-sub">Hàm <code>fit_query_alpha</code></p>
           <ol class="numbered">
             <li>Tính margin của mọi câu<br><code>query_feature</code> → <code>clip_margin</code></li>
             <li>Tính các vạch chia là phân vị của margin<br><code>bucket_edges</code></li>
@@ -893,7 +893,7 @@
         </div>
         <div class="lane">
           <h4>Giai đoạn thi, trên test</h4>
-          <p class="lane-sub">Hàm <code>adaptive_scores</code></p>
+          <p class="lane-sub">Hàm <code>query_alpha_scores</code></p>
           <ol class="numbered">
             <li>Tính margin của mọi câu test<br><code>query_feature</code></li>
             <li>Xếp nhóm bằng vạch chia đã có<br><code>assign_buckets</code><br><span class="uses">dùng vạch từ bước 2 bên trái</span></li>
@@ -904,7 +904,7 @@
       </div>
 
       <h3>Từng hàm làm gì</h3>
-      <p><code>src/retrieval/adaptive_fusion.py</code> chỉ gồm hàm thuần: không đọc ghi file, trừ phần đọc config. Vì vậy mọi hàm đều test được bằng dữ liệu dựng tay.</p>
+      <p><code>src/retrieval/query_alpha.py</code> chỉ gồm hàm thuần: không đọc ghi file, trừ phần đọc config. Vì vậy mọi hàm đều test được bằng dữ liệu dựng tay.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Hàm / lớp</th><th>Nói đơn giản</th><th>Chi tiết</th></tr></thead>
@@ -915,11 +915,11 @@
             <tr><td><code>query_feature</code></td><td>Chọn đúng cách đo theo tên trong config</td><td>Báo lỗi nếu gặp tên chưa có code</td></tr>
             <tr><td><code>bucket_edges</code></td><td>Tìm các vạch để cắt câu thành nhóm đông bằng nhau</td><td>Phân vị mức 1/B, …, (B − 1)/B của đặc trưng trên validation. Vạch trùng nhau được gộp, nên khi nhiều giá trị bằng nhau có thể ra ít nhóm hơn yêu cầu</td></tr>
             <tr><td><code>assign_buckets</code></td><td>Cho biết mỗi câu rơi vào nhóm nào</td><td>Nhóm đánh số từ 0. Nhóm 0 chứa giá trị ≤ vạch đầu; nhóm cuối chứa giá trị &gt; vạch cuối; giá trị nằm đúng trên vạch thuộc nhóm phía dưới</td></tr>
-            <tr><td><code>fit_adaptive_fusion</code></td><td>Giai đoạn ôn luyện: cắt nhóm và chọn α, k cho từng nhóm</td><td>Chỉ nhận validation; kiểm kích thước ma trận điểm; gọi <code>sweep_alpha_and_k</code> cho từng nhóm. Nhóm có ít hơn <code>min_bucket_queries</code> câu bị từ chối. Trả về <code>AdaptiveFusion</code></td></tr>
+            <tr><td><code>fit_query_alpha</code></td><td>Giai đoạn ôn luyện: cắt nhóm và chọn α, k cho từng nhóm</td><td>Chỉ nhận validation; kiểm kích thước ma trận điểm; gọi <code>sweep_alpha_and_k</code> cho từng nhóm. Nhóm có ít hơn <code>min_bucket_queries</code> câu bị từ chối. Trả về <code>QueryAlpha</code></td></tr>
             <tr><td><code>_subset</code></td><td>Lấy riêng các câu của một nhóm</td><td>Giữ nguyên bộ ảnh, chỉ giữ các câu của nhóm, để đưa vào hàm chọn</td></tr>
-            <tr><td><code>AdaptiveFusion</code></td><td>“Bản ghi nhớ” kết quả ôn luyện</td><td>Đặc trưng, seed, các vạch chia, và một <code>SweepPoint</code> (α, k, chỉ số trên validation) cho mỗi nhóm. Tự kiểm số setting bằng số vạch cộng 1. <code>to_dict()</code> tạo phần <code>fit</code> trong file kết quả</td></tr>
-            <tr><td><code>adaptive_scores</code></td><td>Giai đoạn thi: chấm điểm bằng vạch chia và α, k đã chốt</td><td>Xếp nhóm bằng <b>vạch của validation</b>, rồi trộn điểm từng nhóm bằng <code>rerank_scores</code>. Không chọn hay tính lại gì trên tập đang chấm</td></tr>
-            <tr><td><code>AdaptiveFusionConfig</code></td><td>Đọc và kiểm tra file cài đặt</td><td>Xem <a href="#cac-truong-config">các trường trong config</a></td></tr>
+            <tr><td><code>QueryAlpha</code></td><td>“Bản ghi nhớ” kết quả ôn luyện</td><td>Đặc trưng, seed, các vạch chia, và một <code>SweepPoint</code> (α, k, chỉ số trên validation) cho mỗi nhóm. Tự kiểm số setting bằng số vạch cộng 1. <code>to_dict()</code> tạo phần <code>fit</code> trong file kết quả</td></tr>
+            <tr><td><code>query_alpha_scores</code></td><td>Giai đoạn thi: chấm điểm bằng vạch chia và α, k đã chốt</td><td>Xếp nhóm bằng <b>vạch của validation</b>, rồi trộn điểm từng nhóm bằng <code>rerank_scores</code>. Không chọn hay tính lại gì trên tập đang chấm</td></tr>
+            <tr><td><code>QueryAlphaConfig</code></td><td>Đọc và kiểm tra file cài đặt</td><td>Xem <a href="#cac-truong-config">các trường trong config</a></td></tr>
             <tr><td><code>_check_official</code> <span class="muted">(script)</span></td><td>So mốc α cố định với file benchmark chính thức</td><td>Khác α hoặc k là báo <code>DataError</code> và dừng</td></tr>
             <tr><td><code>_bucket_rows</code> <span class="muted">(script)</span></td><td>R@1 từng nhóm, đặt cạnh R@1 của α cố định</td><td>Cho mỗi nhóm: số câu, R@1 của cách chia, R@1 của α cố định trên cùng các câu</td></tr>
             <tr><td><code>run</code>, <code>main</code> <span class="muted">(script)</span></td><td>Chạy cả quy trình từ đầu đến cuối</td><td><code>main</code> đọc tham số dòng lệnh, gọi <code>run</code>, trả exit code 1 khi có lỗi</td></tr>
@@ -947,7 +947,7 @@
       <h3>Script chạy những gì, theo thứ tự</h3>
       <div class="card">
         <ol class="numbered">
-          <li><b>Đọc config.</b> <code>AdaptiveFusionConfig</code> đọc <code>configs/evaluation/adaptive_fusion.yaml</code>; <code>RetrievalConfig</code> đọc config ghi ở <code>retrieval_config</code>: mô hình CLIP, tên run, 3 seed, lưới α và k.</li>
+          <li><b>Đọc config.</b> <code>QueryAlphaConfig</code> đọc <code>configs/evaluation/query_alpha.yaml</code>; <code>RetrievalConfig</code> đọc config ghi ở <code>retrieval_config</code>: mô hình CLIP, tên run, 3 seed, lưới α và k.</li>
           <li><b>Nạp vector CLIP và dựng dữ liệu.</b> <code>verify_inputs_unchanged</code> báo lỗi nếu file đầu vào của vector đã đổi kể từ lúc tạo vector. Sau đó dựng dữ liệu validation, test và ma trận điểm CLIP.</li>
           <li><b>Đọc file benchmark</b> <code>runs/benchmark/graphsage-&lt;run&gt;.json</code>. <code>validate_artifact_inputs</code> từ chối file benchmark cũ, tức file được tạo từ những đầu vào nay đã đổi.</li>
           <li><b>Với mỗi seed (13, 37, 97):</b> <code>validate_run</code> kiểm tra run khớp config, rồi nạp <code>graph_vectors</code> và tính điểm đồ thị. Tiếp theo, tính mốc α cố định và so với benchmark (<code>_check_official</code>); sau đó với mỗi cách chia (2 đặc trưng × 3 số nhóm), ôn luyện trên validation rồi chấm validation và test.</li>
@@ -968,28 +968,28 @@
           </tbody>
         </table>
       </div>
-      <p class="small">Các lỗi trên đều thuộc <code>AppError</code>: script ghi lỗi ra log, trả exit code 1 và <b>không ghi</b> file kết quả. Ngoài ra <code>fit_adaptive_fusion</code> từ chối chọn tham số trên tập khác validation. Script không bao giờ gọi như vậy, nhưng chặn này giữ cho ai dùng lại hàm cũng không thể vô tình chọn trên test.</p>
+      <p class="small">Các lỗi trên đều thuộc <code>AppError</code>: script ghi lỗi ra log, trả exit code 1 và <b>không ghi</b> file kết quả. Ngoài ra <code>fit_query_alpha</code> từ chối chọn tham số trên tập khác validation. Script không bao giờ gọi như vậy, nhưng chặn này giữ cho ai dùng lại hàm cũng không thể vô tình chọn trên test.</p>
 
       <h3 id="cac-truong-config">Các trường trong config</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Trường</th><th>Ý nghĩa</th><th>Mặc định</th></tr></thead>
           <tbody>
-            <tr><td><code>retrieval_config</code></td><td>Config của run cần đánh giá: mô hình CLIP, tên run, các seed, lưới α và k</td><td><code>configs/retrieval/ablations/full.yaml</code></td></tr>
+            <tr><td><code>retrieval_config</code></td><td>Config của run cần đánh giá: mô hình CLIP, tên run, các seed, lưới α và k</td><td><code>configs/retrieval/ablations/full.yaml</code>; với MKG-W là <code>configs/retrieval/mkg_w_captions.yaml</code></td></tr>
             <tr><td><code>features</code></td><td>Các đặc trưng chia nhóm sẽ chạy, không trùng nhau</td><td><code>[clip_margin, random]</code></td></tr>
             <tr><td><code>n_buckets</code></td><td>Các số nhóm sẽ thử; mỗi số ≥ 2 và không trùng. α cố định luôn được chạy nên không ghi ở đây</td><td><code>[2, 3, 4]</code></td></tr>
-            <tr><td><code>min_bucket_queries</code></td><td>Số câu validation tối thiểu để một nhóm được chọn α, k riêng</td><td class="num">500</td></tr>
+            <tr><td><code>min_bucket_queries</code></td><td>Số câu validation tối thiểu để một nhóm được chọn α, k riêng</td><td class="num">500; với MKG-W là 200</td></tr>
             <tr><td><code>feature_seed</code></td><td>Seed của đối chứng ngẫu nhiên; không ảnh hưởng <code>clip_margin</code></td><td class="num">2026</td></tr>
             <tr><td><code>bootstrap_repeats</code></td><td>Số lần rút mẫu lại trong bootstrap</td><td class="num">2000</td></tr>
             <tr><td><code>bootstrap_seed</code></td><td>Seed của bootstrap</td><td class="num">310</td></tr>
-            <tr><td><code>output</code></td><td>File JSON kết quả</td><td><code>runs/analysis/adaptive_fusion.json</code></td></tr>
+            <tr><td><code>output</code></td><td>File JSON kết quả</td><td><code>runs/analysis/query_alpha.json</code>; với MKG-W là <code>runs/analysis/query_alpha_mkg_w.json</code></td></tr>
           </tbody>
         </table>
       </div>
-      <p class="small">Với 7.500 câu validation và B = 4, mỗi nhóm có khoảng 1.875 câu, vượt xa mức 500.</p>
+      <p class="small">Với 7.500 câu validation và B = 4, mỗi nhóm có khoảng 1.875 câu, vượt xa mức 500. MKG-W caption subset chỉ có 880 câu validation (440 mục × 2 caption): với B = 4, mỗi nhóm khoảng 220 câu, nên config của tập này đặt mức 200.</p>
 
       <h3 id="cac-test">Các test</h3>
-      <p>Chạy bằng <code>pytest tests/retrieval/test_adaptive_fusion.py</code>, không cần dữ liệu thật.</p>
+      <p>Chạy bằng <code>pytest tests/retrieval/test_query_alpha.py</code>, không cần dữ liệu thật.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Test</th><th>Kiểm điều gì</th></tr></thead>
@@ -1007,7 +1007,7 @@
             <tr><td><code>test_alpha_one_in_every_bucket_keeps_the_clip_ranking</code></td><td>α = 1 ở mọi nhóm giữ nguyên thứ hạng của CLIP</td></tr>
             <tr><td><code>test_a_fitted_fusion_needs_one_setting_per_bucket</code></td><td>Số setting phải bằng số nhóm</td></tr>
             <tr><td><code>test_config_rejects_invalid_values</code> <span class="muted">(11 trường hợp)</span></td><td>Config sai bị từ chối</td></tr>
-            <tr><td><code>test_shipped_config_is_valid</code></td><td>File config đi kèm hợp lệ</td></tr>
+            <tr><td><code>test_shipped_configs_are_valid</code></td><td>Hai file config đi kèm (VG ∩ COCO, MKG-W) hợp lệ, và đọc được config retrieval mà chúng trỏ tới</td></tr>
             <tr><td><code>test_script_compares_every_bucketing_with_the_fixed_baseline</code></td><td>Chạy cả script trên dữ liệu dựng tay: có đủ các mục kết quả, chênh lệch ghép cặp tính đúng chiều (+50 điểm %)</td></tr>
             <tr><td><code>test_script_stops_when_one_bucket_differs_from_the_benchmark</code></td><td>File benchmark ghi α, k khác thì script trả exit 1 và không ghi file kết quả</td></tr>
           </tbody>
@@ -1029,11 +1029,13 @@
         <li>Mô hình đồ thị đã huấn luyện: <code>python -m scripts.train_graphsage --config configs/retrieval/ablations/full.yaml</code></li>
         <li>Benchmark chính thức đã chạy: <code>python -m scripts.run_benchmark --method graphsage --config configs/retrieval/ablations/full.yaml</code></li>
       </ul>
+      <p class="small">Với MKG-W caption subset (tập công khai thứ hai), làm y như vậy với <code>configs/retrieval/mkg_w_captions.yaml</code>, rồi chạy script với <code>--config configs/evaluation/query_alpha_mkg_w.yaml</code>.</p>
       <h4>Lệnh chạy</h4>
-<pre><code>python -m scripts.evaluate_adaptive_fusion          # dùng configs/evaluation/adaptive_fusion.yaml
-pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không cần dữ liệu thật</code></pre>
+<pre><code>python -m scripts.evaluate_query_alpha                                                       # VG ∩ COCO
+python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha_mkg_w.yaml  # MKG-W caption subset
+pytest tests/retrieval/test_query_alpha.py                                                   # chỉ chạy test</code></pre>
       <p class="small">Với config mặc định, mỗi seed thử lại lưới α, k trên toàn bộ validation 7 lần: 1 lần cho α cố định, cộng 2 đặc trưng × 3 số nhóm. Một lần thử trên 7.500 câu mất khoảng 25–30 giây trên CPU (đo trên Apple M3), nên cả lượt chạy 3 seed mất khoảng 10–15 phút.</p>
-      <p class="small">Kết quả ghi ra <code>runs/analysis/adaptive_fusion.json</code>. Thư mục <code>runs/</code> bị <code>.gitignore</code> bỏ qua, muốn commit thì dùng <code class="nowrap">git add -f</code>.</p>
+      <p class="small">Kết quả ghi ra <code>runs/analysis/query_alpha.json</code> (VG ∩ COCO) và <code>runs/analysis/query_alpha_mkg_w.json</code> (MKG-W). Thư mục <code>runs/</code> bị <code>.gitignore</code> bỏ qua, muốn commit thì dùng <code class="nowrap">git add -f</code>.</p>
     </section>
 
     <!-- 11 -->
@@ -1091,7 +1093,7 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
         </table>
       </div>
       <h3>Khi nào được kết luận “ủng hộ H1”</h3>
-      <p>Cả ba điều sau phải cùng đúng:</p>
+      <p>Cả ba điều sau phải cùng đúng, trên cả hai tập:</p>
       <ol class="numbered">
         <li><b>Chia theo margin tăng thật:</b> chênh lệch dương, và cả khoảng 95% nằm trên 0.</li>
         <li><b>Chia ngẫu nhiên không tăng tương tự.</b> Nếu có, mức tăng chỉ do thêm tham số.</li>
@@ -1101,15 +1103,15 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       <h3>Bảng kết quả (điền sau khi chạy)</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Cách chia</th><th>Số nhóm</th><th>R@1 test (± độ lệch chuẩn)</th><th>Chênh lệch với α cố định</th><th>Khoảng 95%</th></tr></thead>
+          <thead><tr><th>Cách chia</th><th>Số nhóm</th><th>VG ∩ COCO: R@1 test</th><th>VG ∩ COCO: chênh lệch, khoảng 95%</th><th>MKG-W: R@1 test</th><th>MKG-W: chênh lệch, khoảng 95%</th></tr></thead>
           <tbody>
-            <tr><td>α cố định</td><td>1</td><td></td><td>—</td><td>—</td></tr>
-            <tr><td>Theo margin của CLIP</td><td>2</td><td></td><td></td><td></td></tr>
-            <tr><td>Theo margin của CLIP</td><td>3</td><td></td><td></td><td></td></tr>
-            <tr><td>Theo margin của CLIP</td><td>4</td><td></td><td></td><td></td></tr>
-            <tr><td>Ngẫu nhiên (đối chứng)</td><td>2</td><td></td><td></td><td></td></tr>
-            <tr><td>Ngẫu nhiên (đối chứng)</td><td>3</td><td></td><td></td><td></td></tr>
-            <tr><td>Ngẫu nhiên (đối chứng)</td><td>4</td><td></td><td></td><td></td></tr>
+            <tr><td>α cố định</td><td>1</td><td></td><td>—</td><td></td><td>—</td></tr>
+            <tr><td>Theo margin của CLIP</td><td>2</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Theo margin của CLIP</td><td>3</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Theo margin của CLIP</td><td>4</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>2</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>3</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>4</td><td></td><td></td><td></td><td></td></tr>
           </tbody>
         </table>
       </div>
@@ -1121,8 +1123,8 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       <ul class="check-list" style="--x: 0">
         <li><b>Nhiều nhóm hơn thì nhiều tham số hơn</b>, nên dễ khớp quá mức với validation. Đối chứng ngẫu nhiên và kết quả trên test là hai cách kiểm điều này; <code>min_bucket_queries</code> (mặc định 500) chặn các nhóm quá nhỏ.</li>
         <li><b>Margin chỉ là một đặc trưng.</b> Có thể thêm: độ lệch giữa thứ hạng CLIP và thứ hạng đồ thị; số từ chỉ quan hệ trong câu; hoặc học α theo từng câu bằng một hàm logistic trên validation.</li>
-        <li><b>Cấp độ 4 hướng (a) yêu cầu thực nghiệm trên ít nhất 2 tập công khai.</b> Code không phụ thuộc tập dữ liệu, chỉ cần config retrieval của tập kia, nên chạy lại được ngay khi có tập thứ hai.</li>
-        <li><b>Hiện script chỉ đọc run GraphSAGE.</b> Muốn áp dụng cho mô hình khác, ví dụ AdaMF-MAT, cần thêm phần đọc vector của mô hình đó; <code>fit_adaptive_fusion</code> và <code>adaptive_scores</code> thì dùng lại được nguyên vẹn.</li>
+        <li><b>Cấp độ 4 hướng (a) yêu cầu thực nghiệm trên ít nhất 2 tập công khai.</b> Hai tập là VG ∩ COCO và MKG-W caption subset. Tập sau được dựng theo đúng khuôn của tập trước, nên dùng chung script, chỉ khác config.</li>
+        <li><b>Hiện script chỉ đọc run GraphSAGE.</b> Muốn áp dụng cho mô hình khác, ví dụ AdaMF-MAT, cần thêm phần đọc vector của mô hình đó; <code>fit_query_alpha</code> và <code>query_alpha_scores</code> thì dùng lại được nguyên vẹn.</li>
       </ul>
     </section>
 
@@ -1159,7 +1161,7 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       <p>Hai trường hợp đặc biệt, đều có test:</p>
       <ul>
         <li><b>Giá trị nằm đúng trên vạch thuộc nhóm dưới.</b> Với vạch 2,5, các giá trị 1,0; 2,5; 2,6; 9,0 lần lượt vào nhóm 0, 0, 1, 1.</li>
-        <li><b>Nhiều giá trị bằng nhau làm các vạch trùng nhau, và vạch trùng được gộp.</b> Khi đó có nhóm không có câu nào, và <code>fit_adaptive_fusion</code> từ chối. Hãy chọn “6 giá trị bằng nhau” ở trên để thấy. Margin của CLIP là số thực liên tục, nên điều này gần như không xảy ra với dữ liệu thật.</li>
+        <li><b>Nhiều giá trị bằng nhau làm các vạch trùng nhau, và vạch trùng được gộp.</b> Khi đó có nhóm không có câu nào, và <code>fit_query_alpha</code> từ chối. Hãy chọn “6 giá trị bằng nhau” ở trên để thấy. Margin của CLIP là số thực liên tục, nên điều này gần như không xảy ra với dữ liệu thật.</li>
       </ul>
       <details class="more">
         <summary>Xem công thức</summary>
@@ -1325,17 +1327,19 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
         <p>Không. Nó chỉ đọc sơ đồ vật thể và quan hệ do người gán nhãn sẵn trong Visual Genome. Dự án không có bước tự sinh sơ đồ từ ảnh.</p></details>
       <details><summary>Điểm đồ thị một mình chỉ khoảng 28%, sao trộn vào lại giúp?</summary>
         <p>Vì nó sai ở những chỗ khác CLIP. CLIP giỏi nhận ra cảnh chung nhưng hay lẫn quan hệ; đồ thị ghi rõ ai làm gì với ai. Trộn hai nguồn có điểm mạnh khác nhau thì tốt hơn từng nguồn riêng lẻ.</p></details>
+      <details><summary>Khác gì “trọng số thích nghi” của AdaMF trong AdaMF-MAT?</summary>
+        <p>Khác hẳn, chỉ trùng chữ “thích nghi”. AdaMF trộn ba embedding của một ảnh (cấu trúc, hình ảnh, văn bản) bên trong bộ mã hoá ảnh, với trọng số học được theo từng ảnh. α theo truy vấn trộn <b>điểm</b> CLIP với <b>điểm</b> đồ thị ở bước xếp hạng lại, với α chọn trên validation theo từng nhóm câu truy vấn. Bước xếp hạng lại của AdaMF-MAT hiện vẫn dùng một α cố định, nên α theo truy vấn có thể áp lên cả nó.</p></details>
       <details><summary>Có dùng được cho mô hình khác, ví dụ AdaMF-MAT?</summary>
-        <p>Hai hàm chính <code>fit_adaptive_fusion</code> và <code>adaptive_scores</code> không phụ thuộc mô hình. Chỉ phần script đọc vector hiện viết cho run GraphSAGE; cần thêm phần đọc vector của mô hình kia.</p></details>
+        <p>Hai hàm chính <code>fit_query_alpha</code> và <code>query_alpha_scores</code> không phụ thuộc mô hình. Chỉ phần script đọc vector hiện viết cho run GraphSAGE; cần thêm phần đọc vector của mô hình kia.</p></details>
       <details><summary>Để đủ điều kiện Cấp độ 4 còn thiếu gì?</summary>
-        <p>Đề yêu cầu thực nghiệm trên ít nhất 2 tập công khai. Hiện mới có một tập; code chạy lại được ngay khi có config retrieval của tập thứ hai.</p></details>
+        <p>Đề yêu cầu thực nghiệm trên ít nhất 2 tập công khai. Đã có đủ hai tập, VG ∩ COCO và MKG-W caption subset, mỗi tập một config. Việc còn lại là chạy script trên máy có dữ liệu rồi điền kết quả.</p></details>
     </section>
   </main>
 </div>
 
 <footer>
   <div class="inner">
-    Trang này là bản HTML của <code>docs/adaptive-fusion.md</code>; khi code thay đổi, cập nhật cả hai. Mở trực tiếp bằng trình duyệt, không cần mạng.
+    Trang này là bản HTML của <code>docs/query-alpha.md</code>; khi code thay đổi, cập nhật cả hai. Mở trực tiếp bằng trình duyệt, không cần mạng.
   </div>
 </footer>
 
@@ -1430,7 +1434,7 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
   themeButton.addEventListener("click", () => {
     theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
     applyTheme();
-    try { localStorage.setItem("adaptive-fusion-theme", theme); } catch (e) {}
+    try { localStorage.setItem("query-alpha-theme", theme); } catch (e) {}
   });
 
   /* ---------------- Table of contents ---------------- */
@@ -1722,7 +1726,7 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
     let summary = `${res.rows.length} vạch tính ra`;
     summary += merged ? `, ${merged} vạch bị gộp vì trùng giá trị, còn ${res.edges.length} vạch` : "";
     summary += ` → ${res.counts.length} nhóm: ` + res.counts.map((c, b) => (c ? `nhóm ${b} có ${c} ${ds.unit}` : `nhóm ${b} trống`)).join(", ") + ".";
-    if (res.counts.some((c) => c === 0)) summary += " ⚠ Có nhóm trống, nên fit_adaptive_fusion sẽ từ chối cách chia này.";
+    if (res.counts.some((c) => c === 0)) summary += " ⚠ Có nhóm trống, nên fit_query_alpha sẽ từ chối cách chia này.";
     document.getElementById("nl-summary").textContent = summary;
 
     const table = document.getElementById("nl-table");

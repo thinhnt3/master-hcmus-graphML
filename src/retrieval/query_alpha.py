@@ -1,4 +1,4 @@
-"""Query-adaptive fusion of CLIP and graph scores. No file I/O except the config loader.
+"""Query-adaptive alpha: a fusion weight per bucket of queries. No file I/O except the config loader.
 
 The official reranker gives every query the same (alpha, top_k). Here the queries are split
 into buckets by a label-free feature, and each bucket gets its own (alpha, top_k), selected
@@ -97,7 +97,7 @@ def assign_buckets(values: np.ndarray, edges: Sequence[float]) -> np.ndarray:
 
 
 @dataclass(frozen=True)
-class AdaptiveFusion:
+class QueryAlpha:
     """A fitted bucketing: the feature, its edges cut on validation, and the selected setting of each bucket."""
 
     feature: BucketFeature
@@ -127,7 +127,7 @@ def _subset(data: SplitData, rows: np.ndarray) -> SplitData:
     )
 
 
-def fit_adaptive_fusion(
+def fit_query_alpha(
     clip_scores: np.ndarray,
     graph_scores: np.ndarray,
     data: SplitData,
@@ -139,14 +139,14 @@ def fit_adaptive_fusion(
     min_bucket_queries: int,
     feature_seed: int,
     ks: Sequence[int] = DEFAULT_KS,
-) -> AdaptiveFusion:
+) -> QueryAlpha:
     """Cut buckets on validation and select (alpha, top_k) per bucket with the official sweep.
 
     Refuses any split other than validation, and buckets with fewer than
     `min_bucket_queries` validation queries, which are too small to select a setting on.
     """
     if data.split is not Split.VAL:
-        raise DataError(f"adaptive fusion is fitted on validation only, got split '{data.split.value}'")
+        raise DataError(f"query alpha is fitted on validation only, got split '{data.split.value}'")
     expected = (len(data.query_ids), len(data.image_ids))
     if clip_scores.shape != expected or graph_scores.shape != expected:
         raise DataError(f"score shapes {clip_scores.shape} and {graph_scores.shape} do not match {expected}")
@@ -167,11 +167,11 @@ def fit_adaptive_fusion(
             )
         best, _ = sweep_alpha_and_k(clip_scores[rows], graph_scores[rows], _subset(data, rows), alphas, top_ks, ks)
         settings.append(best)
-    return AdaptiveFusion(feature=feature, feature_seed=feature_seed, edges=edges, settings=tuple(settings))
+    return QueryAlpha(feature=feature, feature_seed=feature_seed, edges=edges, settings=tuple(settings))
 
 
-def adaptive_scores(
-    fusion: AdaptiveFusion,
+def query_alpha_scores(
+    fusion: QueryAlpha,
     clip_scores: np.ndarray,
     graph_scores: np.ndarray,
     query_ids: Sequence[str],
@@ -194,8 +194,8 @@ def adaptive_scores(
 
 
 @dataclass(frozen=True)
-class AdaptiveFusionConfig:
-    """Protocol of `scripts/evaluate_adaptive_fusion.py`; see `configs/evaluation/adaptive_fusion.yaml`."""
+class QueryAlphaConfig:
+    """Protocol of `scripts/evaluate_query_alpha.py`; see `configs/evaluation/query_alpha.yaml`."""
 
     retrieval_config: str
     features: tuple[BucketFeature, ...]
@@ -215,12 +215,12 @@ class AdaptiveFusionConfig:
             raise ConfigError("min_bucket_queries and bootstrap_repeats must be >= 1")
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> AdaptiveFusionConfig:
+    def from_yaml(cls, path: str | Path) -> QueryAlphaConfig:
         """Load and validate the YAML file; raise ConfigError on any problem."""
         return cls.from_dict(read_mapping(path))
 
     @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> AdaptiveFusionConfig:
+    def from_dict(cls, raw: Mapping[str, Any]) -> QueryAlphaConfig:
         """Build from an already-parsed mapping (used by tests)."""
         mapping = dict(raw)
         features = mapping.get("features")

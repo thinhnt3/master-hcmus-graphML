@@ -7,24 +7,24 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-import scripts.evaluate_adaptive_fusion as script
+import scripts.evaluate_query_alpha as script
 from src.core.exceptions import ConfigError, DataError
 from src.data.schemas import Split
 from src.data.yaml_io import write_yaml
 from src.evaluation.benchmark import SplitData
 from src.evaluation.metrics import ranks_of_relevant
-from src.retrieval.adaptive_fusion import (
-    AdaptiveFusion,
-    AdaptiveFusionConfig,
+from src.retrieval.config import RetrievalConfig
+from src.retrieval.query_alpha import (
     BucketFeature,
-    adaptive_scores,
+    QueryAlpha,
+    QueryAlphaConfig,
     assign_buckets,
     bucket_edges,
     clip_margin,
-    fit_adaptive_fusion,
+    fit_query_alpha,
+    query_alpha_scores,
     random_feature,
 )
-from src.retrieval.config import RetrievalConfig
 from src.retrieval.rerank import SweepPoint, rerank_scores, sweep_alpha_and_k
 
 ALPHAS = tuple(round(i / 100, 2) for i in range(101))
@@ -33,7 +33,7 @@ ALPHAS = tuple(round(i / 100, 2) for i in range(101))
 # one (column 1) and the graph weakly favours the right one, so it needs alpha < 0.1 / 0.12 ≈ 0.833.
 # "Sure": CLIP is right (column 0) by 0.05 and the graph strongly favours the wrong image, so it
 # needs alpha > 1 / 1.05 ≈ 0.952. No single alpha serves both; one per bucket does.
-# docs/adaptive-fusion.md works this example through by hand.
+# docs/query-alpha.md works this example through by hand.
 UNSURE_CLIP, UNSURE_GRAPH = [0.30, 0.28, 0.0], [0.0, 0.1, 0.0]
 SURE_CLIP, SURE_GRAPH = [0.60, 0.55, 0.0], [0.0, 1.0, 0.0]
 
@@ -56,7 +56,7 @@ def _conflicting(n_each=4):
 
 
 def _fit(clip, graph, data, n_buckets, feature=BucketFeature.CLIP_MARGIN, top_ks=(2, 3), min_bucket_queries=1):
-    return fit_adaptive_fusion(
+    return fit_query_alpha(
         clip, graph, data, feature, n_buckets, ALPHAS, top_ks, min_bucket_queries=min_bucket_queries, feature_seed=0
     )
 
@@ -103,7 +103,7 @@ def test_one_bucket_reproduces_the_official_selection_and_scores():
     best, _ = sweep_alpha_and_k(clip, graph, data, ALPHAS, (2, 4, 8))
     (setting,) = fusion.settings
     assert (setting.alpha, setting.top_k) == (best.alpha, best.top_k)
-    fused, buckets = adaptive_scores(fusion, clip, graph, data.query_ids)
+    fused, buckets = query_alpha_scores(fusion, clip, graph, data.query_ids)
     np.testing.assert_array_equal(fused, rerank_scores(clip, graph, best.alpha, best.top_k))
     assert not buckets.any()
 
@@ -116,7 +116,7 @@ def test_each_bucket_gets_its_own_setting_where_one_alpha_cannot_serve_both():
     adaptive = _fit(clip, graph, data, 2)
     unsure, sure = adaptive.settings
     assert unsure.alpha <= 0.83 and sure.alpha >= 0.96
-    fused, buckets = adaptive_scores(adaptive, clip, graph, data.query_ids)
+    fused, buckets = query_alpha_scores(adaptive, clip, graph, data.query_ids)
     np.testing.assert_array_equal(buckets, [0] * 4 + [1] * 4)
     assert (ranks_of_relevant(fused, data.relevant_columns) == 1).all()
 
@@ -144,7 +144,7 @@ def test_scoring_another_split_uses_the_validation_edges():
     # Margins 0.01, 0.02, 0.03 all sit below the validation edge. Edges recomputed on these
     # queries (median 0.02) would move the last one into the upper bucket.
     test_clip = np.array([[0.30, 0.29, 0.0], [0.30, 0.28, 0.0], [0.30, 0.27, 0.0]])
-    _, buckets = adaptive_scores(fusion, test_clip, np.zeros_like(test_clip), ("t0", "t1", "t2"))
+    _, buckets = query_alpha_scores(fusion, test_clip, np.zeros_like(test_clip), ("t0", "t1", "t2"))
     np.testing.assert_array_equal(buckets, [0, 0, 0])
 
 
@@ -152,15 +152,15 @@ def test_alpha_one_in_every_bucket_keeps_the_clip_ranking():
     rng = np.random.default_rng(1)
     clip, graph = rng.uniform(-1, 1, (20, 6)), rng.uniform(-1, 1, (20, 6))
     settings = (SweepPoint(1.0, 2, {}), SweepPoint(1.0, 6, {}))
-    fusion = AdaptiveFusion(BucketFeature.CLIP_MARGIN, 0, (float(np.median(clip_margin(clip))),), settings)
-    fused, buckets = adaptive_scores(fusion, clip, graph, tuple(f"q{i}" for i in range(20)))
+    fusion = QueryAlpha(BucketFeature.CLIP_MARGIN, 0, (float(np.median(clip_margin(clip))),), settings)
+    fused, buckets = query_alpha_scores(fusion, clip, graph, tuple(f"q{i}" for i in range(20)))
     assert set(buckets.tolist()) == {0, 1}
     np.testing.assert_array_equal(np.argsort(-fused, axis=1), np.argsort(-clip, axis=1))
 
 
 def test_a_fitted_fusion_needs_one_setting_per_bucket():
     with pytest.raises(DataError):
-        AdaptiveFusion(BucketFeature.CLIP_MARGIN, 0, (0.1,), (SweepPoint(0.5, 2, {}),))
+        QueryAlpha(BucketFeature.CLIP_MARGIN, 0, (0.1,), (SweepPoint(0.5, 2, {}),))
 
 
 def _raw_config(**overrides):
@@ -172,7 +172,7 @@ def _raw_config(**overrides):
         "feature_seed": 2026,
         "bootstrap_repeats": 2000,
         "bootstrap_seed": 310,
-        "output": "runs/analysis/adaptive_fusion.json",
+        "output": "runs/analysis/query_alpha.json",
     }
     return {**raw, **overrides}
 
@@ -195,13 +195,15 @@ def _raw_config(**overrides):
 )
 def test_config_rejects_invalid_values(overrides):
     with pytest.raises(ConfigError):
-        AdaptiveFusionConfig.from_dict(_raw_config(**overrides))
+        QueryAlphaConfig.from_dict(_raw_config(**overrides))
 
 
-def test_shipped_config_is_valid():
-    config = AdaptiveFusionConfig.from_yaml("configs/evaluation/adaptive_fusion.yaml")
+@pytest.mark.parametrize("path", ["configs/evaluation/query_alpha.yaml", "configs/evaluation/query_alpha_mkg_w.yaml"])
+def test_shipped_configs_are_valid(path):
+    config = QueryAlphaConfig.from_yaml(path)
     assert config.n_buckets == (2, 3, 4)
     assert config.features == (BucketFeature.CLIP_MARGIN, BucketFeature.RANDOM)
+    RetrievalConfig.from_yaml(config.retrieval_config)  # the run it points to has a readable config
 
 
 def _script_world(monkeypatch, tmp_path):
@@ -232,9 +234,9 @@ def _script_world(monkeypatch, tmp_path):
     }
     for name, fake in fakes.items():
         monkeypatch.setattr(script, name, fake)
-    config, output = tmp_path / "adaptive_fusion.yaml", tmp_path / "adaptive_fusion.json"
+    config, output = tmp_path / "query_alpha.yaml", tmp_path / "query_alpha.json"
     write_yaml(config, _raw_config(n_buckets=[2], min_bucket_queries=5, bootstrap_repeats=50, output=str(output)))
-    monkeypatch.setattr(sys, "argv", ["evaluate_adaptive_fusion", "--config", str(config)])
+    monkeypatch.setattr(sys, "argv", ["evaluate_query_alpha", "--config", str(config)])
     return benchmark, output
 
 

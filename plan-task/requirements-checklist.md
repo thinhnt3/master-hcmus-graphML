@@ -144,9 +144,9 @@ schema v2. CLI `--labels` hiện chỉ nhận v1.
 
 - [ ] MMKG tiếng Việt với entity/triple/image theo yêu cầu, linking, license và data card.
 - [ ] Transfer evaluation trên MMKG tự xây.
-- [~] Chọn và định nghĩa giả thuyết/baseline cho phần mở rộng Cấp độ 4: kết hợp điểm thích nghi theo
-  margin CLIP (H1), baseline α cố định, đối chứng chia nhóm ngẫu nhiên. Code và test đã xong
-  (`docs/adaptive-fusion.md`); chưa chạy trên dữ liệu thật, và đề yêu cầu thực nghiệm trên ≥2 tập công khai.
+- [~] Chọn và định nghĩa giả thuyết/baseline cho phần mở rộng Cấp độ 4: α theo truy vấn (α, k riêng cho
+  từng nhóm câu theo margin CLIP; H1), baseline α cố định, đối chứng chia nhóm ngẫu nhiên. Code và test đã
+  xong, có config cho VG ∩ COCO và MKG-W caption subset (`docs/query-alpha.md`); chưa chạy trên dữ liệu thật.
 
 ## K. Sản phẩm nộp
 

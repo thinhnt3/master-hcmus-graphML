@@ -1,0 +1,19 @@
+# Query-adaptive alpha on the MKG-W caption subset, the second public dataset. It is built in the
+# VG ∩ COCO layout, so the script is the same; only the run and the bucket floor differ.
+# Run: python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha_mkg_w.yaml
+# All paths are relative to the repository root.
+
+# Needs train_graphsage and run_benchmark --method graphsage for this config first.
+retrieval_config: configs/retrieval/mkg_w_captions.yaml
+
+features: [clip_margin, random]
+n_buckets: [2, 3, 4]
+
+# Validation has 880 captions (440 items × 2), so 4 buckets hold about 220 each.
+min_bucket_queries: 200
+
+feature_seed: 2026
+bootstrap_repeats: 2000
+bootstrap_seed: 310
+
+output: runs/analysis/query_alpha_mkg_w.json

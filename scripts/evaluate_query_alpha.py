@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Query-adaptive fusion: one validation-selected (alpha, top_k) per bucket of queries.
+"""Query-adaptive alpha: one validation-selected (alpha, top_k) per bucket of queries.
 
 Run from the repository root after train_graphsage and run_benchmark for the configured run:
-    python -m scripts.evaluate_adaptive_fusion
-    python -m scripts.evaluate_adaptive_fusion --config configs/evaluation/adaptive_fusion.yaml
+    python -m scripts.evaluate_query_alpha
+    python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha.yaml
+    python -m scripts.evaluate_query_alpha --config configs/evaluation/query_alpha_mkg_w.yaml
 
 For every training seed:
 - the baseline is the official fixed-alpha reranker, selected on all validation queries; it
@@ -41,13 +42,13 @@ from src.evaluation.benchmark import aggregate_runs, build_split_data, clip_scor
 from src.evaluation.metrics import ranks_of_relevant, retrieval_metrics
 from src.models.checkpoint import GRAPH_VECTORS, SETTINGS_FILE
 from src.models.run_validation import validate_artifact_inputs, validate_run
-from src.retrieval.adaptive_fusion import AdaptiveFusionConfig, adaptive_scores, fit_adaptive_fusion
 from src.retrieval.config import RetrievalConfig
+from src.retrieval.query_alpha import QueryAlphaConfig, fit_query_alpha, query_alpha_scores
 from src.retrieval.rerank import SweepPoint, rerank_scores, sweep_alpha_and_k
 
-log = logging.getLogger("evaluate_adaptive_fusion")
+log = logging.getLogger("evaluate_query_alpha")
 
-DEFAULT_CONFIG = "configs/evaluation/adaptive_fusion.yaml"
+DEFAULT_CONFIG = "configs/evaluation/query_alpha.yaml"
 EVAL_SPLITS = (Split.VAL, Split.TEST)
 FIXED = "fixed"
 
@@ -89,7 +90,7 @@ def _log_seed(seed: int, key: str, result: dict[str, Any]) -> None:
     )
 
 
-def run(config: AdaptiveFusionConfig, config_path: str) -> None:
+def run(config: QueryAlphaConfig, config_path: str) -> None:
     """Fit the baseline and every bucketing on validation per seed, score validation and test, write the report."""
     retrieval = RetrievalConfig.from_yaml(config.retrieval_config)
     data_config = DataConfig.from_yaml(retrieval.data_config)
@@ -143,7 +144,7 @@ def run(config: AdaptiveFusionConfig, config_path: str) -> None:
         _log_seed(seed, FIXED, fixed)
 
         for key, (feature, n_buckets) in plans.items():
-            fusion = fit_adaptive_fusion(
+            fusion = fit_query_alpha(
                 clip[Split.VAL],
                 graph[Split.VAL],
                 data[Split.VAL],
@@ -157,7 +158,7 @@ def run(config: AdaptiveFusionConfig, config_path: str) -> None:
             )
             result: dict[str, Any] = {"fit": fusion.to_dict()}
             for split in EVAL_SPLITS:
-                fused, buckets = adaptive_scores(fusion, clip[split], graph[split], data[split].query_ids)
+                fused, buckets = query_alpha_scores(fusion, clip[split], graph[split], data[split].query_ids)
                 ranks = ranks_of_relevant(fused, data[split].relevant_columns)
                 result[split.value] = {
                     "metrics": retrieval_metrics(ranks, grid.recall_ks),
@@ -218,9 +219,9 @@ def main() -> int:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     try:
-        run(AdaptiveFusionConfig.from_yaml(args.config), args.config)
+        run(QueryAlphaConfig.from_yaml(args.config), args.config)
     except AppError:
-        log.exception("adaptive fusion failed")
+        log.exception("query alpha failed")
         return 1
     return 0
 
