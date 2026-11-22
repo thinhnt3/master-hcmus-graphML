@@ -190,7 +190,7 @@ Huấn luyện được thiết kế để chạy lại cho ra đúng kết qu�
 | Chỉ dùng CLIP | 43,89% |
 | Trộn CLIP với điểm đồ thị | 48,20 ± 0,05% (lượt 17/11); 48,12 ± 0,23% (lượt chạy lại 18/11) |
 
-Một mình, điểm đồ thị yếu hơn CLIP nhiều. Nhưng nó mạnh ở chỗ CLIP yếu (ai làm gì với ai), nên trộn lại tốt hơn cả hai. Thí nghiệm bỏ hết relation, chỉ giữ đối tượng, làm R@1 giảm 0,56 điểm phần trăm (khoảng 95%: 0,05 đến 1,06): relation có giúp, dù không nhiều. Riêng nhãn vị từ cụ thể (cutting, riding…) thì chưa chứng minh được là giúp rõ ràng. Chi tiết ở mục [Ablation](#ablation-và-kiểm-tra-lời-giải-thích) và [tài liệu 4](04-ket-qua.md).
+Một mình, điểm đồ thị yếu hơn CLIP nhiều. Điểm này có thể bổ sung tín hiệu chú giải cho CLIP khi kết hợp, nhưng mức tăng chưa chứng minh mô hình đã hiểu quan hệ “ai làm gì với ai”. Cần đọc ablation để tách đóng góp của danh sách vật thể, nhãn vị từ và cấu trúc cạnh. Thí nghiệm bỏ hết relation, chỉ giữ đối tượng, làm R@1 giảm 0,56 điểm phần trăm (khoảng 95%: 0,05 đến 1,06): relation có giúp, dù không nhiều. Riêng nhãn vị từ cụ thể (cutting, riding…) thì chưa chứng minh được là giúp rõ ràng. Chi tiết ở mục [Ablation](#ablation-và-kiểm-tra-lời-giải-thích) và [tài liệu 4](04-ket-qua.md).
 
 ## Chấm điểm và xếp hạng lại
 

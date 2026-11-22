@@ -81,7 +81,9 @@ Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `doc
 ## 8. Demo trực tiếp và video dự phòng
 
 - [x] Có code UI/notebook và kịch bản demo dưới 5 phút trong README.
-- [ ] Video dự phòng ≤5 phút được nhóm kiểm và bàn giao.
+- [x] Có `reports/demo/retrieval-demo.mp4`: khoảng 1:30 (<5 phút), H.264, phụ đề tiếng Việt, không lời đọc; ghi thao tác thật và đã kiểm frame/thời lượng.
+- [~] Nhóm cần duyệt video và chọn bản nộp; có thể bổ sung lời đọc.
+- [~] Có gói demo local gồm 1.500 ảnh/cache/checkpoint seed 13 kèm manifest; chưa phải gói artifact đầy đủ của mọi phương pháp/dataset. CLIP weights cần cache riêng.
 - [ ] Thử mở lại bằng môi trường/gói artifact trên máy vấn đáp.
 
 ## Phần mở rộng tùy chọn
@@ -93,6 +95,6 @@ Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `doc
 ## Kết luận nghiệm thu
 
 Code cốt lõi, MMKG remote, dữ liệu/split, cấu hình ablation, UI và notebook đã có.
-Các sản phẩm còn chặn bộ nộp hoàn chỉnh: báo cáo cuối + slide, video, gói artifact
-và kiểm tay theo rubric. Không cần chốt lại số liệu bằng cách train/tune theo test;
+Các sản phẩm còn chặn bộ nộp hoàn chỉnh: báo cáo cuối + slide, duyệt video/gói
+artifact đầy đủ và kiểm tay theo rubric. Không cần chốt lại số liệu bằng cách train/tune theo test;
 cần gắn mỗi bảng/case với đúng nguồn chạy đã có.

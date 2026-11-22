@@ -31,7 +31,7 @@ Tài liệu giải thích đầy đủ, có hình minh hoạ và phụ lục cô
 
 Trách nhiệm bàn giao đã chốt: [task.md](task.md) (4 việc riêng, 3 việc chung từng cặp).
 Checklist tám sản phẩm cần nộp và phần còn thiếu: [requirements-checklist.md](plan-task/requirements-checklist.md).
-Demo/notebook đã có; báo cáo cuối, slide, video và gói model/cache vẫn cần hoàn thiện.
+Demo/notebook và video dự phòng có phụ đề đã có; báo cáo cuối, slide và gói artifact đầy đủ vẫn cần hoàn thiện.
 Việc còn mở của từng phần nằm ở các mục "Chưa có" và "Chưa làm" bên dưới.
 
 ## Dữ liệu
@@ -598,8 +598,16 @@ các giao thức và lệnh riêng đã có.
 
 Chuẩn bị trước ảnh/cache/checkpoint và CLIP offline; chạy `check`, `images` rồi
 `serve`. Trước khi quay, chọn một ca đúng và một ca sai từ các query mẫu đã kiểm,
-không sửa kết quả hoặc đổi tham số theo test. Video dự phòng cần quay và kiểm lại
-âm thanh/nội dung, tổng thời lượng không quá 5 phút; kịch bản này chưa phải video.
+không sửa kết quả hoặc đổi tham số theo test. [Video dự phòng](reports/demo/retrieval-demo.mp4)
+được ghi từ thao tác thật, có phụ đề tiếng Việt, không có lời đọc, dài khoảng 1 phút 30 giây
+(<5 phút). Video có query mẫu với ground truth, so hai tab, mở đồ thị con, query mới
+và xuất JSON; không chỉnh score/ảnh dự đoán. Nhóm cần kiểm duyệt nội dung trước khi nộp.
+
+Gói bàn giao local có thể kèm `du-lieu-va-checkpoint-demo-vg-coco.tar.gz`: giải nén
+ở gốc cùng source để khôi phục đúng 1.500 ảnh gallery, bảng embedding và checkpoint
+seed 13. Gói này không nằm trong Git và không thay thế artifact huấn luyện mọi
+phương pháp. Trọng số CLIP không kèm gói: chạy `prepare-model` một lần có mạng,
+rồi `check` trước khi `serve` hoặc chạy notebook. Giữ file manifest/hash của gói.
 
 ## Chạy lại
 

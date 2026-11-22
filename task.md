@@ -19,7 +19,7 @@ các task riêng do một người chịu trách nhiệm nghiệm thu.
 |---|---|---|---|---|
 | C1 | Trường Thịnh + Phú | Trường Thịnh: AdaMF-MAT/adaptation, loss, checkpoint, bảng mô hình. Phú: MKG-W, query trực tiếp/gián tiếp, split và kiểm oracle input. | `docs/mkg-w-results.md`, `docs/mkg-w-captions-results.md`, bộ query và code trong repo | Đã có code và kết quả. Khi viết báo cáo phải tách caption text-only với KG được cho anchor/relation; không trình bày như so sánh cùng input. |
 | C2 | Nghị + Phú | Nghị: nguồn/license, linking, triple, data card và split. Phú: transfer, gallery ảnh/địa điểm, ablation và phân tích lỗi. | `data/processed/vn_heritage_core/`, `docs/vn-heritage-results.md` | Chỉ dùng MMKG trên remote: 160 địa điểm, 772 ảnh, 849 thực thể, 981 claim + 902 cạnh bài viết. Còn kiểm tay mẫu và đóng gói ảnh/license; không lấy bộ MMKG local cũ thay vào. |
-| C3 | Trường Thịnh + Quốc Thịnh | Trường Thịnh: code/runtime, model/cache, top-k và relation. Quốc Thịnh: kịch bản, quay/biên tập video, đối chiếu slide. | `scripts/run_demo.py`, `src/demo/`, `notebooks/retrieval_demo.ipynb`, hướng dẫn README | UI/notebook đã chạy trên model thật. Còn nghiệm thu ở máy trình bày và video dự phòng ≤5 phút; dùng kịch bản trong README. |
+| C3 | Trường Thịnh + Quốc Thịnh | Trường Thịnh: code/runtime, model/cache, top-k và relation. Quốc Thịnh: kịch bản, quay/biên tập video, đối chiếu slide. | `scripts/run_demo.py`, `src/demo/`, `notebooks/retrieval_demo.ipynb`, hướng dẫn README | UI/notebook đã chạy trên model thật; có video dự phòng ~1:30 có phụ đề, không lời đọc (`reports/demo/retrieval-demo.mp4`). Còn nhóm duyệt video và nghiệm thu ở máy trình bày. |
 
 ## Tài khoản Git và cách ghi đóng góp
 
@@ -43,6 +43,6 @@ chịu trách nhiệm đọc, chạy lại, hiểu và nghiệm thu trước khi
 1. Tích hợp tài liệu Phú → query-adaptive alpha tùy chọn → cấu hình ablation dataset 2 → demo/notebook → panel W&B dataset 2.
 2. Chạy test/lint/type, audit metadata và chạy demo/notebook trên bản tích hợp. Query-adaptive alpha chưa có số liệu, chưa nhận hoàn thành cấp độ 4.
 3. Chốt gói artifact ngoài Git, kiểm validity, hoàn thiện Prism và slide theo gói kỹ thuật đã bàn giao.
-4. Quay video dự phòng ≤5 phút, chạy thử trên máy vấn đáp. Không đánh dấu cả bài hoàn thành trước khi đủ các sản phẩm này.
+4. Duyệt video dự phòng đã chuẩn bị (có thể bổ sung lời đọc), chạy thử trên máy vấn đáp. Không đánh dấu cả bài hoàn thành trước khi đủ các sản phẩm này.
 
 Trạng thái theo sản phẩm: [requirements-checklist.md](plan-task/requirements-checklist.md).
