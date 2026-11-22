@@ -1,0 +1,1739 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kết hợp điểm thích nghi</title>
+<meta name="description" content="Giải thích dễ hiểu tính năng kết hợp điểm thích nghi theo từng truy vấn: ý tưởng, ví dụ tự kéo thử, code hoạt động thế nào và cách đọc kết quả.">
+<script>
+  try {
+    var savedTheme = localStorage.getItem("adaptive-fusion-theme");
+    if (savedTheme === "light" || savedTheme === "dark") document.documentElement.dataset.theme = savedTheme;
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --surface-2: #f1f0ec;
+    --text-1: #0b0b0b;
+    --text-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --link: #1c5cab;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --critical: #d03b3b;
+    --good-wash: rgba(12, 163, 12, 0.10);
+    --accent-wash: rgba(42, 120, 214, 0.08);
+    --neutral-wash: rgba(11, 11, 11, 0.06);
+    --code-bg: #efeee9;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --surface-2: #242422;
+      --text-1: #f0efec;
+      --text-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --link: #6da7ec;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --good-text: #0ca30c;
+      --good-wash: rgba(12, 163, 12, 0.16);
+      --accent-wash: rgba(57, 135, 229, 0.13);
+      --neutral-wash: rgba(255, 255, 255, 0.07);
+      --code-bg: #262624;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --text-1: #f0efec;
+    --text-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --link: #6da7ec;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --good-text: #0ca30c;
+    --good-wash: rgba(12, 163, 12, 0.16);
+    --accent-wash: rgba(57, 135, 229, 0.13);
+    --neutral-wash: rgba(255, 255, 255, 0.07);
+    --code-bg: #262624;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-1);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--link); text-underline-offset: 2px; }
+  h1, h2, h3, h4 { line-height: 1.3; }
+  h2 { font-size: 1.6rem; margin: 0 0 12px; }
+  h3 { font-size: 1.18rem; margin: 28px 0 8px; }
+  h4 { font-size: 1rem; margin: 18px 0 6px; }
+  p { margin: 10px 0; }
+  code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; }
+  code { background: var(--code-bg); padding: 0.08em 0.36em; border-radius: 4px; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 10px; overflow-x: auto; line-height: 1.55; margin: 12px 0; }
+  pre code { background: none; padding: 0; overflow-wrap: normal; }
+  :focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; border-radius: 4px; }
+  .muted { color: var(--text-2); }
+  .small { font-size: 14px; }
+  .nowrap { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- Header ---------- */
+  .hero { border-bottom: 1px solid var(--border); background: var(--surface); }
+  .hero-inner { max-width: 1180px; margin: 0 auto; padding: 28px 16px 24px; position: relative; }
+  .kicker { margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--text-2); }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 4vw, 2.4rem); max-width: 22ch; }
+  .lead { font-size: 1.12rem; color: var(--text-2); max-width: 62ch; margin: 0 0 14px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .badge { font-size: 13px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px 12px; color: var(--text-2); }
+  .theme-toggle { position: absolute; top: 24px; right: 16px; }
+  @media (max-width: 640px) { .theme-toggle { position: static; margin-top: 14px; } }
+
+  /* ---------- Layout ---------- */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; max-width: 1180px; margin: 0 auto; padding: 24px 16px 72px; }
+  @media (min-width: 1100px) { .layout { grid-template-columns: 236px minmax(0, 1fr); gap: 44px; } }
+  main { min-width: 0; max-width: 840px; }
+  main > section { padding-top: 12px; margin-bottom: 52px; }
+  .sec-num { display: inline-block; min-width: 1.6em; color: var(--muted); font-weight: 600; }
+
+  .toc { font-size: 14px; }
+  @media (min-width: 1100px) { .toc { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow: auto; } }
+  .toc details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 8px; }
+  .toc summary { cursor: pointer; padding: 6px 8px; font-weight: 600; }
+  .toc ol { list-style: none; margin: 4px 0; padding: 0; }
+  .toc li a { display: block; padding: 5px 10px; border-radius: 7px; color: var(--text-2); text-decoration: none; }
+  .toc li a:hover { background: var(--surface-2); color: var(--text-1); }
+  .toc li a[aria-current="true"] { background: var(--surface-2); color: var(--text-1); font-weight: 600; }
+  @media (max-width: 1099px) { .toc ol { columns: 2; column-gap: 12px; } .toc li { break-inside: avoid; } }
+  @media (max-width: 560px) { .toc ol { columns: 1; } }
+
+  /* ---------- Building blocks ---------- */
+  .simple { background: var(--accent-wash); border-radius: 12px; padding: 12px 16px; margin: 14px 0 18px; }
+  .simple p { margin: 4px 0; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 650; letter-spacing: 0.02em; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+  .card h4 { margin-top: 0; }
+  .grid-2 { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); margin: 14px 0; }
+  @media (min-width: 720px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .note { font-size: 14px; color: var(--text-2); }
+
+  details.more { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; margin: 14px 0; }
+  details.more > summary { cursor: pointer; padding: 11px 0; font-weight: 600; color: var(--text-2); }
+  details.more[open] > summary { border-bottom: 1px solid var(--grid); margin-bottom: 8px; }
+  details.more > :last-child { margin-bottom: 14px; }
+
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--grid); }
+  tr:last-child > td { border-bottom: 0; }
+  th { font-weight: 600; color: var(--text-2); background: var(--surface-2); }
+  td code { font-size: 0.84em; }
+
+  math[display="block"] { margin: 12px 0; overflow-x: auto; overflow-y: hidden; padding: 4px 0; font-size: 1.08em; }
+  math mtd { padding: 3px 12px 3px 0; text-align: left; }
+
+  /* ---------- Quick read ---------- */
+  ol.quick { counter-reset: q; list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 10px; }
+  ol.quick > li { counter-increment: q; position: relative; padding: 12px 14px 12px 56px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  ol.quick > li::before { content: counter(q); position: absolute; left: 14px; top: 12px; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); font-weight: 700; text-align: center; line-height: 30px; }
+  .reading-guide { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 14px 0; padding: 0; list-style: none; }
+  .reading-guide li { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; }
+  .reading-guide b { display: block; }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline { display: grid; gap: 16px; margin: 18px 0; padding: 0; list-style: none; }
+  .pipeline > li { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; }
+  .pipeline > li b { display: block; margin-bottom: 2px; }
+  .pipeline > li:not(:last-child)::after { content: "↓"; position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%); color: var(--muted); font-size: 14px; line-height: 16px; }
+  @media (min-width: 800px) {
+    .pipeline { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+    .pipeline > li:not(:last-child)::after { content: "→"; left: auto; right: -15px; bottom: auto; top: 50%; transform: translateY(-50%); }
+  }
+  .step-tag { display: inline-block; font-size: 12px; color: var(--muted); font-weight: 600; }
+
+  /* ---------- Controls ---------- */
+  .btn { font: inherit; font-size: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text-1); padding: 7px 13px; border-radius: 9px; cursor: pointer; }
+  .btn:hover { background: var(--surface-2); }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-2); }
+  .seg button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--text-2); padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text-1); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 12px 0; }
+  .slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; width: 100%; font-size: 14.5px; }
+  .slider .s-label { grid-column: 1 / -1; color: var(--text-2); }
+  .slider input[type="range"] { width: 100%; accent-color: var(--series-1); margin: 0; }
+  .slider output { font-weight: 650; font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
+  .slider[hidden] { display: none; }
+
+  /* ---------- Stat tiles ---------- */
+  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin: 14px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .t-label { font-size: 13.5px; color: var(--text-2); }
+  .t-value { font-size: 30px; font-weight: 650; line-height: 1.25; }
+  .t-sub { font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- Idea cards with score bars ---------- */
+  .score-bars { display: grid; gap: 8px; margin: 10px 0 4px; }
+  .score-row { display: grid; grid-template-columns: 6.2em minmax(0, 1fr); align-items: center; gap: 10px; font-size: 14px; }
+  .score-track { position: relative; height: 18px; }
+  .score-fill { position: absolute; left: 0; top: 3px; height: 12px; background: var(--series-1); border-radius: 0 4px 4px 0; }
+  .score-value { position: absolute; top: -1px; font-size: 13px; color: var(--text-1); font-variant-numeric: tabular-nums; }
+  .gap-note { font-weight: 650; }
+
+  /* ---------- Explorer ---------- */
+  .explorer { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin: 18px 0; }
+  .explorer h4 { margin-top: 0; }
+  .explorer .sliders { display: grid; gap: 12px; margin: 12px 0; }
+  .kind-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); margin-top: 10px; }
+  @media (min-width: 760px) { .kind-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .kind-card { margin: 0; border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--page); --chart-bg: var(--page); }
+  .kind-card h5 { margin: 0; font-size: 15px; }
+  .k-alpha { font-size: 13.5px; color: var(--text-2); }
+  .k-scores { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 8px; align-items: center; margin: 8px 0; font-size: 14px; }
+  .k-scores strong { font-variant-numeric: tabular-nums; }
+  .k-status { font-weight: 650; font-size: 14.5px; margin: 4px 0 8px; }
+  .is-good { color: var(--good-text); }
+  .is-bad { color: var(--critical); }
+  .ex-note { font-size: 14.5px; margin: 8px 0 0; }
+
+  /* ---------- Charts ---------- */
+  :root { --chart-bg: var(--surface); }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  /* A halo in the chart background keeps labels legible where they cross a line. */
+  svg .annot, svg .direct, svg .now-label, svg .edge-label, svg .value-label,
+  svg .region-name, svg .region-count, svg .region-empty {
+    paint-order: stroke; stroke: var(--chart-bg); stroke-width: 3px; stroke-linejoin: round;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 2px; font-size: 13.5px; color: var(--text-2); }
+  .legend .item { display: inline-flex; align-items: center; gap: 8px; }
+  .line-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid currentColor; border-radius: 2px; }
+  .key-right { color: var(--series-1); }
+  .key-wrong { color: var(--series-2); }
+  .key-text { color: var(--text-1); }
+  .swatch { display: inline-block; width: 18px; height: 12px; border-radius: 3px; border: 1px solid var(--border); }
+  .swatch-good { background: var(--good-wash); }
+  .swatch-neutral { background: var(--neutral-wash); }
+  .tooltip { position: absolute; z-index: 5; pointer-events: none; background: var(--surface); color: var(--text-1); border: 1px solid var(--border); border-radius: 9px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 13px; min-width: 156px; }
+  .tooltip[hidden] { display: none; }
+  .tip-head { color: var(--text-2); font-size: 12px; margin-bottom: 4px; }
+  .tip-row { display: flex; align-items: center; gap: 8px; }
+  .tip-row strong { font-variant-numeric: tabular-nums; }
+  .tip-name { color: var(--text-2); }
+  .tip-foot { margin-top: 4px; font-weight: 650; }
+
+  svg .grid { stroke: var(--grid); stroke-width: 1; }
+  svg .axis { stroke: var(--axis); stroke-width: 1; }
+  svg .tick { fill: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  svg .axis-title { fill: var(--text-2); font-size: 12px; }
+  svg .series { stroke-width: 2; stroke-linecap: round; fill: none; }
+  svg .line-right { stroke: var(--series-1); }
+  svg .line-wrong { stroke: var(--series-2); }
+  svg .dot { stroke: var(--chart-bg); stroke-width: 2; }
+  svg .dot-right { fill: var(--series-1); }
+  svg .dot-wrong { fill: var(--series-2); }
+  svg .good-wash { fill: var(--good-wash); }
+  svg .threshold { stroke: var(--muted); stroke-width: 1; }
+  svg .cross-dot { fill: var(--text-1); stroke: var(--chart-bg); stroke-width: 2; }
+  svg .annot { fill: var(--text-2); font-size: 11.5px; }
+  svg .direct { fill: var(--text-2); font-size: 12px; font-weight: 600; }
+  svg .now-line { stroke: var(--text-1); stroke-width: 1.5; opacity: 0.5; }
+  svg .now-label { fill: var(--text-1); font-size: 12px; font-weight: 650; }
+  svg .crosshair { stroke: var(--muted); stroke-width: 1; }
+  svg .hit { fill: transparent; cursor: crosshair; }
+  svg .edge { stroke: var(--text-1); stroke-width: 1.5; }
+  svg .edge-label { fill: var(--text-1); font-size: 12px; font-weight: 650; }
+  svg .value-label { fill: var(--text-2); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  svg .b-0 { fill: var(--series-1); }
+  svg .b-1 { fill: var(--series-2); }
+  svg .b-2 { fill: var(--series-3); }
+  svg .b-3 { fill: var(--series-4); }
+  svg .region-name { fill: var(--text-1); font-size: 12.5px; font-weight: 650; }
+  svg .region-count { fill: var(--text-2); font-size: 12px; }
+  svg .region-empty { fill: var(--critical); font-size: 12px; font-weight: 650; }
+  svg .bar { fill: var(--series-1); }
+  svg .bar-hit { fill: transparent; }
+  svg .bar.is-hover { opacity: 0.75; }
+  svg .ci-wash { fill: var(--neutral-wash); }
+  svg .ci-line { stroke: var(--text-2); stroke-width: 1; }
+  svg .delta-line { stroke: var(--text-1); stroke-width: 1.5; }
+  svg .interval { stroke: var(--series-1); stroke-width: 2; stroke-linecap: round; }
+  svg .interval-dot { fill: var(--series-1); stroke: var(--chart-bg); stroke-width: 2; }
+  svg .row-label { fill: var(--text-1); font-size: 12.5px; }
+
+  /* ---------- Code lanes and timelines ---------- */
+  .lanes { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); margin: 14px 0; }
+  @media (min-width: 900px) { .lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .lane { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+  .lane h4 { margin: 0 0 2px; }
+  .lane .lane-sub { margin: 0 0 8px; font-size: 13.5px; color: var(--text-2); }
+  ol.numbered { list-style: none; counter-reset: s; margin: 0; padding: 0; }
+  ol.numbered > li { counter-increment: s; position: relative; padding: 9px 0 9px 38px; border-top: 1px solid var(--grid); font-size: 14.5px; }
+  ol.numbered > li:first-child { border-top: 0; }
+  ol.numbered > li::before { content: counter(s); position: absolute; left: 0; top: 9px; width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); text-align: center; line-height: 26px; font-size: 13px; font-weight: 700; }
+  .uses { display: inline-block; margin-top: 4px; font-size: 12.5px; color: var(--text-2); background: var(--accent-wash); border-radius: 999px; padding: 1px 9px; }
+
+  /* ---------- Glossary and FAQ ---------- */
+  dl.glossary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 14px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  dl.glossary > div { padding: 10px 14px; border-top: 1px solid var(--grid); }
+  dl.glossary > div:first-child { border-top: 0; }
+  dl.glossary dt { font-weight: 650; }
+  dl.glossary dd { margin: 2px 0 0; color: var(--text-2); font-size: 14.5px; }
+  @media (min-width: 760px) { dl.glossary > div { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 14px; } dl.glossary dd { margin: 0; } }
+  .faq details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; margin: 10px 0; }
+  .faq summary { cursor: pointer; padding: 11px 0; font-weight: 650; }
+  .faq details[open] summary { border-bottom: 1px solid var(--grid); margin-bottom: 6px; }
+  .faq details > p:last-child { margin-bottom: 14px; }
+
+  .check-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+  .check-list li { position: relative; padding: 10px 14px 10px 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .check-list li::before { content: "✓"; position: absolute; left: 14px; top: 10px; font-weight: 700; color: var(--good-text); }
+  .warn-line { color: var(--critical); font-weight: 650; }
+
+  footer { border-top: 1px solid var(--border); color: var(--text-2); font-size: 14px; }
+  footer .inner { max-width: 1180px; margin: 0 auto; padding: 18px 16px 40px; }
+
+  @media print {
+    .toc, .theme-toggle, .controls, .seg { display: none !important; }
+    details.more, .faq details { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Tài liệu tính năng · Cấp độ 4, hướng (a) của đề: cơ chế kết hợp điểm thích nghi</p>
+    <h1>Kết hợp điểm thích nghi theo từng truy vấn</h1>
+    <p class="lead">Mỗi câu tìm kiếm được trộn điểm theo một tỉ lệ hợp với chính nó, thay vì một tỉ lệ chung cho mọi câu.</p>
+    <ul class="badges" aria-label="Trạng thái">
+      <li class="badge">✓ Code và test đã xong</li>
+      <li class="badge">⏳ Chưa có kết quả trên dữ liệu thật</li>
+      <li class="badge">Bản HTML của <code>docs/adaptive-fusion.md</code></li>
+    </ul>
+    <button type="button" class="btn theme-toggle" id="theme-toggle">Giao diện: tự động</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Mục lục">
+    <details id="toc-details" open>
+      <summary>Mục lục</summary>
+      <ol>
+        <li><a href="#doc-nhanh"><span class="sec-num">1</span>Đọc nhanh trong 2 phút</a></li>
+        <li><a href="#he-thong"><span class="sec-num">2</span>Hệ thống hiện tại</a></li>
+        <li><a href="#y-tuong"><span class="sec-num">3</span>Ý tưởng</a></li>
+        <li><a href="#gia-thuyet"><span class="sec-num">4</span>Giả thuyết và đối chứng</a></li>
+        <li><a href="#cach-lam"><span class="sec-num">5</span>Cách làm, từng bước</a></li>
+        <li><a href="#vi-du"><span class="sec-num">6</span>Ví dụ tự kéo thử</a></li>
+        <li><a href="#dang-tin"><span class="sec-num">7</span>Vì sao kết quả đáng tin</a></li>
+        <li><a href="#code"><span class="sec-num">8</span>Đi qua code</a></li>
+        <li><a href="#chay"><span class="sec-num">9</span>Cách chạy</a></li>
+        <li><a href="#ket-qua"><span class="sec-num">10</span>Đọc file kết quả</a></li>
+        <li><a href="#gioi-han"><span class="sec-num">11</span>Giới hạn, hướng mở rộng</a></li>
+        <li><a href="#kien-thuc"><span class="sec-num">12</span>Kiến thức nền</a></li>
+        <li><a href="#tu-dien"><span class="sec-num">13</span>Từ điển nhỏ</a></li>
+        <li><a href="#hoi-dap"><span class="sec-num">14</span>Câu hỏi hay gặp</a></li>
+      </ol>
+    </details>
+  </nav>
+
+  <main>
+    <!-- 1 -->
+    <section id="doc-nhanh">
+      <h2><span class="sec-num">1</span>Đọc nhanh trong 2 phút</h2>
+      <ol class="quick">
+        <li><b>Bài toán.</b> Người dùng gõ một câu mô tả, ví dụ “một người cưỡi ngựa trên bãi biển”. Hệ thống phải tìm đúng tấm ảnh đó trong 1.500 ảnh.</li>
+        <li><b>Hai “giám khảo” chấm điểm từng ảnh.</b> <em>CLIP</em> nhìn tổng thể xem ảnh và câu có giống nhau không. <em>Đồ thị cảnh</em> soi chi tiết: trong ảnh có những vật gì, vật nào đang làm gì với vật nào.</li>
+        <li><b>Hiện nay, hai điểm được trộn theo một tỉ lệ chung cho mọi câu</b>, khoảng 80% điểm CLIP và 20% điểm đồ thị. Tỉ lệ này gọi là <b>α</b> (đọc là “an-pha”).</li>
+        <li><b>Ý tưởng của nhóm:</b> khi CLIP đã rất chắc chắn thì nên tin CLIP; khi CLIP lưỡng lự giữa hai ảnh thì nên nghe đồ thị nhiều hơn. Độ chắc chắn được đo bằng khoảng cách giữa điểm của ảnh hạng 1 và ảnh hạng 2, gọi là <b>margin</b>.</li>
+        <li><b>Cách làm:</b> chia các câu thành vài nhóm theo margin, và cho mỗi nhóm tự chọn một α riêng.</li>
+        <li><b>Kiểm tra công bằng:</b> chọn α trên tập “ôn luyện” (validation), chấm điểm trên tập “thi” (test) đúng một lần, và so với cách chia nhóm <em>ngẫu nhiên</em> để chắc rằng mức tăng không đến từ may mắn.</li>
+      </ol>
+      <div class="card">
+        <span class="chip">Ví von</span>
+        <p>Bạn nhờ hai người tìm giúp một tấm ảnh. Một người <b>nhìn lướt</b> rất nhanh (CLIP), một người <b>soi kỹ từng chi tiết</b> (đồ thị cảnh). Nếu người nhìn lướt nói chắc nịch “tấm này!”, cứ tin họ. Nếu họ ngập ngừng “tấm này hay tấm kia nhỉ?”, đó là lúc nên hỏi thêm người soi chi tiết. Tính năng này dạy hệ thống biết lúc nào nên hỏi thêm.</p>
+      </div>
+      <h3>Nên đọc mục nào</h3>
+      <ul class="reading-guide">
+        <li><b>Chỉ cần hiểu ý tưởng</b>Mục 1 đến 4.</li>
+        <li><b>Muốn tự tay thấy nó hoạt động</b>Mục 6: kéo thanh trượt α.</li>
+        <li><b>Chuẩn bị trình bày, bảo vệ</b>Mục 5, 7, 10 và 14.</li>
+        <li><b>Đọc hoặc sửa code</b>Mục 8 và 9.</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section id="he-thong">
+      <h2><span class="sec-num">2</span>Hệ thống hiện tại tìm ảnh thế nào</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Hệ thống cho mỗi ảnh một <b>điểm</b> cho biết ảnh hợp với câu mô tả đến đâu, rồi xếp các ảnh từ điểm cao xuống thấp. Một câu được tính là <b>tìm đúng</b> nếu ảnh đúng đứng hạng 1.</p>
+      </div>
+      <ol class="pipeline" aria-label="Các bước tìm ảnh">
+        <li><span class="step-tag">Bước 1</span><b>Câu mô tả</b>Ví dụ: “một người cưỡi ngựa trên bãi biển”.</li>
+        <li><span class="step-tag">Bước 2</span><b>CLIP chấm cả 1.500 ảnh</b>Điểm cao khi ảnh và câu “trông giống nhau” về tổng thể.</li>
+        <li><span class="step-tag">Bước 3</span><b>Giữ k ảnh đứng đầu</b>Chỉ k ảnh CLIP xếp cao nhất được xét tiếp. Các ảnh còn lại giữ thứ tự của CLIP và đứng sau.</li>
+        <li><span class="step-tag">Bước 4</span><b>Trộn với điểm đồ thị</b>Điểm cuối = α × điểm CLIP + <span class="nowrap">(1 − α)</span> × điểm đồ thị.</li>
+        <li><span class="step-tag">Bước 5</span><b>Xếp hạng cuối</b>Ảnh có điểm cuối cao nhất đứng hạng 1.</li>
+      </ol>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Giám khảo 1: CLIP</h4>
+          <p class="small">Một mô hình có sẵn, đã học từ hàng trăm triệu cặp ảnh và chú thích. Nó biến ảnh và câu thành dãy số rồi so độ giống nhau. CLIP giỏi nhận ra “cảnh chung”, nhưng có thể nhầm chi tiết, ví dụ người <em>cưỡi</em> ngựa với người <em>đứng cạnh</em> ngựa. Nhóm dùng nguyên CLIP, không huấn luyện lại.</p>
+        </div>
+        <div class="card">
+          <h4>Giám khảo 2: đồ thị cảnh</h4>
+          <p class="small">Mỗi ảnh có sẵn một bản mô tả có cấu trúc (từ bộ dữ liệu Visual Genome): các vật thể như <em>người</em>, <em>ngựa</em>, <em>bãi biển</em>, và quan hệ như <em>người → cưỡi → ngựa</em>. Mô hình GraphSAGE của nhóm, một loại mạng nơ-ron học trên đồ thị, biến bản mô tả này thành điểm để so với câu.</p>
+        </div>
+      </div>
+      <h3>α là núm vặn trộn điểm</h3>
+      <p>Kéo thử để thấy α nghĩa là gì:</p>
+      <div class="card">
+        <label class="slider" for="dial">
+          <span class="s-label">α</span>
+          <input type="range" id="dial" min="0" max="100" step="1" value="80">
+          <output id="dial-value" for="dial">0,80</output>
+        </label>
+        <p id="dial-text" class="small" aria-live="polite"></p>
+      </div>
+      <p>Hệ thống hiện tại tự chọn α khoảng 0,78–0,84 (tức khoảng 80% CLIP) và dùng <b>cùng một α cho mọi câu</b>. Kết quả trên tập test:</p>
+      <div class="tiles">
+        <div class="tile"><div class="t-label">Chỉ dùng CLIP</div><div class="t-value">43,89%</div><div class="t-sub">R@1: tỉ lệ câu có ảnh đúng ở hạng 1</div></div>
+        <div class="tile"><div class="t-label">CLIP + đồ thị, một α chung</div><div class="t-value">48,12%</div><div class="t-sub">± 0,23 qua 3 lần huấn luyện · lượt chạy 18/11</div></div>
+      </div>
+      <p class="note">Nguồn: bảng kết quả trong <code>README.md</code>. Tập test có 1.500 ảnh và 7.500 câu mô tả; mỗi câu có đúng một ảnh đúng.</p>
+      <p><b>Câu hỏi của tính năng này:</b> có nhất thiết phải dùng cùng một α cho mọi câu không?</p>
+    </section>
+
+    <!-- 3 -->
+    <section id="y-tuong">
+      <h2><span class="sec-num">3</span>Ý tưởng: lúc nào nên nghe đồ thị nhiều hơn?</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Khi CLIP đã chắc chắn thì tin CLIP. Khi CLIP lưỡng lự giữa hai ảnh thì nghe đồ thị nhiều hơn. Muốn biết CLIP chắc đến đâu, chỉ cần nhìn khoảng cách giữa điểm của ảnh hạng 1 và ảnh hạng 2.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>CLIP chắc chắn</h4>
+          <div class="score-bars" data-scores="0.60,0.55"></div>
+          <p class="small"><span class="gap-note">Cách nhau 0,05.</span> Khoảng cách lớn: CLIP khá chắc về ảnh hạng 1. Trộn thêm đồ thị dễ làm hỏng một kết quả vốn đã đúng.</p>
+        </div>
+        <div class="card">
+          <h4>CLIP phân vân</h4>
+          <div class="score-bars" data-scores="0.30,0.28"></div>
+          <p class="small"><span class="gap-note">Cách nhau 0,02.</span> Khoảng cách nhỏ: CLIP gần như không phân biệt được hai ảnh. Đây là lúc thông tin chi tiết của đồ thị có ích nhất.</p>
+        </div>
+      </div>
+      <p>Khoảng cách này gọi là <b>margin</b>: <em>điểm CLIP của ảnh hạng 1 trừ điểm CLIP của ảnh hạng 2</em>. Margin chỉ dùng điểm CLIP của chính câu đó, không cần biết đáp án, nên lúc dùng thật cũng tính được.</p>
+      <p class="note">Các con số ở đây là số dựng tay để minh hoạ, cũng chính là dữ liệu của một test tự động (xem mục 6).</p>
+    </section>
+
+    <!-- 4 -->
+    <section id="gia-thuyet">
+      <h2><span class="sec-num">4</span>Giả thuyết và đối chứng</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Nhóm đặt cược rằng chia câu theo margin rồi cho mỗi nhóm một α sẽ tìm đúng nhiều câu hơn. Để chắc mức tăng là thật, nhóm so với một cách chia nhóm <em>bừa</em>.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Giả thuyết H1</h4>
+          <p class="small">Cho mỗi nhóm câu một α riêng theo margin làm R@1 trên tập test cao hơn dùng một α chung. Nhóm CLIP phân vân sẽ chọn α <b>thấp hơn</b>, tức nghe đồ thị nhiều hơn, so với nhóm CLIP chắc chắn.</p>
+        </div>
+        <div class="card">
+          <h4>Đối chứng: chia nhóm ngẫu nhiên</h4>
+          <p class="small">Cùng số nhóm, cùng số α phải chọn, nhưng câu được xếp vào nhóm một cách bừa bãi. Nếu cách bừa này cũng tăng như cách theo margin, thì mức tăng chỉ đến từ việc có thêm núm vặn để “khớp” tập ôn luyện, chứ không nhờ margin.</p>
+        </div>
+      </div>
+      <div class="card">
+        <span class="chip">Ví von</span>
+        <p class="small">Giống thử một loại thuốc: phải so với nhóm uống thuốc giả (giả dược). Nếu nhóm uống thuốc giả cũng khỏi y như vậy, thì thuốc không có tác dụng gì.</p>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section id="cach-lam">
+      <h2><span class="sec-num">5</span>Cách làm, từng bước</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Ôn luyện trên một tập câu có đáp án (validation) để chọn cách chia nhóm và α cho từng nhóm. Sau đó mới chấm bài thi (test), đúng một lần.</p>
+      </div>
+      <p>Dữ liệu được chia làm ba phần, không phần nào lẫn sang phần nào:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Phần</th><th>Kích thước</th><th>Dùng để</th></tr></thead>
+          <tbody>
+            <tr><td>Train</td><td class="num">7.000 ảnh</td><td>Huấn luyện mô hình đồ thị GraphSAGE</td></tr>
+            <tr><td>Validation (“ôn luyện”)</td><td class="num">1.500 ảnh · 7.500 câu</td><td>Chọn tham số: α, k, các vạch chia nhóm</td></tr>
+            <tr><td>Test (“thi”)</td><td class="num">1.500 ảnh · 7.500 câu</td><td>Chấm điểm cuối, một lần, sau khi đã chốt mọi thứ</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ol class="numbered">
+        <li><b>Đo margin cho từng câu.</b> Lấy điểm CLIP của ảnh hạng 1 trừ điểm của ảnh hạng 2. Không dùng đáp án.</li>
+        <li><b>Cắt nhóm trên validation.</b> Xếp các câu validation theo margin rồi cắt thành B nhóm đông bằng nhau, với B = 2, 3 hoặc 4. Ví dụ B = 2 thì cắt ở chính giữa (trung vị). Các vạch cắt này được giữ lại để dùng cho test.</li>
+        <li><b>Mỗi nhóm chọn α và k riêng</b>, bằng đúng hàm chọn tham số chính thức của dự án: thử α từ 0 đến 1 (bước 0,01) và k ∈ {10, 20, 50, 100, 200, 500, 1.500}, giữ cặp cho R@1 cao nhất. Nếu hoà thì xét MRR; nếu vẫn hoà thì chọn α lớn hơn (gần CLIP hơn), rồi k nhỏ hơn.</li>
+        <li><b>Chấm test một lần.</b> Tính margin cho từng câu test, xếp vào nhóm bằng <b>vạch cắt của validation</b>, rồi dùng α và k của nhóm đó. Không chọn lại gì trên test.</li>
+        <li><b>Luôn chạy kèm mốc so sánh: α cố định.</b> Một α, k chung cho mọi câu, chọn bằng cùng hàm chính thức. Mọi cách chia đều được so với mốc này trên cùng các câu test.</li>
+      </ol>
+      <h3>Vì sao chọn riêng từng nhóm vẫn là tốt nhất cho toàn bộ?</h3>
+      <p>Điểm cuối của một câu chỉ phụ thuộc vào chính câu đó. Vì vậy R@1 của cả tập là <b>trung bình có trọng số</b> R@1 của các nhóm: nhóm nào cũng đạt mức cao nhất của nó thì tổng cũng cao nhất. MRR cũng là trung bình theo câu nên tách theo nhóm được y như vậy.</p>
+      <p><b>Hệ quả:</b> trên validation, chia nhóm không bao giờ kém α chung, vì α chung vẫn là một lựa chọn mà nhóm nào cũng có thể chọn. Trên test thì <b>có thể</b> kém. Đó là lý do phải chấm test và phải có đối chứng ngẫu nhiên.</p>
+      <details class="more">
+        <summary>Xem công thức</summary>
+        <p>Ký hiệu: <i>s</i><sup>C</sup><sub>q,i</sub> và <i>s</i><sup>G</sup><sub>q,i</sub> là điểm CLIP và điểm đồ thị của câu <i>q</i> với ảnh <i>i</i>; <i>b</i>(<i>q</i>) là nhóm của câu <i>q</i>; <i>α</i><sub>b</sub>, <i>k</i><sub>b</sub> là tham số của nhóm <i>b</i>. Điểm cuối:</p>
+        <math display="block">
+          <mrow>
+            <msub><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow></msub>
+            <mo>=</mo>
+            <mrow>
+              <mo>{</mo>
+              <mtable>
+                <mtr>
+                  <mtd><mrow><msub><mi>α</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>C</mtext></msubsup><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>α</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><mo stretchy="false">)</mo><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>G</mtext></msubsup></mrow></mtd>
+                  <mtd><mtext>nếu ảnh </mtext><mi>i</mi><mtext> nằm trong </mtext><msub><mi>k</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><mtext> ảnh CLIP xếp cao nhất</mtext></mtd>
+                </mtr>
+                <mtr>
+                  <mtd><mrow><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>C</mtext></msubsup><mo>−</mo><mn>3</mn></mrow></mtd>
+                  <mtd><mtext>nếu không</mtext></mtd>
+                </mtr>
+              </mtable>
+            </mrow>
+          </mrow>
+        </math>
+        <p class="small">Điểm cosine nằm trong khoảng −1 đến 1, nên trừ 3 đẩy mọi ảnh ngoài top-k xuống sau mọi ứng viên mà vẫn giữ thứ tự CLIP giữa chúng. Đây đúng là luật của bộ xếp hạng chính thức; điểm khác duy nhất là α và k phụ thuộc vào nhóm.</p>
+        <p>Gọi <i>n</i><sub>b</sub> là số câu validation của nhóm <i>b</i> và <i>n</i> là tổng số câu:</p>
+        <math display="block">
+          <mrow>
+            <mtext>R@1</mtext><mo>=</mo>
+            <munder><mo>∑</mo><mi>b</mi></munder>
+            <mfrac><msub><mi>n</mi><mi>b</mi></msub><mi>n</mi></mfrac>
+            <msub><mtext>R@1</mtext><mi>b</mi></msub>
+          </mrow>
+        </math>
+        <p class="small">Mỗi số hạng chỉ phụ thuộc vào (<i>α</i><sub>b</sub>, <i>k</i><sub>b</sub>) của nhóm đó, nên tổng lớn nhất khi từng số hạng lớn nhất.</p>
+      </details>
+    </section>
+
+    <!-- 6 -->
+    <section id="vi-du">
+      <h2><span class="sec-num">6</span>Ví dụ tự kéo thử</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Một ví dụ nhỏ, 8 câu và 3 ảnh, cho thấy vì sao một α chung có thể thua: hai loại câu cần hai α trái ngược nhau.</p>
+      </div>
+      <p>Đây là dữ liệu dựng tay của test <code>test_each_bucket_gets_its_own_setting_where_one_alpha_cannot_serve_both</code>, nên mọi con số dưới đây đều được test kiểm lại. Có hai loại câu, mỗi loại 4 câu giống nhau:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Loại câu</th><th>Điểm CLIP (ảnh 0 · 1 · 2)</th><th>Điểm đồ thị (ảnh 0 · 1 · 2)</th><th>Ảnh đúng</th></tr></thead>
+          <tbody>
+            <tr><td>CLIP phân vân</td><td class="num">0,30 · 0,28 · 0,00</td><td class="num">0,0 · 0,1 · 0,0</td><td>ảnh 1</td></tr>
+            <tr><td>CLIP chắc chắn</td><td class="num">0,60 · 0,55 · 0,00</td><td class="num">0,0 · 1,0 · 0,0</td><td>ảnh 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Ở loại thứ nhất, CLIP xếp <b>sai</b> (ảnh 0 trên ảnh 1) nhưng chỉ hơn 0,02, còn đồ thị nghiêng nhẹ về ảnh đúng. Ở loại thứ hai, CLIP xếp <b>đúng</b>, còn đồ thị nghiêng mạnh về ảnh sai. Ảnh 2 có điểm 0 ở cả hai giám khảo nên không bao giờ lên đầu; ta chỉ cần so ảnh 0 và ảnh 1.</p>
+
+      <h3>Bước 1 · Đo margin</h3>
+      <p>Phân vân: 0,30 − 0,28 = <b>0,02</b>. Chắc chắn: 0,60 − 0,55 = <b>0,05</b>.</p>
+
+      <h3>Bước 2 · Cắt 2 nhóm</h3>
+      <p>Vạch cắt là trung vị của 8 margin. Xếp tăng dần: 0,02 0,02 0,02 0,02 0,05 0,05 0,05 0,05. Trung vị nằm giữa giá trị thứ 4 và thứ 5: (0,02 + 0,05) / 2 = <b>0,035</b>. Nhóm 0 (margin ≤ 0,035) gồm 4 câu phân vân; nhóm 1 gồm 4 câu chắc chắn. Mục <a href="#phan-vi">Phân vị</a> có hình minh hoạ cách cắt.</p>
+
+      <h3>Bước 3 · α nào đưa ảnh đúng lên đầu?</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Câu phân vân: cần ảnh 1 trên ảnh 0</h4>
+          <p class="small num">ảnh 0: 0,30α + (1 − α) · 0 = 0,30α<br>ảnh 1: 0,28α + (1 − α) · 0,1 = 0,1 + 0,18α</p>
+          <p class="small">0,1 + 0,18α &gt; 0,30α ⇔ 0,1 &gt; 0,12α ⇔ <b>α &lt; 0,833…</b></p>
+        </div>
+        <div class="card">
+          <h4>Câu chắc chắn: cần ảnh 0 trên ảnh 1</h4>
+          <p class="small num">ảnh 0: 0,60α<br>ảnh 1: 0,55α + (1 − α) · 1,0 = 1 − 0,45α</p>
+          <p class="small">0,60α &gt; 1 − 0,45α ⇔ 1,05α &gt; 1 ⇔ <b>α &gt; 0,952…</b></p>
+        </div>
+      </div>
+      <p><b>Không α nào vừa nhỏ hơn 0,833 vừa lớn hơn 0,952.</b> Hãy tự kiểm chứng:</p>
+
+      <div class="explorer" id="explorer">
+        <h4>Thử tự tay: kéo α và xem ảnh nào đứng đầu</h4>
+        <div class="seg" role="group" aria-label="Cách chọn α">
+          <button type="button" data-mode="fixed" aria-pressed="true">Một α cho cả 8 câu (cách hiện tại)</button>
+          <button type="button" data-mode="bucket" aria-pressed="false">Mỗi nhóm một α (đề xuất)</button>
+        </div>
+        <div class="sliders">
+          <label class="slider" data-show="fixed" for="alpha-all">
+            <span class="s-label">α chung cho cả 8 câu</span>
+            <input type="range" id="alpha-all" min="0" max="100" step="1" value="80">
+            <output id="alpha-all-out" for="alpha-all">0,80</output>
+          </label>
+          <label class="slider" data-show="bucket" for="alpha-0" hidden>
+            <span class="s-label">α của nhóm 0 (4 câu CLIP phân vân)</span>
+            <input type="range" id="alpha-0" min="0" max="100" step="1" value="80">
+            <output id="alpha-0-out" for="alpha-0">0,80</output>
+          </label>
+          <label class="slider" data-show="bucket" for="alpha-1" hidden>
+            <span class="s-label">α của nhóm 1 (4 câu CLIP chắc chắn)</span>
+            <input type="range" id="alpha-1" min="0" max="100" step="1" value="80">
+            <output id="alpha-1-out" for="alpha-1">0,80</output>
+          </label>
+        </div>
+        <div class="controls">
+          <button type="button" class="btn" id="alpha-system">Đặt như hệ thống tự chọn</button>
+          <span class="note">Trong các α tốt như nhau, hệ thống chọn α lớn nhất (gần CLIP nhất).</span>
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="t-label">R@1 trên 8 câu</div><div class="t-value" id="ex-r1">50%</div><div class="t-sub" id="ex-r1-sub"></div></div>
+          <div class="tile"><div class="t-label">MRR</div><div class="t-value" id="ex-mrr">0,75</div><div class="t-sub">trung bình của 1 / hạng ảnh đúng</div></div>
+        </div>
+        <p class="ex-note" id="ex-note" aria-live="polite"></p>
+        <div class="kind-grid">
+          <figure class="kind-card" data-kind="unsure">
+            <h5>4 câu CLIP phân vân <span class="k-alpha"></span></h5>
+            <div class="k-scores">
+              <span class="line-key key-right"></span><strong class="k-right"></strong><span class="muted">điểm cuối của ảnh đúng (ảnh 1)</span>
+              <span class="line-key key-wrong"></span><strong class="k-wrong"></strong><span class="muted">điểm cuối của ảnh sai (ảnh 0)</span>
+            </div>
+            <div class="k-status"></div>
+            <div class="chart"><div class="tooltip" hidden></div></div>
+          </figure>
+          <figure class="kind-card" data-kind="sure">
+            <h5>4 câu CLIP chắc chắn <span class="k-alpha"></span></h5>
+            <div class="k-scores">
+              <span class="line-key key-right"></span><strong class="k-right"></strong><span class="muted">điểm cuối của ảnh đúng (ảnh 0)</span>
+              <span class="line-key key-wrong"></span><strong class="k-wrong"></strong><span class="muted">điểm cuối của ảnh sai (ảnh 1)</span>
+            </div>
+            <div class="k-status"></div>
+            <div class="chart"><div class="tooltip" hidden></div></div>
+          </figure>
+        </div>
+        <div class="legend" aria-label="Chú giải biểu đồ">
+          <span class="item"><span class="line-key key-right"></span>ảnh đúng</span>
+          <span class="item"><span class="line-key key-wrong"></span>ảnh sai</span>
+          <span class="item"><span class="swatch swatch-good"></span>✓ vùng α mà ảnh đúng đứng đầu</span>
+          <span class="item"><span class="line-key key-text"></span>α đang chọn</span>
+        </div>
+        <p class="note">Mỗi đường là điểm cuối của một ảnh khi α thay đổi. Hai đường cắt nhau ở đúng ngưỡng tính ở bước 3. Rê chuột lên biểu đồ để xem số.</p>
+        <details class="more">
+          <summary>Xem dạng bảng</summary>
+          <div class="table-wrap"><table id="alpha-table"></table></div>
+        </details>
+      </div>
+
+      <h3>Bước 4 · α cố định do hệ thống chọn</h3>
+      <p>Với một α cho cả 8 câu, R@1 tốt nhất chỉ là 4/8 = 50%. Có hai vùng đạt 50%: α ≤ 0,83 (đúng loại phân vân) và α ≥ 0,96 (đúng loại chắc chắn). Ở cả hai vùng, loại bị sai có ảnh đúng ở hạng 2, nên MRR đều bằng (4 · 1 + 4 · 0,5) / 8 = 0,75. Hoà cả R@1 lẫn MRR, luật hoà chọn α lớn hơn: <b>α = 1,0, k = 2</b>. Nghĩa là trong ví dụ này, α cố định bỏ hẳn điểm đồ thị.</p>
+      <h3>Bước 5 · Chia 2 nhóm</h3>
+      <p>Mỗi nhóm chạy hàm chọn chính thức trên 4 câu của mình. Nhóm 0 (phân vân): mọi α ≤ 0,83 đều đạt 100%; luật hoà chọn α lớn nhất là <b>α = 0,83</b>. Nhóm 1 (chắc chắn): mọi α ≥ 0,96 đều đạt 100%; luật hoà chọn <b>α = 1,0</b>. Cả 8 câu đều đúng: <b>R@1 = 100%</b>, so với 50% của α cố định. Để ý α = 0,83 nằm sát ngưỡng 0,833, vì luật hoà luôn chọn α gần CLIP nhất trong các α tốt như nhau.</p>
+      <h3>Bước 6 · Chấm test</h3>
+      <p>Câu test dùng vạch 0,035 của validation, không tính vạch mới. Ví dụ một câu test có điểm CLIP 0,30 · 0,27 · 0,00 có margin 0,03 ≤ 0,035, nên vào nhóm 0 và dùng α = 0,83. Test <code>test_scoring_another_split_uses_the_validation_edges</code> kiểm đúng điều này.</p>
+      <div class="card">
+        <span class="chip">Điều rút ra</span>
+        <p class="small">Một α chung buộc phải hy sinh một loại câu. Chia theo margin cho phép mỗi loại có α hợp với nó. Dữ liệu thật không tách bạch như ví dụ này, nên mức tăng (nếu có) sẽ nhỏ hơn nhiều. Vì vậy phải đo cẩn thận bằng test, đối chứng và khoảng tin cậy.</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="dang-tin">
+      <h2><span class="sec-num">7</span>Vì sao kết quả đáng tin</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Nguyên tắc vàng: <b>không được nhìn đề thi khi ôn bài.</b> Mọi thứ được chọn trên validation; test chỉ được chấm một lần.</p>
+      </div>
+      <ul class="check-list">
+        <li><b>Vạch cắt và α, k chỉ lấy từ validation.</b> Hàm <code>fit_adaptive_fusion</code> từ chối mọi tập khác validation.</li>
+        <li><b>Margin không dùng đáp án.</b> Nó chỉ dùng điểm CLIP của chính câu đó, thông tin vốn có sẵn lúc dùng thật.</li>
+        <li><b>Mốc so sánh là đúng bộ xếp hạng chính thức.</b> Script tự chọn lại α, k chung bằng hàm chính thức và so với file benchmark của dự án cho từng seed. Khác dù một chút là dừng ngay.</li>
+        <li><b>Test chỉ chấm một lần,</b> sau khi mọi thứ đã chốt trên validation.</li>
+        <li><b>Có đối chứng và khoảng tin cậy.</b> Cách chia ngẫu nhiên và khoảng 95% của bootstrap (mục <a href="#bootstrap">12</a>) tách mức tăng thật khỏi may rủi.</li>
+      </ul>
+      <p>Mỗi điều trên đều có test tự động kiểm; danh sách ở mục <a href="#cac-test">Các test</a>.</p>
+    </section>
+
+    <!-- 8 -->
+    <section id="code">
+      <h2><span class="sec-num">8</span>Đi qua code</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Tính năng gồm 4 file: phần <b>thuật toán</b> (các hàm tính toán), <b>script</b> (chạy cả quy trình trên dữ liệu thật), <b>config</b> (các con số cài đặt) và <b>test</b> (kiểm tra tự động).</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Thành phần</th><th>File</th></tr></thead>
+          <tbody>
+            <tr><td>Thuật toán</td><td><code>src/retrieval/adaptive_fusion.py</code></td></tr>
+            <tr><td>Script chạy</td><td><code>scripts/evaluate_adaptive_fusion.py</code></td></tr>
+            <tr><td>Config</td><td><code>configs/evaluation/adaptive_fusion.yaml</code></td></tr>
+            <tr><td>Test</td><td><code>tests/retrieval/test_adaptive_fusion.py</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Toàn cảnh: hai giai đoạn</h3>
+      <div class="lanes">
+        <div class="lane">
+          <h4>Giai đoạn ôn luyện, trên validation</h4>
+          <p class="lane-sub">Hàm <code>fit_adaptive_fusion</code></p>
+          <ol class="numbered">
+            <li>Tính margin của mọi câu<br><code>query_feature</code> → <code>clip_margin</code></li>
+            <li>Tính các vạch chia là phân vị của margin<br><code>bucket_edges</code></li>
+            <li>Xếp mỗi câu vào một nhóm<br><code>assign_buckets</code></li>
+            <li>Mỗi nhóm chọn α, k bằng hàm chính thức<br><code>sweep_alpha_and_k</code></li>
+          </ol>
+        </div>
+        <div class="lane">
+          <h4>Giai đoạn thi, trên test</h4>
+          <p class="lane-sub">Hàm <code>adaptive_scores</code></p>
+          <ol class="numbered">
+            <li>Tính margin của mọi câu test<br><code>query_feature</code></li>
+            <li>Xếp nhóm bằng vạch chia đã có<br><code>assign_buckets</code><br><span class="uses">dùng vạch từ bước 2 bên trái</span></li>
+            <li>Trộn điểm với α, k của nhóm<br><code>rerank_scores</code><br><span class="uses">dùng α, k từ bước 4 bên trái</span></li>
+            <li>So với α cố định trên cùng các câu<br><code>paired_analysis</code></li>
+          </ol>
+        </div>
+      </div>
+
+      <h3>Từng hàm làm gì</h3>
+      <p><code>src/retrieval/adaptive_fusion.py</code> chỉ gồm hàm thuần: không đọc ghi file, trừ phần đọc config. Vì vậy mọi hàm đều test được bằng dữ liệu dựng tay.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hàm / lớp</th><th>Nói đơn giản</th><th>Chi tiết</th></tr></thead>
+          <tbody>
+            <tr><td><code>BucketFeature</code></td><td>Danh sách các cách đo đặc trưng của câu</td><td><code>clip_margin</code> hoặc <code>random</code></td></tr>
+            <tr><td><code>clip_margin</code></td><td>Đo độ chắc chắn của CLIP cho từng câu</td><td>Điểm CLIP cao nhất trừ điểm cao thứ hai trong mỗi hàng. Dùng <code>np.partition</code> để lấy hai giá trị lớn nhất mà không phải sắp xếp cả hàng. Báo lỗi nếu có ít hơn 2 ảnh, hoặc có giá trị NaN, vô cực</td></tr>
+            <tr><td><code>random_feature</code></td><td>Gán cho mỗi câu một số ngẫu nhiên cố định, để làm cách chia bừa (đối chứng)</td><td>Mỗi câu có bộ sinh ngẫu nhiên riêng, khởi tạo bằng chuỗi <code>"&lt;seed&gt;:&lt;query_id&gt;"</code>. Giá trị chỉ phụ thuộc seed và id, không phụ thuộc thứ tự câu hay tập dữ liệu, nên validation và test có cùng phân phối</td></tr>
+            <tr><td><code>query_feature</code></td><td>Chọn đúng cách đo theo tên trong config</td><td>Báo lỗi nếu gặp tên chưa có code</td></tr>
+            <tr><td><code>bucket_edges</code></td><td>Tìm các vạch để cắt câu thành nhóm đông bằng nhau</td><td>Phân vị mức 1/B, …, (B − 1)/B của đặc trưng trên validation. Vạch trùng nhau được gộp, nên khi nhiều giá trị bằng nhau có thể ra ít nhóm hơn yêu cầu</td></tr>
+            <tr><td><code>assign_buckets</code></td><td>Cho biết mỗi câu rơi vào nhóm nào</td><td>Nhóm đánh số từ 0. Nhóm 0 chứa giá trị ≤ vạch đầu; nhóm cuối chứa giá trị &gt; vạch cuối; giá trị nằm đúng trên vạch thuộc nhóm phía dưới</td></tr>
+            <tr><td><code>fit_adaptive_fusion</code></td><td>Giai đoạn ôn luyện: cắt nhóm và chọn α, k cho từng nhóm</td><td>Chỉ nhận validation; kiểm kích thước ma trận điểm; gọi <code>sweep_alpha_and_k</code> cho từng nhóm. Nhóm có ít hơn <code>min_bucket_queries</code> câu bị từ chối. Trả về <code>AdaptiveFusion</code></td></tr>
+            <tr><td><code>_subset</code></td><td>Lấy riêng các câu của một nhóm</td><td>Giữ nguyên bộ ảnh, chỉ giữ các câu của nhóm, để đưa vào hàm chọn</td></tr>
+            <tr><td><code>AdaptiveFusion</code></td><td>“Bản ghi nhớ” kết quả ôn luyện</td><td>Đặc trưng, seed, các vạch chia, và một <code>SweepPoint</code> (α, k, chỉ số trên validation) cho mỗi nhóm. Tự kiểm số setting bằng số vạch cộng 1. <code>to_dict()</code> tạo phần <code>fit</code> trong file kết quả</td></tr>
+            <tr><td><code>adaptive_scores</code></td><td>Giai đoạn thi: chấm điểm bằng vạch chia và α, k đã chốt</td><td>Xếp nhóm bằng <b>vạch của validation</b>, rồi trộn điểm từng nhóm bằng <code>rerank_scores</code>. Không chọn hay tính lại gì trên tập đang chấm</td></tr>
+            <tr><td><code>AdaptiveFusionConfig</code></td><td>Đọc và kiểm tra file cài đặt</td><td>Xem <a href="#cac-truong-config">các trường trong config</a></td></tr>
+            <tr><td><code>_check_official</code> <span class="muted">(script)</span></td><td>So mốc α cố định với file benchmark chính thức</td><td>Khác α hoặc k là báo <code>DataError</code> và dừng</td></tr>
+            <tr><td><code>_bucket_rows</code> <span class="muted">(script)</span></td><td>R@1 từng nhóm, đặt cạnh R@1 của α cố định</td><td>Cho mỗi nhóm: số câu, R@1 của cách chia, R@1 của α cố định trên cùng các câu</td></tr>
+            <tr><td><code>run</code>, <code>main</code> <span class="muted">(script)</span></td><td>Chạy cả quy trình từ đầu đến cuối</td><td><code>main</code> đọc tham số dòng lệnh, gọi <code>run</code>, trả exit code 1 khi có lỗi</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Code chính thức được dùng lại</h3>
+      <p>Tính năng <b>không tự viết lại</b> luật chọn tham số, luật trộn điểm hay cách đo. Mọi phép đó đều gọi code có sẵn của dự án, nên kết quả so trực tiếp được với benchmark.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hàm</th><th>File</th><th>Dùng để</th></tr></thead>
+          <tbody>
+            <tr><td><code>sweep_alpha_and_k</code>, <code>SweepPoint</code></td><td><code>src/retrieval/rerank.py</code></td><td>Thử lưới α, k trên validation và chọn theo luật hoà chính thức</td></tr>
+            <tr><td><code>rerank_scores</code></td><td><code>src/retrieval/rerank.py</code></td><td>Trộn điểm CLIP và điểm đồ thị trong top-k</td></tr>
+            <tr><td><code>ranks_of_relevant</code>, <code>retrieval_metrics</code></td><td><code>src/evaluation/metrics.py</code></td><td>Hạng của ảnh đúng; R@K, MRR</td></tr>
+            <tr><td><code>build_split_data</code>, <code>clip_scores</code>, <code>graph_vector_scores</code>, <code>aggregate_runs</code></td><td><code>src/evaluation/benchmark.py</code></td><td>Dựng dữ liệu từng tập, tính ma trận điểm, tính trung bình ± độ lệch chuẩn qua seed</td></tr>
+            <tr><td><code>paired_analysis</code></td><td><code>src/evaluation/ablation_analysis.py</code></td><td>Bootstrap ghép cặp theo cụm, giống <code>analyze_ablation</code></td></tr>
+            <tr><td><code>verify_inputs_unchanged</code>, <code>load_table</code>, <code>table_paths</code></td><td><code>src/embeddings/store.py</code></td><td>Nạp vector và kiểm tra đầu vào chưa đổi</td></tr>
+            <tr><td><code>validate_run</code>, <code>validate_artifact_inputs</code></td><td><code>src/models/run_validation.py</code></td><td>Kiểm tra thư mục run và file benchmark</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Script chạy những gì, theo thứ tự</h3>
+      <div class="card">
+        <ol class="numbered">
+          <li><b>Đọc config.</b> <code>AdaptiveFusionConfig</code> đọc <code>configs/evaluation/adaptive_fusion.yaml</code>; <code>RetrievalConfig</code> đọc config ghi ở <code>retrieval_config</code>: mô hình CLIP, tên run, 3 seed, lưới α và k.</li>
+          <li><b>Nạp vector CLIP và dựng dữ liệu.</b> <code>verify_inputs_unchanged</code> báo lỗi nếu file đầu vào của vector đã đổi kể từ lúc tạo vector. Sau đó dựng dữ liệu validation, test và ma trận điểm CLIP.</li>
+          <li><b>Đọc file benchmark</b> <code>runs/benchmark/graphsage-&lt;run&gt;.json</code>. <code>validate_artifact_inputs</code> từ chối file benchmark cũ, tức file được tạo từ những đầu vào nay đã đổi.</li>
+          <li><b>Với mỗi seed (13, 37, 97):</b> <code>validate_run</code> kiểm tra run khớp config, rồi nạp <code>graph_vectors</code> và tính điểm đồ thị. Tiếp theo, tính mốc α cố định và so với benchmark (<code>_check_official</code>); sau đó với mỗi cách chia (2 đặc trưng × 3 số nhóm), ôn luyện trên validation rồi chấm validation và test.</li>
+          <li><b>Gộp qua seed.</b> <code>aggregate_runs</code> tính trung bình và độ lệch chuẩn; <code>paired_analysis</code> so từng cách chia với α cố định trên test.</li>
+          <li><b>Ghi file kết quả</b> gồm <code>results</code>, <code>protocol</code> (mô tả cách làm) và <code>inputs_sha256</code>: “dấu vân tay” SHA-256 của mọi file đầu vào. Nhờ đó, sau này vẫn kiểm được kết quả được tạo từ đúng những file nào.</li>
+        </ol>
+      </div>
+
+      <h3>Khi nào script dừng</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tình huống</th><th>Lỗi</th><th>Cách xử lý</th></tr></thead>
+          <tbody>
+            <tr><td>(α, k) của mốc α cố định khác file benchmark</td><td><code>DataError</code></td><td>File benchmark không được tạo từ đúng vector và lưới hiện có: chạy lại <code>run_benchmark --method graphsage</code></td></tr>
+            <tr><td>File đầu vào của vector, của run hoặc của benchmark đã thay đổi</td><td><code>DataError</code></td><td>Chạy lại bước tạo ra file đó</td></tr>
+            <tr><td>Một nhóm có ít hơn <code>min_bucket_queries</code> câu validation</td><td><code>ConfigError</code></td><td>Bớt số nhóm trong <code>n_buckets</code> hoặc giảm <code>min_bucket_queries</code></td></tr>
+            <tr><td>Config sai: đặc trưng lạ, số nhóm nhỏ hơn 2 hoặc bị trùng, trường thiếu hay sai kiểu</td><td><code>ConfigError</code></td><td>Sửa file YAML</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Các lỗi trên đều thuộc <code>AppError</code>: script ghi lỗi ra log, trả exit code 1 và <b>không ghi</b> file kết quả. Ngoài ra <code>fit_adaptive_fusion</code> từ chối chọn tham số trên tập khác validation. Script không bao giờ gọi như vậy, nhưng chặn này giữ cho ai dùng lại hàm cũng không thể vô tình chọn trên test.</p>
+
+      <h3 id="cac-truong-config">Các trường trong config</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trường</th><th>Ý nghĩa</th><th>Mặc định</th></tr></thead>
+          <tbody>
+            <tr><td><code>retrieval_config</code></td><td>Config của run cần đánh giá: mô hình CLIP, tên run, các seed, lưới α và k</td><td><code>configs/retrieval/ablations/full.yaml</code></td></tr>
+            <tr><td><code>features</code></td><td>Các đặc trưng chia nhóm sẽ chạy, không trùng nhau</td><td><code>[clip_margin, random]</code></td></tr>
+            <tr><td><code>n_buckets</code></td><td>Các số nhóm sẽ thử; mỗi số ≥ 2 và không trùng. α cố định luôn được chạy nên không ghi ở đây</td><td><code>[2, 3, 4]</code></td></tr>
+            <tr><td><code>min_bucket_queries</code></td><td>Số câu validation tối thiểu để một nhóm được chọn α, k riêng</td><td class="num">500</td></tr>
+            <tr><td><code>feature_seed</code></td><td>Seed của đối chứng ngẫu nhiên; không ảnh hưởng <code>clip_margin</code></td><td class="num">2026</td></tr>
+            <tr><td><code>bootstrap_repeats</code></td><td>Số lần rút mẫu lại trong bootstrap</td><td class="num">2000</td></tr>
+            <tr><td><code>bootstrap_seed</code></td><td>Seed của bootstrap</td><td class="num">310</td></tr>
+            <tr><td><code>output</code></td><td>File JSON kết quả</td><td><code>runs/analysis/adaptive_fusion.json</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Với 7.500 câu validation và B = 4, mỗi nhóm có khoảng 1.875 câu, vượt xa mức 500.</p>
+
+      <h3 id="cac-test">Các test</h3>
+      <p>Chạy bằng <code>pytest tests/retrieval/test_adaptive_fusion.py</code>, không cần dữ liệu thật.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Test</th><th>Kiểm điều gì</th></tr></thead>
+          <tbody>
+            <tr><td><code>test_clip_margin_is_top_one_minus_top_two</code></td><td>Margin là điểm cao nhất trừ điểm cao thứ hai, dù hai điểm đó nằm ở cột nào; hai điểm đầu bằng nhau thì margin bằng 0</td></tr>
+            <tr><td><code>test_clip_margin_needs_two_items</code></td><td>Ít hơn 2 ảnh thì báo lỗi</td></tr>
+            <tr><td><code>test_random_feature_depends_only_on_seed_and_query_id</code></td><td>Mỗi câu một giá trị khác nhau; không phụ thuộc thứ tự; đổi seed thì đổi giá trị; giá trị nằm trong [0, 1)</td></tr>
+            <tr><td><code>test_bucket_edges_are_quantiles_and_tied_quantiles_collapse</code></td><td>Vạch chia đúng là phân vị; vạch trùng được gộp; số nhóm bằng 0 bị từ chối</td></tr>
+            <tr><td><code>test_a_value_on_an_edge_goes_to_the_lower_bucket</code></td><td>Giá trị nằm đúng trên vạch thuộc nhóm dưới</td></tr>
+            <tr><td><code>test_one_bucket_reproduces_the_official_selection_and_scores</code></td><td>Một nhóm cho ra đúng lựa chọn và đúng điểm của bộ xếp hạng chính thức</td></tr>
+            <tr><td><code>test_each_bucket_gets_its_own_setting_where_one_alpha_cannot_serve_both</code></td><td>Ví dụ ở mục 6: α cố định đạt 50%, hai nhóm đạt 100%</td></tr>
+            <tr><td><code>test_fitting_refuses_any_split_but_validation</code></td><td>Chọn tham số trên test bị từ chối</td></tr>
+            <tr><td><code>test_buckets_too_small_to_select_on_are_refused</code></td><td>Nhóm quá nhỏ, hoặc nhóm rỗng do giá trị bằng nhau, bị từ chối</td></tr>
+            <tr><td><code>test_scoring_another_split_uses_the_validation_edges</code></td><td>Tập được chấm dùng vạch của validation, không tự tính lại</td></tr>
+            <tr><td><code>test_alpha_one_in_every_bucket_keeps_the_clip_ranking</code></td><td>α = 1 ở mọi nhóm giữ nguyên thứ hạng của CLIP</td></tr>
+            <tr><td><code>test_a_fitted_fusion_needs_one_setting_per_bucket</code></td><td>Số setting phải bằng số nhóm</td></tr>
+            <tr><td><code>test_config_rejects_invalid_values</code> <span class="muted">(11 trường hợp)</span></td><td>Config sai bị từ chối</td></tr>
+            <tr><td><code>test_shipped_config_is_valid</code></td><td>File config đi kèm hợp lệ</td></tr>
+            <tr><td><code>test_script_compares_every_bucketing_with_the_fixed_baseline</code></td><td>Chạy cả script trên dữ liệu dựng tay: có đủ các mục kết quả, chênh lệch ghép cặp tính đúng chiều (+50 điểm %)</td></tr>
+            <tr><td><code>test_script_stops_when_one_bucket_differs_from_the_benchmark</code></td><td>File benchmark ghi α, k khác thì script trả exit 1 và không ghi file kết quả</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Bộ test cũng đã được kiểm bằng cách cố ý gài lỗi vào code, chẳng hạn bỏ bước so với benchmark, cho phép chọn tham số trên test, hay đảo chiều phép so sánh. Lần nào test cũng báo hỏng, tức các test thực sự bắt được những lỗi đó.</p>
+    </section>
+
+    <!-- 9 -->
+    <section id="chay">
+      <h2><span class="sec-num">9</span>Cách chạy</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Cần có sẵn kết quả của mô hình chính trên máy, rồi chạy một lệnh. Không cần GPU, mất khoảng 10–15 phút.</p>
+      </div>
+      <h4>Cần có trước</h4>
+      <ul class="check-list">
+        <li>Vector CLIP trong <code>data/processed/vg_coco/embeddings/</code>.</li>
+        <li>Mô hình đồ thị đã huấn luyện: <code>python -m scripts.train_graphsage --config configs/retrieval/ablations/full.yaml</code></li>
+        <li>Benchmark chính thức đã chạy: <code>python -m scripts.run_benchmark --method graphsage --config configs/retrieval/ablations/full.yaml</code></li>
+      </ul>
+      <h4>Lệnh chạy</h4>
+<pre><code>python -m scripts.evaluate_adaptive_fusion          # dùng configs/evaluation/adaptive_fusion.yaml
+pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không cần dữ liệu thật</code></pre>
+      <p class="small">Với config mặc định, mỗi seed thử lại lưới α, k trên toàn bộ validation 7 lần: 1 lần cho α cố định, cộng 2 đặc trưng × 3 số nhóm. Một lần thử trên 7.500 câu mất khoảng 25–30 giây trên CPU (đo trên Apple M3), nên cả lượt chạy 3 seed mất khoảng 10–15 phút.</p>
+      <p class="small">Kết quả ghi ra <code>runs/analysis/adaptive_fusion.json</code>. Thư mục <code>runs/</code> bị <code>.gitignore</code> bỏ qua, muốn commit thì dùng <code class="nowrap">git add -f</code>.</p>
+    </section>
+
+    <!-- 10 -->
+    <section id="ket-qua">
+      <h2><span class="sec-num">10</span>Đọc file kết quả</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>File kết quả có một mục cho α cố định (<code>fixed</code>) và một mục cho mỗi cách chia. Con số quan trọng nhất là <b>chênh lệch so với α cố định</b> và <b>khoảng 95%</b> của chênh lệch đó.</p>
+      </div>
+      <p class="small">Cấu trúc rút gọn; dấu … là chỗ có số:</p>
+<pre><code>{
+  "run_name": "directed-learned-l3-h512",
+  "results": {
+    "fixed": {                                  ← mốc α cố định
+      "seeds": {
+        "13": {
+          "fit":  { "alpha": …, "top_k": … },   ← α, k chọn trên validation
+          "val":  { "metrics": { "recall@1": …, "recall@5": …, "recall@10": …, "mrr": … } },
+          "test": { "metrics": { … } }
+        }, "37": { … }, "97": { … }
+      },
+      "summary": { "test": { "recall@1": { "mean": …, "std": … }, … } }
+    },
+    "clip_margin-b2": {                         ← chia theo margin, 2 nhóm
+      "feature": "clip_margin", "n_buckets": 2,
+      "seeds": {
+        "13": {
+          "fit":  { "edges": [ … ],             ← vạch chia
+                    "buckets": [ { "alpha": …, "top_k": … }, { … } ] },
+          "test": { "metrics": { … },
+                    "buckets": [ { "queries": …, "recall@1": …, "fixed_recall@1": … }, { … } ] }
+        }, …
+      },
+      "summary": { … },
+      "paired_vs_fixed_test": {                 ← so với α cố định trên test
+        "delta_r1_pp": …,                       ← chênh lệch R@1, điểm phần trăm
+        "image_cluster_bootstrap_95ci_pp": [ …, … ],   ← khoảng 95%
+        "per_seed": [ … ], …
+      }
+    },
+    "random-b2": { … }, …                       ← đối chứng ngẫu nhiên
+  },
+  "protocol": { … },
+  "inputs_sha256": { … }
+}</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+          <tbody>
+            <tr><td><code>seeds.&lt;seed&gt;.fit</code></td><td>Với <code>fixed</code>: α, k chọn trên toàn bộ validation. Với cách chia: vạch chia (<code>edges</code>) và α, k của từng nhóm (<code>buckets</code>)</td></tr>
+            <tr><td><code>seeds.&lt;seed&gt;.val</code>, <code>.test</code></td><td><code>metrics</code>: R@1/5/10, MRR. Với cách chia, thêm <code>buckets</code> theo đúng thứ tự trong <code>fit.buckets</code>: số câu, R@1 của cách chia và của α cố định trên <b>cùng</b> các câu đó</td></tr>
+            <tr><td><code>summary</code></td><td>Trung bình ± độ lệch chuẩn qua 3 seed</td></tr>
+            <tr><td><code>paired_vs_fixed_test</code></td><td>Chỉ có ở các cách chia. <code>delta_r1_pp</code> là chênh lệch R@1 so với α cố định trên test, đơn vị điểm phần trăm; <code>image_cluster_bootstrap_95ci_pp</code> là khoảng 95% (mục <a href="#bootstrap">12</a>). Trong <code>per_seed</code>, “full” là cách chia và “variant” là α cố định</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Khi nào được kết luận “ủng hộ H1”</h3>
+      <p>Cả ba điều sau phải cùng đúng:</p>
+      <ol class="numbered">
+        <li><b>Chia theo margin tăng thật:</b> chênh lệch dương, và cả khoảng 95% nằm trên 0.</li>
+        <li><b>Chia ngẫu nhiên không tăng tương tự.</b> Nếu có, mức tăng chỉ do thêm tham số.</li>
+        <li><b>Hướng α đúng như dự đoán:</b> nhóm margin nhỏ chọn α thấp hơn nhóm margin lớn. Xem trong <code>fit.buckets</code>.</li>
+      </ol>
+      <p class="small">Nếu chỉ validation tăng còn test không tăng, cách chia đang khớp quá mức với validation. Nên báo cáo thẳng điều đó, kèm số nhóm mà hiện tượng bắt đầu xảy ra.</p>
+      <h3>Bảng kết quả (điền sau khi chạy)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cách chia</th><th>Số nhóm</th><th>R@1 test (± độ lệch chuẩn)</th><th>Chênh lệch với α cố định</th><th>Khoảng 95%</th></tr></thead>
+          <tbody>
+            <tr><td>α cố định</td><td>1</td><td></td><td>—</td><td>—</td></tr>
+            <tr><td>Theo margin của CLIP</td><td>2</td><td></td><td></td><td></td></tr>
+            <tr><td>Theo margin của CLIP</td><td>3</td><td></td><td></td><td></td></tr>
+            <tr><td>Theo margin của CLIP</td><td>4</td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>2</td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>3</td><td></td><td></td><td></td></tr>
+            <tr><td>Ngẫu nhiên (đối chứng)</td><td>4</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="gioi-han">
+      <h2><span class="sec-num">11</span>Giới hạn và hướng mở rộng</h2>
+      <ul class="check-list" style="--x: 0">
+        <li><b>Nhiều nhóm hơn thì nhiều tham số hơn</b>, nên dễ khớp quá mức với validation. Đối chứng ngẫu nhiên và kết quả trên test là hai cách kiểm điều này; <code>min_bucket_queries</code> (mặc định 500) chặn các nhóm quá nhỏ.</li>
+        <li><b>Margin chỉ là một đặc trưng.</b> Có thể thêm: độ lệch giữa thứ hạng CLIP và thứ hạng đồ thị; số từ chỉ quan hệ trong câu; hoặc học α theo từng câu bằng một hàm logistic trên validation.</li>
+        <li><b>Cấp độ 4 hướng (a) yêu cầu thực nghiệm trên ít nhất 2 tập công khai.</b> Code không phụ thuộc tập dữ liệu, chỉ cần config retrieval của tập kia, nên chạy lại được ngay khi có tập thứ hai.</li>
+        <li><b>Hiện script chỉ đọc run GraphSAGE.</b> Muốn áp dụng cho mô hình khác, ví dụ AdaMF-MAT, cần thêm phần đọc vector của mô hình đó; <code>fit_adaptive_fusion</code> và <code>adaptive_scores</code> thì dùng lại được nguyên vẹn.</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section id="kien-thuc">
+      <h2><span class="sec-num">12</span>Kiến thức nền</h2>
+
+      <h3 id="phan-vi">Phân vị: cắt nhóm đông bằng nhau</h3>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Xếp 100 người theo chiều cao. Muốn chia 4 nhóm đông bằng nhau, đặt vạch ở người thứ 25, 50 và 75. Ba vạch đó là <b>phân vị</b> 25%, 50% và 75%; phân vị 50% còn gọi là <b>trung vị</b>. Khi vạch rơi vào giữa hai người, lấy giá trị nằm giữa theo tỉ lệ (gọi là nội suy).</p>
+      </div>
+      <div class="explorer" id="numline">
+        <h4>Thử chọn dữ liệu và số nhóm</h4>
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Dữ liệu" id="nl-data">
+            <button type="button" data-value="margins" aria-pressed="true">8 margin của ví dụ</button>
+            <button type="button" data-value="ints" aria-pressed="false">4 giá trị 1, 2, 3, 4</button>
+            <button type="button" data-value="ties" aria-pressed="false">6 giá trị bằng nhau</button>
+          </div>
+          <div class="seg" role="group" aria-label="Số nhóm B" id="nl-b">
+            <button type="button" data-value="2" aria-pressed="true">B = 2</button>
+            <button type="button" data-value="3" aria-pressed="false">B = 3</button>
+            <button type="button" data-value="4" aria-pressed="false">B = 4</button>
+          </div>
+        </div>
+        <div class="chart" id="nl-chart"><div class="tooltip" hidden></div></div>
+        <p class="ex-note" id="nl-summary" aria-live="polite"></p>
+        <details class="more">
+          <summary>Xem cách tính từng vạch</summary>
+          <div class="table-wrap"><table id="nl-table"></table></div>
+        </details>
+      </div>
+      <p>Hai trường hợp đặc biệt, đều có test:</p>
+      <ul>
+        <li><b>Giá trị nằm đúng trên vạch thuộc nhóm dưới.</b> Với vạch 2,5, các giá trị 1,0; 2,5; 2,6; 9,0 lần lượt vào nhóm 0, 0, 1, 1.</li>
+        <li><b>Nhiều giá trị bằng nhau làm các vạch trùng nhau, và vạch trùng được gộp.</b> Khi đó có nhóm không có câu nào, và <code>fit_adaptive_fusion</code> từ chối. Hãy chọn “6 giá trị bằng nhau” ở trên để thấy. Margin của CLIP là số thực liên tục, nên điều này gần như không xảy ra với dữ liệu thật.</li>
+      </ul>
+      <details class="more">
+        <summary>Xem công thức</summary>
+        <p>Xếp <i>n</i> giá trị tăng dần <i>x</i><sub>(0)</sub> ≤ <i>x</i><sub>(1)</sub> ≤ … ≤ <i>x</i><sub>(n−1)</sub>. Code dùng cách tính mặc định của <code>np.quantile</code> (nội suy tuyến tính):</p>
+        <math display="block">
+          <mrow>
+            <mi>Q</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo>
+            <msub><mi>x</mi><mrow><mo stretchy="false">(</mo><mo>⌊</mo><mi>h</mi><mo>⌋</mo><mo stretchy="false">)</mo></mrow></msub>
+            <mo>+</mo><mo stretchy="false">(</mo><mi>h</mi><mo>−</mo><mo>⌊</mo><mi>h</mi><mo>⌋</mo><mo stretchy="false">)</mo><mo>·</mo>
+            <mo stretchy="false">(</mo><msub><mi>x</mi><mrow><mo stretchy="false">(</mo><mo>⌊</mo><mi>h</mi><mo>⌋</mo><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msub><mo>−</mo><msub><mi>x</mi><mrow><mo stretchy="false">(</mo><mo>⌊</mo><mi>h</mi><mo>⌋</mo><mo stretchy="false">)</mo></mrow></msub><mo stretchy="false">)</mo>
+            <mo>,</mo><mspace width="1.2em"></mspace>
+            <mi>h</mi><mo>=</mo><mi>p</mi><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo>
+          </mrow>
+        </math>
+        <p>Muốn B nhóm, lấy B − 1 vạch <i>e</i><sub>j</sub> = <i>Q</i>(<i>j</i>/B) với <i>j</i> = 1, …, B − 1. Với <i>m</i>(<i>q</i>) là margin của câu <i>q</i>:</p>
+        <math display="block">
+          <mrow>
+            <mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>=</mo>
+            <mrow>
+              <mo>{</mo>
+              <mtable>
+                <mtr><mtd><mn>0</mn></mtd><mtd><mrow><mi>m</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>≤</mo><msub><mi>e</mi><mn>1</mn></msub></mrow></mtd></mtr>
+                <mtr><mtd><mi>j</mi></mtd><mtd><mrow><msub><mi>e</mi><mi>j</mi></msub><mo>&lt;</mo><mi>m</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>≤</mo><msub><mi>e</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></mtd></mtr>
+                <mtr><mtd><mrow><mi>B</mi><mo>−</mo><mn>1</mn></mrow></mtd><mtd><mrow><mi>m</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>&gt;</mo><msub><mi>e</mi><mrow><mi>B</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow></mtd></mtr>
+              </mtable>
+            </mrow>
+          </mrow>
+        </math>
+      </details>
+
+      <h3 id="r1-mrr">R@1 và MRR: hai cách chấm điểm</h3>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p><b>R@1</b> là tỉ lệ câu tìm đúng ngay ở ảnh đầu tiên. <b>MRR</b> thưởng điểm theo vị trí của ảnh đúng: hạng 1 được 1 điểm, hạng 2 được 1/2, hạng 3 được 1/3, rồi lấy trung bình.</p>
+      </div>
+      <p>Ví dụ 4 câu có ảnh đúng ở hạng 1, 2, 1 và 4: R@1 = 2/4 = 50%; MRR = (1 + 0,5 + 1 + 0,25) / 4 = 0,6875. Chênh lệch giữa hai tỉ lệ phần trăm tính bằng <b>điểm phần trăm</b>: từ 48% lên 50% là tăng 2 điểm phần trăm.</p>
+
+      <h3 id="bootstrap">Bootstrap ghép cặp theo cụm: mức tăng có phải do may?</h3>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Ta chỉ có một bộ 1.500 ảnh test. Nếu thi với một bộ ảnh khác, chênh lệch đo được sẽ hơi khác. <b>Bootstrap</b> giả lập “một bộ ảnh khác” bằng cách rút ngẫu nhiên có hoàn lại từ chính bộ đang có (một ảnh có thể bị rút nhiều lần, ảnh khác không được rút), làm 2.000 lần, rồi xem chênh lệch dao động trong khoảng nào. 95% số lần rơi vào khoảng nào thì đó là <b>khoảng 95%</b>.</p>
+      </div>
+      <ol class="numbered">
+        <li><b>Hiệu theo từng câu.</b> Mỗi câu test được +1 nếu cách chia tìm đúng còn α cố định sai, −1 nếu ngược lại, 0 nếu như nhau; tính trung bình qua 3 seed. Trung bình của các hiệu này × 100 chính là <code>delta_r1_pp</code>.</li>
+        <li><b>Gom theo ảnh.</b> 5 câu của cùng một ảnh thường cùng dễ hoặc cùng khó, nên phải rút theo ảnh (cả 5 câu đi cùng nhau). Rút lẻ từng câu sẽ làm khoảng hẹp hơn thực tế.</li>
+        <li><b>Rút mẫu lại:</b> rút có hoàn lại 1.500 ảnh, tính lại chênh lệch trên các câu của những ảnh được rút.</li>
+        <li><b>Lặp 2.000 lần.</b> Bỏ 2,5% giá trị thấp nhất và 2,5% cao nhất; phần còn lại là khoảng 95%.</li>
+      </ol>
+      <div class="explorer" id="boot">
+        <h4>Thử trên một ví dụ đồ chơi</h4>
+        <p class="small">Mỗi ảnh có 2 câu. Ba loại ảnh lặp lại: ảnh loại A có hiệu (1, 0), loại B có (0, 0), loại C có (1, 1). Chênh lệch đo được luôn là 50 điểm %. Câu hỏi: nếu thi với bộ ảnh khác thì chênh lệch dao động bao nhiêu?</p>
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Số ảnh test" id="boot-n">
+            <button type="button" data-value="3" aria-pressed="true">3 ảnh</button>
+            <button type="button" data-value="30" aria-pressed="false">30 ảnh</button>
+            <button type="button" data-value="300" aria-pressed="false">300 ảnh</button>
+            <button type="button" data-value="1500" aria-pressed="false">1.500 ảnh</button>
+          </div>
+          <button type="button" class="btn" id="boot-once">Rút thử một lần</button>
+        </div>
+        <p class="ex-note" id="boot-once-out" aria-live="polite">Bấm “Rút thử một lần” để xem một bộ ảnh rút lại.</p>
+        <p class="ex-note" id="boot-ci"></p>
+        <div class="chart" id="boot-chart"><div class="tooltip" hidden></div></div>
+        <div class="legend">
+          <span class="item"><span class="swatch swatch-neutral"></span>khoảng 95%</span>
+          <span class="item"><span class="line-key key-text"></span>chênh lệch đo được: 50 điểm %</span>
+        </div>
+        <p class="note">Biểu đồ đếm xem trong 2.000 lần rút, chênh lệch rơi vào từng khoảng bao nhiêu lần. Rê chuột lên cột để xem số.</p>
+        <h4>Càng nhiều ảnh, khoảng càng hẹp</h4>
+        <div class="chart" id="boot-intervals"><div class="tooltip" hidden></div></div>
+        <details class="more">
+          <summary>Xem dạng bảng</summary>
+          <div class="table-wrap"><table id="boot-table"></table></div>
+        </details>
+        <p class="note">Ví dụ đồ chơi, dùng bộ sinh ngẫu nhiên của trình duyệt. Trong code thật, <code>paired_analysis</code> làm việc này trên 7.500 câu test, gom theo 1.500 ảnh, với <code>bootstrap_seed</code> = 310.</p>
+      </div>
+      <p><b>Ghép cặp</b> nghĩa là hai cách được so trên cùng câu và cùng seed, nên độ khó riêng của từng câu triệt tiêu khi lấy hiệu. Khoảng 95% chỉ phản ánh độ dao động do chọn bộ câu và ảnh, với 3 lần huấn luyện cố định; nó không nói gì về việc huấn luyện lại với seed mới.</p>
+      <details class="more">
+        <summary>Xem công thức</summary>
+        <p>Với câu test <i>q</i>, <i>S</i> = 3 seed, <i>r</i><sup>A</sup><sub>s,q</sub> và <i>r</i><sup>F</sup><sub>s,q</sub> là hạng của ảnh đúng theo cách chia và theo α cố định; [<i>P</i>] bằng 1 nếu <i>P</i> đúng, 0 nếu sai:</p>
+        <math display="block">
+          <mrow>
+            <msub><mi>d</mi><mi>q</mi></msub><mo>=</mo>
+            <mfrac><mn>1</mn><mi>S</mi></mfrac>
+            <munderover><mo>∑</mo><mrow><mi>s</mi><mo>=</mo><mn>1</mn></mrow><mi>S</mi></munderover>
+            <mo stretchy="false">(</mo>
+            <mo stretchy="false">[</mo><msubsup><mi>r</mi><mrow><mi>s</mi><mo>,</mo><mi>q</mi></mrow><mtext>A</mtext></msubsup><mo>=</mo><mn>1</mn><mo stretchy="false">]</mo>
+            <mo>−</mo>
+            <mo stretchy="false">[</mo><msubsup><mi>r</mi><mrow><mi>s</mi><mo>,</mo><mi>q</mi></mrow><mtext>F</mtext></msubsup><mo>=</mo><mn>1</mn><mo stretchy="false">]</mo>
+            <mo stretchy="false">)</mo>
+            <mo>,</mo><mspace width="2em"></mspace>
+            <mi>Δ</mi><mo>=</mo><mn>100</mn><mo>·</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munder><mo>∑</mo><mi>q</mi></munder><msub><mi>d</mi><mi>q</mi></msub>
+          </mrow>
+        </math>
+        <p>Với mỗi ảnh <i>c</i>: <i>D</i><sub>c</sub> = tổng <i>d</i><sub>q</sub> trên các câu của ảnh, <i>n</i><sub>c</sub> = số câu của ảnh. Mỗi lần rút có hoàn lại <i>C</i> ảnh <i>c</i><sub>1</sub>, …, <i>c</i><sub>C</sub> (<i>C</i> là số ảnh test):</p>
+        <math display="block">
+          <mrow>
+            <msup><mi>Δ</mi><mo>*</mo></msup><mo>=</mo><mn>100</mn><mo>·</mo>
+            <mfrac>
+              <mrow><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>C</mi></munderover><msub><mi>D</mi><msub><mi>c</mi><mi>t</mi></msub></msub></mrow>
+              <mrow><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>C</mi></munderover><msub><mi>n</mi><msub><mi>c</mi><mi>t</mi></msub></msub></mrow>
+            </mfrac>
+          </mrow>
+        </math>
+        <p class="small">Khoảng 95% là phân vị 2,5% và 97,5% của 2.000 giá trị Δ*.</p>
+      </details>
+    </section>
+
+    <!-- 13 -->
+    <section id="tu-dien">
+      <h2><span class="sec-num">13</span>Từ điển nhỏ</h2>
+      <dl class="glossary">
+        <div><dt>Truy vấn (câu mô tả)</dt><dd>Câu người dùng gõ để tìm ảnh. Trong dữ liệu, mỗi ảnh có 5 câu mô tả do người viết; mỗi câu là một truy vấn và ảnh đó là “ảnh đúng” của nó.</dd></div>
+        <div><dt>Điểm</dt><dd>Con số đo độ hợp giữa câu và ảnh, ở đây nằm trong khoảng −1 đến 1. Càng cao càng hợp.</dd></div>
+        <div><dt>Hạng</dt><dd>Vị trí của ảnh sau khi xếp theo điểm giảm dần. Hạng 1 là ảnh hệ thống tin nhất.</dd></div>
+        <div><dt>CLIP</dt><dd>Mô hình có sẵn biến ảnh và câu thành dãy số để so độ giống nhau. Nhóm dùng nguyên, không huấn luyện lại.</dd></div>
+        <div><dt>Đồ thị cảnh</dt><dd>Bản mô tả ảnh dưới dạng vật thể và quan hệ, ví dụ người → cưỡi → ngựa.</dd></div>
+        <div><dt>GraphSAGE</dt><dd>Một loại mạng nơ-ron học trên đồ thị. Nhóm dùng nó để biến đồ thị cảnh thành điểm so với câu.</dd></div>
+        <div><dt>α (an-pha)</dt><dd>Tỉ lệ trộn điểm, từ 0 đến 1. α = 1: chỉ dùng CLIP; α = 0: chỉ dùng đồ thị.</dd></div>
+        <div><dt>k (top-k)</dt><dd>Số ảnh CLIP xếp cao nhất được đem ra trộn điểm. Các ảnh còn lại giữ thứ tự của CLIP và đứng sau.</dd></div>
+        <div><dt>Margin</dt><dd>Điểm CLIP của ảnh hạng 1 trừ điểm của ảnh hạng 2. Lớn: CLIP chắc chắn; nhỏ: CLIP phân vân.</dd></div>
+        <div><dt>Nhóm (bucket)</dt><dd>Một phần các câu truy vấn có margin gần nhau. Mỗi nhóm có α, k riêng.</dd></div>
+        <div><dt>Validation</dt><dd>Tập “ôn luyện”: dùng để chọn α, k và vạch chia. Không dùng để báo cáo kết quả cuối.</dd></div>
+        <div><dt>Test</dt><dd>Tập “thi”: chỉ chấm một lần, sau khi đã chốt mọi tham số.</dd></div>
+        <div><dt>R@1 (Recall@1)</dt><dd>Tỉ lệ câu có ảnh đúng ở hạng 1.</dd></div>
+        <div><dt>MRR</dt><dd>Trung bình của 1 / hạng ảnh đúng. Hạng 1 được 1, hạng 2 được 0,5, hạng 4 được 0,25.</dd></div>
+        <div><dt>Phân vị, trung vị</dt><dd>Phân vị 25% là giá trị mà một phần tư số liệu nhỏ hơn hoặc bằng nó. Trung vị là phân vị 50%.</dd></div>
+        <div><dt>Seed</dt><dd>Con số khởi tạo phần ngẫu nhiên. Mô hình đồ thị được huấn luyện 3 lần với 3 seed (13, 37, 97) để kết quả không phụ thuộc may rủi của một lần.</dd></div>
+        <div><dt>Benchmark</dt><dd>Lượt chạy chính thức của dự án, ghi lại α, k đã chọn và kết quả. Script này dùng nó làm mốc đối chiếu.</dd></div>
+        <div><dt>Đối chứng</dt><dd>Một cách làm “giả” có cùng điều kiện nhưng không chứa ý tưởng, dùng để tách tác dụng thật của ý tưởng.</dd></div>
+        <div><dt>Khớp quá mức</dt><dd>Chỉnh tham số quá sát tập ôn luyện, nên đẹp trên validation mà không tốt hơn trên test (overfitting).</dd></div>
+        <div><dt>Rò rỉ dữ liệu</dt><dd>Vô tình dùng thông tin của tập test khi chọn tham số, làm kết quả đẹp giả tạo (data leakage).</dd></div>
+        <div><dt>Bootstrap</dt><dd>Cách ước lượng độ dao động của một con số bằng cách rút lại dữ liệu có hoàn lại nhiều lần.</dd></div>
+        <div><dt>Khoảng 95%</dt><dd>Khoảng chứa 95% các giá trị thu được khi bootstrap. Nếu cả khoảng nằm trên 0, mức tăng khó là do tình cờ.</dd></div>
+        <div><dt>Điểm phần trăm</dt><dd>Chênh lệch giữa hai tỉ lệ phần trăm. Từ 48% lên 50% là tăng 2 điểm phần trăm.</dd></div>
+        <div><dt>Exit code</dt><dd>Con số chương trình trả về khi kết thúc: 0 là chạy xong bình thường, 1 là dừng vì lỗi.</dd></div>
+      </dl>
+    </section>
+
+    <!-- 14 -->
+    <section id="hoi-dap" class="faq">
+      <h2><span class="sec-num">14</span>Câu hỏi hay gặp</h2>
+      <details><summary>Sao không chọn α trên tập test cho kết quả đẹp hơn?</summary>
+        <p>Vì như vậy là xem đề thi trước khi thi. Con số sẽ đẹp nhưng không nói gì về việc hệ thống làm tốt trên những câu nó chưa từng thấy. Mọi tham số chỉ được chọn trên validation; test chấm một lần.</p></details>
+      <details><summary>Margin có “ăn gian” bằng cách dùng đáp án không?</summary>
+        <p>Không. Margin chỉ dùng điểm CLIP của chính câu đó với các ảnh, không cần biết ảnh nào là ảnh đúng. Lúc dùng thật, hệ thống cũng tính được margin.</p></details>
+      <details><summary>Tại sao phải có cách chia ngẫu nhiên?</summary>
+        <p>Có thêm tham số thì validation dễ tăng chỉ vì “khớp” hơn. Cách chia ngẫu nhiên có cùng số tham số nhưng không chứa ý tưởng. Nếu nó cũng tăng như cách theo margin, thì margin không có công.</p></details>
+      <details><summary>Chia nhóm có thể làm kết quả tệ hơn không?</summary>
+        <p>Trên validation thì không: α chung vẫn là một lựa chọn mà nhóm nào cũng có thể chọn, nên chia nhóm ít nhất bằng α chung. Trên test thì có thể tệ hơn nếu cách chia khớp quá mức với validation. Đó là lý do phải chấm test và báo cáo khoảng 95%.</p></details>
+      <details><summary>Sao lại cần 3 seed?</summary>
+        <p>Mô hình đồ thị được huấn luyện 3 lần với 3 seed. Kết quả lấy trung bình qua 3 lần để không phụ thuộc may rủi của một lần huấn luyện; mỗi seed chọn α, k riêng trên validation.</p></details>
+      <details><summary>Tại sao không chia thật nhiều nhóm cho chính xác?</summary>
+        <p>Nhiều nhóm thì mỗi nhóm ít câu, và có nhiều tham số hơn để chọn, nên càng dễ khớp quá mức. Script thử 2, 3 và 4 nhóm, và từ chối nhóm có ít hơn 500 câu validation.</p></details>
+      <details><summary>Nếu chạy xong mà không tăng thì sao?</summary>
+        <p>Vẫn là một kết quả có giá trị. Báo cáo thẳng, kèm R@1 từng nhóm và α mà từng nhóm chọn, để giải thích vì sao ý tưởng không giúp trên dữ liệu này.</p></details>
+      <details><summary>Có dùng được cho mô hình khác, ví dụ AdaMF-MAT?</summary>
+        <p>Hai hàm chính <code>fit_adaptive_fusion</code> và <code>adaptive_scores</code> không phụ thuộc mô hình. Chỉ phần script đọc vector hiện viết cho run GraphSAGE; cần thêm phần đọc vector của mô hình kia.</p></details>
+      <details><summary>Để đủ điều kiện Cấp độ 4 còn thiếu gì?</summary>
+        <p>Đề yêu cầu thực nghiệm trên ít nhất 2 tập công khai. Hiện mới có một tập; code chạy lại được ngay khi có config retrieval của tập thứ hai.</p></details>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="inner">
+    Trang này là bản HTML của <code>docs/adaptive-fusion.md</code>; khi code thay đổi, cập nhật cả hai. Mở trực tiếp bằng trình duyệt, không cần mạng.
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------------- Helpers ---------------- */
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const formatters = new Map();
+  function fmt(x, digits = 2) {
+    const key = "f" + digits;
+    if (!formatters.has(key)) {
+      formatters.set(key, new Intl.NumberFormat("vi-VN", { minimumFractionDigits: digits, maximumFractionDigits: digits }));
+    }
+    return formatters.get(key).format(Math.abs(x) < 1e-12 ? 0 : x);
+  }
+  function fmtTrim(x, maxDigits = 3) {
+    const key = "t" + maxDigits;
+    if (!formatters.has(key)) {
+      formatters.set(key, new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: maxDigits }));
+    }
+    return formatters.get(key).format(Math.abs(x) < 1e-12 ? 0 : x);
+  }
+  const fmtInt = (n) => new Intl.NumberFormat("vi-VN").format(n);
+
+  function svg(tag, attrs = {}, parent = null) {
+    const node = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function svgText(parent, x, y, str, cls, anchor = "start") {
+    const t = svg("text", { x, y, class: cls, "text-anchor": anchor }, parent);
+    t.textContent = str;
+    return t;
+  }
+  function h(tag, attrs = {}, ...children) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") node.className = v;
+      else node.setAttribute(k, v);
+    }
+    for (const c of children) node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    return node;
+  }
+  function placeTip(tip, box, x, y) {
+    tip.hidden = false;
+    const bw = box.clientWidth;
+    const tw = tip.offsetWidth;
+    let left = x + 14;
+    if (left + tw > bw) left = x - tw - 14;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = Math.max(0, y) + "px";
+  }
+  function tipRow(keyClass, value, name) {
+    return h("div", { class: "tip-row" }, h("span", { class: "line-key " + keyClass }), h("strong", {}, value), h("span", { class: "tip-name" }, name));
+  }
+  function anchorFor(x, left, right, room = 70) {
+    if (x - left < room) return "start";
+    if (right - x < room) return "end";
+    return "middle";
+  }
+  // numpy's default (linear) quantile on a sorted array
+  function quantile(sorted, p) {
+    const hh = p * (sorted.length - 1);
+    const lo = Math.floor(hh);
+    const hi = Math.min(lo + 1, sorted.length - 1);
+    return sorted[lo] + (hh - lo) * (sorted[hi] - sorted[lo]);
+  }
+  function niceMax(v) {
+    if (v <= 0) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+    return 10 * p;
+  }
+  function setPressed(group, value) {
+    group.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === String(value) || b.dataset.mode === String(value))));
+  }
+
+  /* ---------------- Theme ---------------- */
+  const THEMES = ["auto", "light", "dark"];
+  const THEME_LABEL = { auto: "tự động", light: "sáng", dark: "tối" };
+  const themeButton = document.getElementById("theme-toggle");
+  let theme = document.documentElement.dataset.theme || "auto";
+  function applyTheme() {
+    if (theme === "auto") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = theme;
+    themeButton.textContent = "Giao diện: " + THEME_LABEL[theme];
+  }
+  applyTheme();
+  themeButton.addEventListener("click", () => {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    applyTheme();
+    try { localStorage.setItem("adaptive-fusion-theme", theme); } catch (e) {}
+  });
+
+  /* ---------------- Table of contents ---------------- */
+  const tocDetails = document.getElementById("toc-details");
+  const wide = window.matchMedia("(min-width: 1100px)");
+  function syncToc() { tocDetails.open = wide.matches; }
+  syncToc();
+  wide.addEventListener("change", syncToc);
+  const tocLinks = new Map([...document.querySelectorAll(".toc a")].map((a) => [a.getAttribute("href").slice(1), a]));
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          tocLinks.forEach((a) => a.removeAttribute("aria-current"));
+          const link = tocLinks.get(entry.target.id);
+          if (link) link.setAttribute("aria-current", "true");
+        }
+      }
+    }, { rootMargin: "-15% 0px -75% 0px" });
+    document.querySelectorAll("main > section").forEach((s) => observer.observe(s));
+  }
+
+  /* ---------------- α dial ---------------- */
+  const dial = document.getElementById("dial");
+  function updateDial() {
+    const v = Number(dial.value);
+    document.getElementById("dial-value").textContent = fmt(v / 100, 2);
+    let text = `Điểm cuối = ${v}% điểm CLIP + ${100 - v}% điểm đồ thị.`;
+    if (v === 100) text += " Chỉ nghe CLIP.";
+    else if (v === 0) text += " Chỉ nghe đồ thị.";
+    else if (v >= 75 && v <= 85) text += " Gần với α mà hệ thống hiện tại tự chọn.";
+    document.getElementById("dial-text").textContent = text;
+  }
+  dial.addEventListener("input", updateDial);
+  updateDial();
+
+  /* ---------------- Idea cards: score bars ---------------- */
+  document.querySelectorAll(".score-bars").forEach((box) => {
+    const scores = box.dataset.scores.split(",").map(Number);
+    scores.forEach((s, i) => {
+      const fill = h("span", { class: "score-fill" });
+      fill.style.width = `${(s / 0.7) * 82}%`;
+      const value = h("span", { class: "score-value" }, fmt(s, 2));
+      value.style.left = `calc(${(s / 0.7) * 82}% + 6px)`;
+      box.append(h("div", { class: "score-row" }, h("span", { class: "muted" }, `Ảnh hạng ${i + 1}`), h("span", { class: "score-track" }, fill, value)));
+    });
+    box.setAttribute("role", "img");
+    box.setAttribute("aria-label", `Điểm CLIP của ảnh hạng 1 là ${fmt(scores[0], 2)}, ảnh hạng 2 là ${fmt(scores[1], 2)}`);
+  });
+
+  /* ---------------- Worked example ---------------- */
+  const KINDS = [
+    { id: "unsure", clip: [0.30, 0.28], graph: [0.0, 0.1], correct: 1, count: 4,
+      threshold: 0.1 / 0.12, good: [0, 0.1 / 0.12], yMax: 0.35, yTicks: [0, 0.1, 0.2, 0.3], need: "α < 0,833" },
+    { id: "sure", clip: [0.60, 0.55], graph: [0.0, 1.0], correct: 0, count: 4,
+      threshold: 1 / 1.05, good: [1 / 1.05, 1], yMax: 1.1, yTicks: [0, 0.2, 0.4, 0.6, 0.8, 1.0], need: "α > 0,952" },
+  ];
+  const fused = (kind, a, img) => a * kind.clip[img] + (1 - a) * kind.graph[img];
+  function outcome(kind, a) {
+    const right = fused(kind, a, kind.correct);
+    const wrong = fused(kind, a, 1 - kind.correct);
+    return { right, wrong, win: right > wrong };
+  }
+  const ex = { mode: "fixed", all: 80, a0: 80, a1: 80 };
+  const sliders = { all: document.getElementById("alpha-all"), a0: document.getElementById("alpha-0"), a1: document.getElementById("alpha-1") };
+  const alphaOf = (kind) => (ex.mode === "fixed" ? ex.all : kind.id === "unsure" ? ex.a0 : ex.a1) / 100;
+
+  function drawAlphaChart(box, kind, aNow) {
+    const tip = box.querySelector(".tooltip");
+    box.querySelectorAll("svg").forEach((n) => n.remove());
+    const W = Math.max(260, box.clientWidth);
+    const H = 230;
+    const m = { t: 24, r: 12, b: 42, l: 40 };
+    const pw = W - m.l - m.r;
+    const ph = H - m.t - m.b;
+    const X = (a) => m.l + a * pw;
+    const Y = (v) => m.t + (1 - v / kind.yMax) * ph;
+    const root = svg("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `Điểm cuối của ảnh đúng và ảnh sai theo α. Ảnh đúng đứng đầu khi ${kind.need}.` });
+    svg("rect", { x: X(kind.good[0]), y: m.t, width: X(kind.good[1]) - X(kind.good[0]), height: ph, class: "good-wash" }, root);
+    for (const t of kind.yTicks) {
+      svg("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "grid" }, root);
+      svgText(root, m.l - 6, Y(t) + 4, fmt(t, 1), "tick", "end");
+    }
+    svg("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: "axis" }, root);
+    for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) svgText(root, X(t), Y(0) + 16, fmt(t, 1), "tick", "middle");
+    svgText(root, m.l + pw / 2, H - 6, "α: tỉ lệ điểm CLIP", "axis-title", "middle");
+
+    const tx = X(kind.threshold);
+    const ty = Y(fused(kind, kind.threshold, 0));
+    svg("line", { x1: tx, x2: tx, y1: m.t, y2: Y(0), class: "threshold" }, root);
+    for (const [img, cls] of [[1 - kind.correct, "line-wrong"], [kind.correct, "line-right"]]) {
+      svg("line", { x1: X(0), y1: Y(fused(kind, 0, img)), x2: X(1), y2: Y(fused(kind, 1, img)), class: "series " + cls }, root);
+    }
+    svg("circle", { cx: tx, cy: ty, r: 4, class: "cross-dot" }, root);
+
+    const ax = X(aNow);
+    svg("line", { x1: ax, x2: ax, y1: m.t, y2: Y(0), class: "now-line" }, root);
+    for (const [img, cls] of [[1 - kind.correct, "dot-wrong"], [kind.correct, "dot-right"]]) {
+      svg("circle", { cx: ax, cy: Y(fused(kind, aNow, img)), r: 4.5, class: "dot " + cls }, root);
+    }
+
+    // Labels last, so they sit above the lines. The threshold is named inside the top of the plot;
+    // the α marker above it.
+    svgText(root, tx - 6, m.t + 13, `ngưỡng ≈ ${fmt(kind.threshold, 3)}`, "annot", "end");
+    svgText(root, ax, m.t - 9, `α = ${fmt(aNow, 2)}`, "now-label", anchorFor(ax, m.l, W - m.r, 30));
+    // Direct labels where the two lines are far apart: the upper line's above it, the lower line's
+    // below it, each running toward the side where its own line moves away from the text.
+    const LABEL_AT = 0.3;
+    const imgs = [kind.correct, 1 - kind.correct];
+    const upper = fused(kind, LABEL_AT, imgs[0]) >= fused(kind, LABEL_AT, imgs[1]) ? imgs[0] : imgs[1];
+    for (const img of imgs) {
+      const above = img === upper;
+      const slope = fused(kind, 1, img) - fused(kind, 0, img);
+      const toRight = above ? slope < 0 : slope > 0;
+      svgText(root, X(LABEL_AT) + (toRight ? 4 : -4), Y(fused(kind, LABEL_AT, img)) + (above ? -9 : 17),
+        img === kind.correct ? "ảnh đúng" : "ảnh sai", "direct", toRight ? "start" : "end");
+    }
+
+    const cross = svg("line", { x1: 0, x2: 0, y1: m.t, y2: Y(0), class: "crosshair", visibility: "hidden" }, root);
+    const hit = svg("rect", { x: m.l, y: 0, width: pw, height: Y(0), class: "hit" }, root);
+    hit.addEventListener("pointermove", (e) => {
+      const rect = root.getBoundingClientRect();
+      const a = Math.min(1, Math.max(0, Math.round(((e.clientX - rect.left - m.l) / pw) * 100) / 100));
+      cross.setAttribute("x1", X(a));
+      cross.setAttribute("x2", X(a));
+      cross.setAttribute("visibility", "visible");
+      const o = outcome(kind, a);
+      tip.replaceChildren(
+        h("div", { class: "tip-head" }, `α = ${fmt(a, 2)}`),
+        tipRow("key-right", fmt(o.right, 4), "ảnh đúng"),
+        tipRow("key-wrong", fmt(o.wrong, 4), "ảnh sai"),
+        h("div", { class: "tip-foot " + (o.win ? "is-good" : "is-bad") }, o.win ? "✓ ảnh đúng đứng đầu" : "✗ ảnh sai đứng đầu"),
+      );
+      placeTip(tip, box, X(a), m.t);
+    });
+    hit.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); tip.hidden = true; });
+    box.prepend(root);
+  }
+
+  function explorerNote(results) {
+    const [u, s] = results;
+    if (ex.mode === "bucket") {
+      if (u.win && s.win) return "Mỗi nhóm có α riêng nên cả 8 câu đều đúng: R@1 = 100%. Một α chung không làm được điều này.";
+      const hints = [];
+      if (!u.win) hints.push("kéo α của nhóm 0 xuống dưới 0,833");
+      if (!s.win) hints.push("kéo α của nhóm 1 lên trên 0,952");
+      return "Gợi ý: " + hints.join(" và ") + ".";
+    }
+    let text;
+    if (u.win) text = "α này đúng 4 câu phân vân nhưng sai 4 câu chắc chắn, vì loại chắc chắn cần α > 0,952.";
+    else if (s.win) text = "α này đúng 4 câu chắc chắn nhưng sai 4 câu phân vân, vì loại phân vân cần α < 0,833.";
+    else text = "α nằm giữa 0,833 và 0,952 nên sai cả hai loại câu.";
+    return text + " Không α chung nào đúng được cả 8 câu; thử chuyển sang “Mỗi nhóm một α”.";
+  }
+
+  function renderExplorer() {
+    document.querySelectorAll("#explorer [data-show]").forEach((n) => { n.hidden = n.dataset.show !== ex.mode; });
+    setPressed(document.querySelector("#explorer .seg"), ex.mode);
+    for (const [key, input] of Object.entries(sliders)) {
+      input.value = ex[key];
+      document.getElementById(input.id + "-out").textContent = fmt(ex[key] / 100, 2);
+    }
+    let correct = 0;
+    let reciprocal = 0;
+    const results = [];
+    for (const kind of KINDS) {
+      const a = alphaOf(kind);
+      const o = outcome(kind, a);
+      results.push(o);
+      correct += o.win ? kind.count : 0;
+      reciprocal += kind.count * (o.win ? 1 : 0.5);
+      const card = document.querySelector(`.kind-card[data-kind="${kind.id}"]`);
+      card.querySelector(".k-alpha").textContent = `· dùng α = ${fmt(a, 2)}`;
+      card.querySelector(".k-right").textContent = fmt(o.right, 4);
+      card.querySelector(".k-wrong").textContent = fmt(o.wrong, 4);
+      const status = card.querySelector(".k-status");
+      status.className = "k-status " + (o.win ? "is-good" : "is-bad");
+      status.textContent = o.win ? "✓ Ảnh đúng đứng hạng 1" : "✗ Ảnh sai đứng hạng 1, ảnh đúng ở hạng 2";
+      drawAlphaChart(card.querySelector(".chart"), kind, a);
+    }
+    document.getElementById("ex-r1").textContent = `${Math.round((100 * correct) / 8)}%`;
+    document.getElementById("ex-r1-sub").textContent = `${correct}/8 câu có ảnh đúng ở hạng 1`;
+    document.getElementById("ex-mrr").textContent = fmt(reciprocal / 8, 2);
+    document.getElementById("ex-note").textContent = explorerNote(results);
+  }
+
+  document.querySelectorAll("#explorer .seg button").forEach((b) => b.addEventListener("click", () => { ex.mode = b.dataset.mode; renderExplorer(); }));
+  for (const [key, input] of Object.entries(sliders)) input.addEventListener("input", () => { ex[key] = Number(input.value); renderExplorer(); });
+  document.getElementById("alpha-system").addEventListener("click", () => {
+    if (ex.mode === "fixed") ex.all = 100;
+    else { ex.a0 = 83; ex.a1 = 100; }
+    renderExplorer();
+  });
+
+  (function buildAlphaTable() {
+    const table = document.getElementById("alpha-table");
+    const head = h("tr", {}, h("th", {}, "α"), h("th", {}, "Phân vân: ảnh đúng"), h("th", {}, "Phân vân: ảnh sai"), h("th", {}, "Chắc chắn: ảnh đúng"), h("th", {}, "Chắc chắn: ảnh sai"), h("th", {}, "R@1 với α chung"));
+    const body = h("tbody");
+    const alphas = [0, 10, 20, 30, 40, 50, 60, 70, 80, 83, 84, 90, 95, 96, 100];
+    for (const v of alphas) {
+      const a = v / 100;
+      const [u, s] = KINDS.map((k) => outcome(k, a));
+      const cell = (o, which) => h("td", { class: "num" }, fmt(o[which], 4) + (which === "right" ? (o.win ? " ✓" : "") : (o.win ? "" : " ✗")));
+      const r1 = ((u.win ? 4 : 0) + (s.win ? 4 : 0)) / 8;
+      body.append(h("tr", {}, h("td", { class: "num" }, fmt(a, 2)), cell(u, "right"), cell(u, "wrong"), cell(s, "right"), cell(s, "wrong"), h("td", { class: "num" }, `${Math.round(r1 * 100)}%`)));
+    }
+    table.append(h("thead", {}, head), body);
+    table.append(h("caption", { class: "note" }, "✓ đánh dấu ảnh đứng đầu khi đó là ảnh đúng; ✗ khi ảnh sai đứng đầu."));
+  })();
+
+  /* ---------------- Quantile number line ---------------- */
+  const DATASETS = {
+    margins: { values: [0.02, 0.02, 0.02, 0.02, 0.05, 0.05, 0.05, 0.05], unit: "câu" },
+    ints: { values: [1, 2, 3, 4], unit: "giá trị" },
+    ties: { values: [5, 5, 5, 5, 5, 5], unit: "giá trị" },
+  };
+  const nl = { data: "margins", B: 2 };
+
+  function computeBuckets(values, B) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const rows = [];
+    for (let j = 1; j < B; j++) {
+      const p = j / B;
+      const hh = p * (sorted.length - 1);
+      const lo = Math.floor(hh);
+      const hi = Math.min(lo + 1, sorted.length - 1);
+      rows.push({ j, p, h: hh, lo, hi, xlo: sorted[lo], xhi: sorted[hi], q: quantile(sorted, p) });
+    }
+    const edges = [...new Set(rows.map((r) => r.q))].sort((a, b) => a - b);
+    const bucketOf = (v) => edges.filter((e) => e < v).length;
+    const counts = new Array(edges.length + 1).fill(0);
+    for (const v of values) counts[bucketOf(v)] += 1;
+    return { sorted, rows, edges, counts, bucketOf };
+  }
+
+  function drawNumberLine() {
+    const box = document.getElementById("nl-chart");
+    const tip = box.querySelector(".tooltip");
+    box.querySelectorAll("svg").forEach((n) => n.remove());
+    const ds = DATASETS[nl.data];
+    const res = computeBuckets(ds.values, nl.B);
+    const W = Math.max(280, box.clientWidth);
+    const stackMax = Math.max(...[...new Set(res.sorted)].map((v) => res.sorted.filter((x) => x === v).length));
+    const H = 150 + stackMax * 13;
+    const m = { t: 30, r: 16, b: 58, l: 16 };
+    const axisY = H - m.b;
+    const lo = res.sorted[0];
+    const hi = res.sorted[res.sorted.length - 1];
+    const span = hi - lo || Math.max(1, Math.abs(lo));
+    const x0 = lo - span * 0.35;
+    const x1 = hi + span * 0.35;
+    const pw = W - m.l - m.r;
+    const X = (v) => m.l + ((v - x0) / (x1 - x0)) * pw;
+    const root = svg("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `Trục số với ${res.sorted.length} giá trị, ${res.edges.length} vạch chia và ${res.counts.length} nhóm` });
+    svg("line", { x1: m.l, x2: W - m.r, y1: axisY, y2: axisY, class: "axis" }, root);
+
+    const bounds = [x0, ...res.edges, x1];
+    for (let b = 0; b < bounds.length - 1; b++) {
+      const left = X(bounds[b]);
+      const right = X(bounds[b + 1]);
+      svg("rect", { x: left + 1, y: axisY + 6, width: Math.max(0, right - left - 2), height: 5, rx: 2.5, class: "b-" + b }, root);
+      const cx = (left + right) / 2;
+      svgText(root, cx, axisY + 27, `Nhóm ${b}`, "region-name", "middle");
+      if (res.counts[b]) svgText(root, cx, axisY + 43, `${res.counts[b]} ${ds.unit}`, "region-count", "middle");
+      else svgText(root, cx, axisY + 43, "⚠ trống", "region-empty", "middle");
+    }
+    res.edges.forEach((e) => {
+      svg("line", { x1: X(e), x2: X(e), y1: m.t - 6, y2: axisY + 12, class: "edge" }, root);
+      svgText(root, X(e), m.t - 12, `vạch ${fmtTrim(e, 3)}`, "edge-label", anchorFor(X(e), m.l, W - m.r, 34));
+    });
+    const stacks = new Map();
+    for (const v of res.sorted) {
+      const k = stacks.get(v) || 0;
+      stacks.set(v, k + 1);
+      const b = res.bucketOf(v);
+      const dot = svg("circle", { cx: X(v), cy: axisY - 10 - k * 13, r: 5, class: "dot b-" + b }, root);
+      dot.addEventListener("pointerenter", () => {
+        tip.replaceChildren(h("div", { class: "tip-head" }, `Giá trị ${fmtTrim(v, 3)}`), h("div", {}, `thuộc nhóm ${b}`));
+        placeTip(tip, box, X(v), Math.max(0, axisY - 70 - k * 13));
+      });
+      dot.addEventListener("pointerleave", () => { tip.hidden = true; });
+    }
+    for (const [v, n] of stacks) svgText(root, X(v), axisY - 10 - n * 13 - 2, fmtTrim(v, 3), "value-label", "middle");
+    box.prepend(root);
+
+    const merged = res.rows.length - res.edges.length;
+    let summary = `${res.rows.length} vạch tính ra`;
+    summary += merged ? `, ${merged} vạch bị gộp vì trùng giá trị, còn ${res.edges.length} vạch` : "";
+    summary += ` → ${res.counts.length} nhóm: ` + res.counts.map((c, b) => (c ? `nhóm ${b} có ${c} ${ds.unit}` : `nhóm ${b} trống`)).join(", ") + ".";
+    if (res.counts.some((c) => c === 0)) summary += " ⚠ Có nhóm trống, nên fit_adaptive_fusion sẽ từ chối cách chia này.";
+    document.getElementById("nl-summary").textContent = summary;
+
+    const table = document.getElementById("nl-table");
+    table.replaceChildren();
+    const n = res.sorted.length;
+    table.append(h("thead", {}, h("tr", {}, h("th", {}, "Vạch"), h("th", {}, "p = j / B"), h("th", {}, `h = p · (n − 1), n = ${n}`), h("th", {}, "Hai giá trị kề nhau"), h("th", {}, "Q(p)"))));
+    const body = h("tbody");
+    for (const r of res.rows) {
+      const frac = r.h - r.lo;
+      const sub = (i) => { const s = h("span", {}, "x"); s.append(h("sub", {}, `(${i})`)); return s; };
+      const pair = h("td", { class: "num" }, sub(r.lo), ` = ${fmtTrim(r.xlo, 3)} và `, sub(r.hi), ` = ${fmtTrim(r.xhi, 3)}`);
+      body.append(h("tr", {},
+        h("td", {}, String(r.j)),
+        h("td", { class: "num" }, fmtTrim(r.p, 3)),
+        h("td", { class: "num" }, fmtTrim(r.h, 3)),
+        pair,
+        h("td", { class: "num" }, `${fmtTrim(r.xlo, 3)} + ${fmtTrim(frac, 3)} · (${fmtTrim(r.xhi, 3)} − ${fmtTrim(r.xlo, 3)}) = ${fmtTrim(r.q, 3)}`)));
+    }
+    table.append(body);
+    table.append(h("caption", { class: "note" }, "Giá trị được xếp tăng dần và đánh số từ 0. Mỗi giá trị vào nhóm bằng số vạch nhỏ hơn hẳn nó."));
+  }
+  document.querySelectorAll("#nl-data button").forEach((b) => b.addEventListener("click", () => { nl.data = b.dataset.value; setPressed(document.getElementById("nl-data"), nl.data); drawNumberLine(); }));
+  document.querySelectorAll("#nl-b button").forEach((b) => b.addEventListener("click", () => { nl.B = Number(b.dataset.value); setPressed(document.getElementById("nl-b"), nl.B); drawNumberLine(); }));
+
+  /* ---------------- Bootstrap demo ---------------- */
+  const TOY = [{ name: "A", d: [1, 0] }, { name: "B", d: [0, 0] }, { name: "C", d: [1, 1] }];
+  const SIZES = [3, 30, 300, 1500];
+  const REPEATS = 2000;
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const imagesOf = (N) => Array.from({ length: N }, (_, i) => ({ name: TOY[i % 3].name, D: TOY[i % 3].d[0] + TOY[i % 3].d[1], n: 2 }));
+  function resample(images, rng) {
+    let sumD = 0;
+    let sumN = 0;
+    const picks = [];
+    for (let t = 0; t < images.length; t++) {
+      const c = Math.floor(rng() * images.length);
+      sumD += images[c].D;
+      sumN += images[c].n;
+      if (picks.length < 5) picks.push(c);
+    }
+    return { value: (100 * sumD) / sumN, picks };
+  }
+  const BOOT = new Map();
+  for (const N of SIZES) {
+    const images = imagesOf(N);
+    const rng = mulberry32(310 + N);
+    const values = new Array(REPEATS);
+    for (let r = 0; r < REPEATS; r++) values[r] = resample(images, rng).value;
+    values.sort((a, b) => a - b);
+    BOOT.set(N, { values, lo: quantile(values, 0.025), hi: quantile(values, 0.975) });
+  }
+  const boot = { N: 3, rng: mulberry32(2026) };
+
+  function drawHistogram() {
+    const box = document.getElementById("boot-chart");
+    const tip = box.querySelector(".tooltip");
+    box.querySelectorAll("svg").forEach((n) => n.remove());
+    const res = BOOT.get(boot.N);
+    const W = Math.max(280, box.clientWidth);
+    const H = 230;
+    const m = { t: 14, r: 14, b: 42, l: 46 };
+    const pw = W - m.l - m.r;
+    const ph = H - m.t - m.b;
+    const BIN = 2;
+    const nb = 100 / BIN;
+    const counts = new Array(nb).fill(0);
+    for (const v of res.values) counts[Math.min(nb - 1, Math.floor(v / BIN))] += 1;
+    const yMax = niceMax(Math.max(...counts));
+    const X = (v) => m.l + (v / 100) * pw;
+    const Y = (c) => m.t + (1 - c / yMax) * ph;
+    const root = svg("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `Phân bố chênh lệch qua 2.000 lần rút với ${boot.N} ảnh; khoảng 95% từ ${fmt(res.lo, 1)} đến ${fmt(res.hi, 1)} điểm %` });
+    svg("rect", { x: X(res.lo), y: m.t, width: Math.max(2, X(res.hi) - X(res.lo)), height: ph, class: "ci-wash" }, root);
+    for (const t of [0, yMax / 2, yMax]) {
+      svg("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: "grid" }, root);
+      svgText(root, m.l - 6, Y(t) + 4, fmtInt(t), "tick", "end");
+    }
+    const bw = pw / nb;
+    const barW = Math.max(1, Math.min(24, bw - 2));
+    counts.forEach((c, i) => {
+      const x = m.l + i * bw + (bw - barW) / 2;
+      let bar = null;
+      if (c > 0) {
+        const y = Y(c);
+        const r = Math.min(4, barW / 2, Y(0) - y);
+        const d = `M${x},${Y(0)} V${y + r} Q${x},${y} ${x + r},${y} H${x + barW - r} Q${x + barW},${y} ${x + barW},${y + r} V${Y(0)} Z`;
+        bar = svg("path", { d, class: "bar" }, root);
+      }
+      const hit = svg("rect", { x: m.l + i * bw, y: m.t, width: bw, height: ph, class: "bar-hit" }, root);
+      hit.addEventListener("pointerenter", () => {
+        if (bar) bar.classList.add("is-hover");
+        tip.replaceChildren(h("div", { class: "tip-head" }, `Chênh lệch từ ${i * BIN} đến ${(i + 1) * BIN} điểm %`), h("div", {}, h("strong", {}, fmtInt(c)), " lần trong 2.000"));
+        placeTip(tip, box, m.l + (i + 0.5) * bw, m.t);
+      });
+      hit.addEventListener("pointerleave", () => { if (bar) bar.classList.remove("is-hover"); tip.hidden = true; });
+    });
+    svg("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: "axis" }, root);
+    for (const x of [res.lo, res.hi]) svg("line", { x1: X(x), x2: X(x), y1: m.t, y2: Y(0), class: "ci-line" }, root);
+    svg("line", { x1: X(50), x2: X(50), y1: m.t, y2: Y(0), class: "delta-line" }, root);
+    for (const t of [0, 25, 50, 75, 100]) svgText(root, X(t), Y(0) + 16, String(t), "tick", "middle");
+    svgText(root, m.l + pw / 2, H - 6, "Chênh lệch R@1 sau khi rút lại (điểm %)", "axis-title", "middle");
+    box.prepend(root);
+    document.getElementById("boot-ci").textContent =
+      `Với ${fmtInt(boot.N)} ảnh: khoảng 95% là [${fmt(res.lo, 1)}; ${fmt(res.hi, 1)}], rộng ${fmt(res.hi - res.lo, 1)} điểm %.` +
+      (boot.N === 3 ? " Chỉ có 3 ảnh nên bộ rút lại rất khác nhau, khoảng trải gần hết từ 0 đến 100." : "");
+  }
+
+  function drawIntervals() {
+    const box = document.getElementById("boot-intervals");
+    const tip = box.querySelector(".tooltip");
+    box.querySelectorAll("svg").forEach((n) => n.remove());
+    const W = Math.max(280, box.clientWidth);
+    const rowH = 30;
+    const m = { t: 8, r: 16, b: 34, l: 78 };
+    const H = m.t + m.b + rowH * SIZES.length;
+    const pw = W - m.l - m.r;
+    const X = (v) => m.l + (v / 100) * pw;
+    const root = svg("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": "Khoảng 95% theo số ảnh: càng nhiều ảnh, khoảng càng hẹp" });
+    for (const t of [0, 25, 50, 75, 100]) {
+      svg("line", { x1: X(t), x2: X(t), y1: m.t, y2: H - m.b, class: "grid" }, root);
+      svgText(root, X(t), H - m.b + 16, String(t), "tick", "middle");
+    }
+    svgText(root, m.l + pw / 2, H - 4, "Khoảng 95% của chênh lệch (điểm %)", "axis-title", "middle");
+    SIZES.forEach((N, i) => {
+      const res = BOOT.get(N);
+      const y = m.t + rowH * i + rowH / 2;
+      svgText(root, m.l - 10, y + 4, `${fmtInt(N)} ảnh`, "row-label", "end");
+      svg("line", { x1: X(res.lo), x2: X(res.hi), y1: y, y2: y, class: "interval" }, root);
+      svg("circle", { cx: X(50), cy: y, r: 4.5, class: "interval-dot" }, root);
+      const hit = svg("rect", { x: m.l, y: y - rowH / 2, width: pw, height: rowH, class: "bar-hit" }, root);
+      hit.addEventListener("pointerenter", () => {
+        tip.replaceChildren(h("div", { class: "tip-head" }, `${fmtInt(N)} ảnh`), h("div", {}, h("strong", {}, `[${fmt(res.lo, 1)}; ${fmt(res.hi, 1)}]`)), h("div", { class: "tip-name" }, `rộng ${fmt(res.hi - res.lo, 1)} điểm %`));
+        placeTip(tip, box, X(res.hi), Math.max(0, y - 30));
+      });
+      hit.addEventListener("pointerleave", () => { tip.hidden = true; });
+    });
+    box.prepend(root);
+  }
+
+  (function buildBootTable() {
+    const table = document.getElementById("boot-table");
+    table.append(h("thead", {}, h("tr", {}, h("th", {}, "Số ảnh"), h("th", {}, "Khoảng 95% (điểm %)"), h("th", {}, "Độ rộng"))));
+    const body = h("tbody");
+    for (const N of SIZES) {
+      const res = BOOT.get(N);
+      body.append(h("tr", {}, h("td", { class: "num" }, fmtInt(N)), h("td", { class: "num" }, `[${fmt(res.lo, 1)}; ${fmt(res.hi, 1)}]`), h("td", { class: "num" }, fmt(res.hi - res.lo, 1))));
+    }
+    table.append(body);
+  })();
+
+  document.querySelectorAll("#boot-n button").forEach((b) => b.addEventListener("click", () => {
+    boot.N = Number(b.dataset.value);
+    setPressed(document.getElementById("boot-n"), boot.N);
+    document.getElementById("boot-once-out").textContent = "Bấm “Rút thử một lần” để xem một bộ ảnh rút lại.";
+    drawHistogram();
+  }));
+  document.getElementById("boot-once").addEventListener("click", () => {
+    const images = imagesOf(boot.N);
+    const draw = resample(images, boot.rng);
+    let text;
+    if (boot.N === 3) {
+      const names = draw.picks.map((c) => images[c].name);
+      const ds = draw.picks.map((c) => images[c].D);
+      text = `Rút được ảnh ${names.join(", ")} → chênh lệch = 100 · (${ds.join(" + ")}) / 6 = ${fmt(draw.value, 1)} điểm %.`;
+    } else {
+      text = `Rút được ${fmtInt(boot.N)} ảnh (ví dụ ảnh số ${draw.picks.map((c) => c + 1).join(", ")}, …) → chênh lệch = ${fmt(draw.value, 1)} điểm %.`;
+    }
+    document.getElementById("boot-once-out").textContent = text;
+  });
+
+  /* ---------------- Render and keep charts sized ---------------- */
+  function renderAll() {
+    renderExplorer();
+    drawNumberLine();
+    drawHistogram();
+    drawIntervals();
+  }
+  renderAll();
+  let lastWidth = document.documentElement.clientWidth;
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const width = document.documentElement.clientWidth;
+      if (width !== lastWidth) { lastWidth = width; renderAll(); }
+    }, 120);
+  });
+})();
+</script>
+</body>
+</html>

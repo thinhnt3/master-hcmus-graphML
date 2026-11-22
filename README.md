@@ -130,6 +130,7 @@ Report giải thích tương tác là tài liệu local trong `private/`, không
 Mỗi nhóm truy vấn, chia theo độ tự tin của CLIP (điểm hạng 1 − điểm hạng 2), được chọn (α, k) riêng trên validation;
 chia ngẫu nhiên là đối chứng. Cần chạy trước `train_graphsage` và `run_benchmark --method graphsage` cho config
 ghi ở `retrieval_config`. Giả thuyết, cách đọc kết quả và giới hạn: [docs/adaptive-fusion.md](docs/adaptive-fusion.md).
+Bản giải thích cho người mới, có ví dụ tự kéo thử: mở `docs/adaptive-fusion.html` bằng trình duyệt.
 
 ```bash
 python -m scripts.evaluate_adaptive_fusion --config configs/evaluation/adaptive_fusion.yaml
