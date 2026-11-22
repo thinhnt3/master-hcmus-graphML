@@ -38,10 +38,8 @@ reports/data-review/figures/*
 # Local explainer page (not part of the deliverable).
 docs/explainer/
 
-# Local build/EDA scripts and diagram pages (not shipped).
-scripts/build_vg_coco.py
+# Local exploratory scripts and diagram byproducts.
 scripts/build_vn_heritage.py
-scripts/review_vg_coco.py
 reports/data-review/diagrams/
 
 # CLIP embeddings (about 130 MB); regenerate with `python -m scripts.embed_vg_coco`.
