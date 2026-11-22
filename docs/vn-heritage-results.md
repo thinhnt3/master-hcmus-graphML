@@ -19,7 +19,7 @@ Báo cáo đủ bảng về cách xây bộ dữ liệu (bản đầy đủ và 
 - **Chia theo cặp đỉnh:** mọi claim nối cùng hai đỉnh vào cùng một tập, nên sự kiện bị giấu không đọc lại được từ quan hệ nghịch.
 - **Cạnh rút từ bài** không bao giờ bị hỏi, chỉ làm bằng chứng trong đồ thị.
 - Truy vấn viết bằng tiếng Anh vì CLIP dùng chung chỉ học tiếng Anh; tên riêng giữ tiếng Việt.
-- Data card: `data/processed/vn_heritage_core/retrieval/card.json` (và `split-<n>/card.json` cho từng cách chia claim). Thống kê bản lõi: `data/processed/vn_heritage_core/stats.json`.
+- Data card (nguồn, cách tạo triple, giấy phép và điều kiện sử dụng): [vn-heritage-data-card.md](vn-heritage-data-card.md). Số liệu máy đọc được: `data/processed/vn_heritage_core/retrieval/card.json` (và `split-<n>/card.json` cho từng cách chia claim). Thống kê bản lõi: `data/processed/vn_heritage_core/stats.json`.
 
 ## Cách hoạt động
 
