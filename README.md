@@ -10,10 +10,10 @@ Quy trình tổng thể: truy vấn → mã hóa bằng CLIP → chọn top-k �
 
 | Tên | MSHV |
 |---|---|
-| Nguyễn Trường Thịnh | 25C11066 |
+| Trần Quốc Thịnh | 25C11065 |
 | Đỗ Thanh Nghị | 25C11051 |
 | Phan Lê Đắc Phú | 25C11059 |
-| Trần Quốc Thịnh | 25C11065 |
+| Nguyễn Trường Thịnh | 25C11066 |
 
 ## Báo cáo
 
