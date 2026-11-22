@@ -114,3 +114,23 @@ def test_stale_embeddings_are_detected(tmp_path):
     source.unlink()
     with pytest.raises(DataError, match="stale"):
         verify_inputs_unchanged(directory)
+
+
+def test_portable_embedding_inputs_still_reject_changed_data(tmp_path, monkeypatch):
+    asset_root = tmp_path / "assets"
+    asset_root.mkdir()
+    source = asset_root / "queries.json"
+    source.write_text("[1]")
+    directory = asset_root / "emb"
+    directory.mkdir()
+    write_json(directory / META_FILE, {"inputs_sha256": {"queries.json": sha256_of(source)}, "tables": {}})
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    verify_inputs_unchanged(directory, input_root=asset_root)
+    source.write_text("[2]")
+    with pytest.raises(DataError, match="stale"):
+        verify_inputs_unchanged(directory, input_root=asset_root)
+    source.unlink()
+    with pytest.raises(DataError, match="stale"):
+        verify_inputs_unchanged(directory, input_root=asset_root)

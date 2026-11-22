@@ -19,6 +19,8 @@ def validate_run(
     path: Path,
     config: RetrievalConfig,
     seed: int,
+    *,
+    input_root: Path | None = None,
 ) -> None:
     """Reject mismatched architecture, seed, CLIP model, or changed training inputs.
 
@@ -38,7 +40,7 @@ def validate_run(
     if not isinstance(hashes, dict) or not hashes:
         raise DataError(f"{path}: no input provenance in the training snapshot")
     for name, expected in hashes.items():
-        source = Path(name)
+        source = _input_path(name, input_root)
         if not source.is_file() or sha256_of(source) != expected:
             raise DataError(f"{path}: training input missing or changed: {source}")
 
@@ -49,15 +51,17 @@ def validate_run(
         data.paths.processed_dir / "graph/image_graphs.json",
         data.paths.split_file,
     )
-    resolved = {Path(name).resolve(): value for name, value in hashes.items()}
+    resolved = {_input_path(name, input_root).resolve(): value for name, value in hashes.items()}
     for source in required:
-        if source.resolve() not in resolved:
+        if _input_path(source, input_root).resolve() not in resolved:
             raise DataError(f"{path}: requested input is not part of this training run: {source}")
 
 
 def validate_artifact_inputs(
     report: dict[str, Any],
     label: str,
+    *,
+    input_root: Path | None = None,
 ) -> None:
     """Reject a stale benchmark before consuming its validation-selected alpha/k."""
     # A benchmark selection is reusable only with its recorded inputs.
@@ -65,6 +69,12 @@ def validate_artifact_inputs(
     if not isinstance(hashes, dict) or not hashes:
         raise DataError(f"{label}: missing input provenance")
     for name, expected in hashes.items():
-        source = Path(name)
+        source = _input_path(name, input_root)
         if not source.is_file() or sha256_of(source) != expected:
             raise DataError(f"{label}: stale input: {source}")
+
+
+def _input_path(name: str | Path, root: Path | None) -> Path:
+    """Resolve recorded relative paths without changing the process working directory."""
+    path = Path(name)
+    return root / path if root is not None and not path.is_absolute() else path

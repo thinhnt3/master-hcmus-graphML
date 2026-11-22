@@ -99,7 +99,7 @@ def load_table(directory: Path, name: str) -> EmbeddingTable:
     return EmbeddingTable(ids=tuple(read_json(ids_path)), vectors=np.load(vectors_path))
 
 
-def verify_inputs_unchanged(directory: Path) -> None:
+def verify_inputs_unchanged(directory: Path, *, input_root: Path | None = None) -> None:
     """Raise DataError if an input of the embeddings, or a stored table, has changed since.
 
     Ids alone cannot reveal this: a rebuilt dataset can keep its ids and change the content.
@@ -109,11 +109,13 @@ def verify_inputs_unchanged(directory: Path) -> None:
     if not meta_path.is_file():
         raise DataError(f"{meta_path} not found; compute the embeddings first")
     meta = read_json(meta_path)
-    changed = [
-        path
-        for path, digest in meta["inputs_sha256"].items()
-        if not Path(path).is_file() or sha256_of(Path(path)) != digest
-    ]
+    changed = []
+    for name, digest in meta["inputs_sha256"].items():
+        source = Path(name)
+        if input_root is not None and not source.is_absolute():
+            source = input_root / source
+        if not source.is_file() or sha256_of(source) != digest:
+            changed.append(name)
     if changed:
         raise DataError(f"embeddings in {directory} are stale; these inputs changed: {changed}")
     altered = [

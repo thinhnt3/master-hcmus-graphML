@@ -27,10 +27,10 @@ def resolve_device(device: Device) -> str:
 class ClipEncoder:
     """Wraps a Hugging Face CLIP checkpoint; returns raw (not normalized) projection vectors."""
 
-    def __init__(self, model_name: str, device: Device) -> None:
+    def __init__(self, model_name: str, device: Device, *, local_files_only: bool = False) -> None:
         self.device = resolve_device(device)
-        self._processor = CLIPProcessor.from_pretrained(model_name)
-        self._model = CLIPModel.from_pretrained(model_name).eval().to(self.device)
+        self._processor = CLIPProcessor.from_pretrained(model_name, local_files_only=local_files_only)
+        self._model = CLIPModel.from_pretrained(model_name, local_files_only=local_files_only).eval().to(self.device)
         self._model.requires_grad_(False)
 
     @property
