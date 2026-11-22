@@ -4,7 +4,7 @@
 
 **Trạng thái:** code và test đã xong, **chưa có kết quả**. Chạy theo mục [Cách chạy](#cách-chạy), rồi điền số vào [bảng kết quả](#bảng-kết-quả-điền-sau-khi-chạy).
 
-**Bản dễ đọc cho người mới:** mở `docs/adaptive-fusion.html` bằng trình duyệt (không cần mạng). Trang có phần tóm tắt 2 phút, ví dụ tự kéo thử, hình minh hoạ, từ điển thuật ngữ và phần hỏi đáp.
+**Bản dễ đọc cho người mới:** mở `docs/adaptive-fusion.html` bằng trình duyệt (không cần mạng). Trang có phần tóm tắt 2 phút, giải thích GraphSAGE từng bước, ví dụ tự kéo thử, hình minh hoạ, từ điển thuật ngữ và phần hỏi đáp.
 
 | Thành phần | File |
 |---|---|

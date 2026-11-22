@@ -34,6 +34,8 @@
     --good-wash: rgba(12, 163, 12, 0.10);
     --accent-wash: rgba(42, 120, 214, 0.08);
     --neutral-wash: rgba(11, 11, 11, 0.06);
+    --obj-wash: rgba(42, 120, 214, 0.12);
+    --rel-wash: rgba(235, 104, 52, 0.13);
     --code-bg: #efeee9;
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
   }
@@ -58,6 +60,8 @@
       --good-wash: rgba(12, 163, 12, 0.16);
       --accent-wash: rgba(57, 135, 229, 0.13);
       --neutral-wash: rgba(255, 255, 255, 0.07);
+      --obj-wash: rgba(57, 135, 229, 0.20);
+      --rel-wash: rgba(217, 89, 38, 0.22);
       --code-bg: #262624;
       --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
     }
@@ -82,6 +86,8 @@
     --good-wash: rgba(12, 163, 12, 0.16);
     --accent-wash: rgba(57, 135, 229, 0.13);
     --neutral-wash: rgba(255, 255, 255, 0.07);
+    --obj-wash: rgba(57, 135, 229, 0.20);
+    --rel-wash: rgba(217, 89, 38, 0.22);
     --code-bg: #262624;
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
   }
@@ -294,6 +300,36 @@
   svg .interval-dot { fill: var(--series-1); stroke: var(--chart-bg); stroke-width: 2; }
   svg .row-label { fill: var(--text-1); font-size: 12.5px; }
 
+  /* ---------- GraphSAGE explainer ---------- */
+  .know-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 10px 0 2px; }
+  .know-list li { font-size: 13.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px 11px; }
+  .know-list li.is-new { background: var(--accent-wash); border-color: transparent; font-weight: 650; }
+  .know-list li.is-empty { background: transparent; color: var(--text-2); font-style: italic; }
+  .swatch-image { background: var(--surface-2); border: 2px solid var(--text-2); border-radius: 2px; }
+  .swatch-object { background: var(--obj-wash); border: 2px solid var(--series-1); border-radius: 4px; }
+  .swatch-relation { background: var(--rel-wash); border: 2px solid var(--series-2); border-radius: 999px; }
+  .line-key.key-on { color: var(--text-2); }
+  .line-key.key-chain { color: var(--text-1); border-top-width: 3px; }
+  svg .g-edge { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  svg .g-edge.is-on { stroke: var(--text-2); stroke-width: 2; }
+  svg .g-edge.is-chain { stroke: var(--text-1); stroke-width: 3; }
+  svg .g-head { fill: var(--axis); }
+  svg .g-head.is-on { fill: var(--text-2); }
+  svg .g-head.is-chain { fill: var(--text-1); }
+  svg .g-node rect { stroke-width: 2; }
+  svg .g-image rect { fill: var(--surface-2); stroke: var(--text-2); }
+  svg .g-object rect { fill: var(--obj-wash); stroke: var(--series-1); }
+  svg .g-relation rect { fill: var(--rel-wash); stroke: var(--series-2); }
+  svg .g-node text { fill: var(--text-1); font-size: 13px; font-weight: 650; }
+  svg .g-node { transition: opacity 0.2s; }
+  svg .g-node.is-dim { opacity: 0.35; }
+  @media (prefers-reduced-motion: reduce) { svg .g-node { transition: none; } }
+  table.matrix { width: auto; border-collapse: separate; border-spacing: 3px; margin: 4px; }
+  table.matrix th, table.matrix td { border: 0; text-align: center; padding: 8px 12px; }
+  table.matrix th { background: none; font-weight: 600; color: var(--text-2); font-size: 13.5px; }
+  table.matrix td { border-radius: 6px; color: var(--text-1); font-variant-numeric: tabular-nums; min-width: 64px; }
+  table.matrix td.is-pair { outline: 2px solid var(--text-1); outline-offset: -2px; font-weight: 700; }
+
   /* ---------- Code lanes and timelines ---------- */
   .lanes { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); margin: 14px 0; }
   @media (min-width: 900px) { .lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -354,18 +390,19 @@
       <ol>
         <li><a href="#doc-nhanh"><span class="sec-num">1</span>Đọc nhanh trong 2 phút</a></li>
         <li><a href="#he-thong"><span class="sec-num">2</span>Hệ thống hiện tại</a></li>
-        <li><a href="#y-tuong"><span class="sec-num">3</span>Ý tưởng</a></li>
-        <li><a href="#gia-thuyet"><span class="sec-num">4</span>Giả thuyết và đối chứng</a></li>
-        <li><a href="#cach-lam"><span class="sec-num">5</span>Cách làm, từng bước</a></li>
-        <li><a href="#vi-du"><span class="sec-num">6</span>Ví dụ tự kéo thử</a></li>
-        <li><a href="#dang-tin"><span class="sec-num">7</span>Vì sao kết quả đáng tin</a></li>
-        <li><a href="#code"><span class="sec-num">8</span>Đi qua code</a></li>
-        <li><a href="#chay"><span class="sec-num">9</span>Cách chạy</a></li>
-        <li><a href="#ket-qua"><span class="sec-num">10</span>Đọc file kết quả</a></li>
-        <li><a href="#gioi-han"><span class="sec-num">11</span>Giới hạn, hướng mở rộng</a></li>
-        <li><a href="#kien-thuc"><span class="sec-num">12</span>Kiến thức nền</a></li>
-        <li><a href="#tu-dien"><span class="sec-num">13</span>Từ điển nhỏ</a></li>
-        <li><a href="#hoi-dap"><span class="sec-num">14</span>Câu hỏi hay gặp</a></li>
+        <li><a href="#graphsage"><span class="sec-num">3</span>GraphSAGE từng bước</a></li>
+        <li><a href="#y-tuong"><span class="sec-num">4</span>Ý tưởng</a></li>
+        <li><a href="#gia-thuyet"><span class="sec-num">5</span>Giả thuyết và đối chứng</a></li>
+        <li><a href="#cach-lam"><span class="sec-num">6</span>Cách làm, từng bước</a></li>
+        <li><a href="#vi-du"><span class="sec-num">7</span>Ví dụ tự kéo thử</a></li>
+        <li><a href="#dang-tin"><span class="sec-num">8</span>Vì sao kết quả đáng tin</a></li>
+        <li><a href="#code"><span class="sec-num">9</span>Đi qua code</a></li>
+        <li><a href="#chay"><span class="sec-num">10</span>Cách chạy</a></li>
+        <li><a href="#ket-qua"><span class="sec-num">11</span>Đọc file kết quả</a></li>
+        <li><a href="#gioi-han"><span class="sec-num">12</span>Giới hạn, hướng mở rộng</a></li>
+        <li><a href="#kien-thuc"><span class="sec-num">13</span>Kiến thức nền</a></li>
+        <li><a href="#tu-dien"><span class="sec-num">14</span>Từ điển nhỏ</a></li>
+        <li><a href="#hoi-dap"><span class="sec-num">15</span>Câu hỏi hay gặp</a></li>
       </ol>
     </details>
   </nav>
@@ -388,10 +425,11 @@
       </div>
       <h3>Nên đọc mục nào</h3>
       <ul class="reading-guide">
-        <li><b>Chỉ cần hiểu ý tưởng</b>Mục 1 đến 4.</li>
-        <li><b>Muốn tự tay thấy nó hoạt động</b>Mục 6: kéo thanh trượt α.</li>
-        <li><b>Chuẩn bị trình bày, bảo vệ</b>Mục 5, 7, 10 và 14.</li>
-        <li><b>Đọc hoặc sửa code</b>Mục 8 và 9.</li>
+        <li><b>Chỉ cần hiểu ý tưởng</b>Mục 1, 2, 4 và 5.</li>
+        <li><b>Muốn hiểu điểm đồ thị từ đâu ra</b>Mục 3: GraphSAGE từng bước.</li>
+        <li><b>Muốn tự tay thấy nó hoạt động</b>Mục 7: kéo thanh trượt α.</li>
+        <li><b>Chuẩn bị trình bày, bảo vệ</b>Mục 6, 8, 11 và 15.</li>
+        <li><b>Đọc hoặc sửa code</b>Mục 9 và 10.</li>
       </ul>
     </section>
 
@@ -416,7 +454,7 @@
         </div>
         <div class="card">
           <h4>Giám khảo 2: đồ thị cảnh</h4>
-          <p class="small">Mỗi ảnh có sẵn một bản mô tả có cấu trúc (từ bộ dữ liệu Visual Genome): các vật thể như <em>người</em>, <em>ngựa</em>, <em>bãi biển</em>, và quan hệ như <em>người → cưỡi → ngựa</em>. Mô hình GraphSAGE của nhóm, một loại mạng nơ-ron học trên đồ thị, biến bản mô tả này thành điểm để so với câu.</p>
+          <p class="small">Mỗi ảnh có sẵn một bản mô tả có cấu trúc (từ bộ dữ liệu Visual Genome): các vật thể như <em>người</em>, <em>ngựa</em>, <em>bãi biển</em>, và quan hệ như <em>người → cưỡi → ngựa</em>. Mô hình GraphSAGE của nhóm, một loại mạng nơ-ron học trên đồ thị, biến bản mô tả này thành điểm để so với câu. <a href="#graphsage">Mục 3</a> giải thích từng bước, có hình minh hoạ.</p>
         </div>
       </div>
       <h3>α là núm vặn trộn điểm</h3>
@@ -439,8 +477,148 @@
     </section>
 
     <!-- 3 -->
+    <section id="graphsage">
+      <h2><span class="sec-num">3</span>GraphSAGE: giám khảo thứ hai làm việc thế nào</h2>
+      <div class="simple">
+        <span class="chip">Nói đơn giản</span>
+        <p>Mỗi ảnh có sẵn một <b>sơ đồ</b> ghi trong ảnh có vật gì, và vật nào làm gì với vật nào. GraphSAGE đọc sơ đồ đó qua 3 vòng “hỏi hàng xóm”, rồi tóm cả sơ đồ thành <b>một dãy số</b>. Mô hình được luyện để dãy số này giống dãy số CLIP của câu mô tả đúng. Điểm đồ thị chính là độ giống nhau giữa hai dãy số đó.</p>
+      </div>
+
+      <h3>Bước 1 · Đồ thị cảnh: sơ đồ của một tấm ảnh</h3>
+      <p>Lấy một ảnh “người cưỡi ngựa trên bãi biển”. Người gán nhãn của bộ dữ liệu Visual Genome đã ghi sẵn:</p>
+      <ul>
+        <li><b>Vật thể:</b> người, ngựa, bãi biển.</li>
+        <li><b>Quan hệ:</b> người <b>cưỡi</b> ngựa; ngựa <b>trên</b> bãi biển.</li>
+      </ul>
+      <p>Sơ đồ được vẽ thành một <b>đồ thị</b>: mỗi thứ là một <b>đỉnh</b> (một ô), nối với nhau bằng <b>cạnh</b> (mũi tên). Có ba loại đỉnh:</p>
+      <ul>
+        <li><b>Đỉnh ảnh</b> (ô vuông), có mũi tên tới mọi vật thể của ảnh.</li>
+        <li><b>Đỉnh vật thể</b> (ô bo góc), mỗi loại vật một đỉnh; hai người trong ảnh vẫn chung một đỉnh “người”.</li>
+        <li><b>Đỉnh quan hệ</b> (ô tròn hai đầu) mang tên quan hệ, nằm giữa hai vật: người → cưỡi → ngựa. GraphSAGE chỉ đọc được nội dung của đỉnh, không đọc được chữ ghi trên mũi tên, nên mỗi quan hệ được biến thành một đỉnh nhỏ. Chiều mũi tên cho biết ai là chủ thể (người), ai là đối tượng (ngựa).</li>
+      </ul>
+      <div class="card">
+        <div class="chart" id="g-structure"></div>
+        <div class="legend">
+          <span class="item"><span class="swatch swatch-image"></span>đỉnh ảnh</span>
+          <span class="item"><span class="swatch swatch-object"></span>đỉnh vật thể</span>
+          <span class="item"><span class="swatch swatch-relation"></span>đỉnh quan hệ</span>
+        </div>
+      </div>
+      <p class="note">Dữ liệu thật ghi bằng tiếng Anh (man, horse, beach, riding, on); ở đây dịch cho dễ đọc. GraphSAGE không tự nhìn ảnh: nó chỉ đọc sơ đồ do người gán nhãn sẵn.</p>
+
+      <h3>Bước 2 · Mỗi đỉnh bắt đầu bằng một dãy số</h3>
+      <p>Máy tính không hiểu chữ, nên mỗi đỉnh được đổi thành một dãy 512 con số, gọi là <b>vector</b>. Đỉnh vật thể và đỉnh quan hệ lấy vector CLIP của tên mình: đỉnh “ngựa” bắt đầu bằng vector CLIP của chữ “horse”. Nhờ vậy, hai tên gần nghĩa như “horse” và “pony” bắt đầu bằng hai vector gần nhau.</p>
+      <p>Đỉnh ảnh thì khác: ở mô hình chính, <b>mọi ảnh dùng chung một vector khởi đầu</b> (vector này cũng được học). Đỉnh ảnh vì thế không biết gì về ảnh của mình; mọi thông tin phải đi tới nó qua sơ đồ. Đây là chủ ý của nhóm, để chắc rằng phần cải thiện đến từ đồ thị chứ không phải từ CLIP của ảnh.</p>
+
+      <h3>Bước 3 · Ba vòng “hỏi hàng xóm”</h3>
+      <p>Đây là phần cốt lõi. Ở mỗi vòng, <b>mọi đỉnh cùng lúc</b> cập nhật dãy số của mình bằng cách trộn ba thứ:</p>
+      <ul>
+        <li>dãy số hiện tại của chính nó;</li>
+        <li>trung bình dãy số của các đỉnh <b>có mũi tên trỏ tới nó</b>;</li>
+        <li>trung bình dãy số của các đỉnh <b>nó trỏ mũi tên tới</b>.</li>
+      </ul>
+      <p>Tỉ lệ trộn không do người đặt, mà do mô hình tự học (bước 5). Hai chiều của mũi tên được trộn bằng <b>hai bộ tỉ lệ khác nhau</b>, nên mô hình phân biệt được “người cưỡi ngựa” với “ngựa cưỡi người”.</p>
+      <div class="card">
+        <span class="chip">Ví von</span>
+        <p class="small">Cả lớp ngồi theo sơ đồ chỗ ngồi. Mỗi vòng, ai cũng hỏi các bạn ngồi cạnh rồi ghi lại điều mới biết. Sau vòng 1, mỗi bạn biết về các bạn ngồi cạnh; sau vòng 2, biết cả bạn của bạn; sau vòng 3, biết xa thêm một bước nữa.</p>
+      </div>
+      <div class="explorer" id="graph-demo">
+        <h4>Thử bấm qua từng vòng: đỉnh ảnh biết thêm gì?</h4>
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Số vòng đã chạy" id="g-steps">
+            <button type="button" data-value="0" aria-pressed="true">Ban đầu</button>
+            <button type="button" data-value="1" aria-pressed="false">Sau vòng 1</button>
+            <button type="button" data-value="2" aria-pressed="false">Sau vòng 2</button>
+            <button type="button" data-value="3" aria-pressed="false">Sau vòng 3</button>
+          </div>
+          <button type="button" class="btn" id="g-next">Vòng tiếp theo →</button>
+        </div>
+        <div class="chart" id="g-chart"></div>
+        <div class="legend">
+          <span class="item"><span class="line-key key-on"></span>thông tin đã đi qua mũi tên này</span>
+          <span class="item"><span class="line-key key-chain"></span>đã nối được hai đầu của quan hệ</span>
+          <span class="item">ô mờ: đỉnh ảnh chưa nghe được tới đó</span>
+        </div>
+        <p class="ex-note" id="g-text" aria-live="polite"></p>
+        <p class="small muted" style="margin-bottom: 0">Đỉnh ảnh đã biết:</p>
+        <ul class="know-list" id="g-know"></ul>
+      </div>
+      <p>Mô hình của nhóm dùng đúng <b>3 vòng</b> (3 tầng). Vòng thứ 3 cần khi ảnh có nhiều quan hệ cùng tên: “người đàn ông cưỡi xe đạp, người phụ nữ cưỡi ngựa” khác “người đàn ông cưỡi ngựa, người phụ nữ cưỡi xe đạp”. Chỉ với 2 vòng, hai ảnh này cho cùng một dãy số; nhóm có test kiểm điều này.</p>
+      <details class="more">
+        <summary>Xem công thức một vòng</summary>
+        <p>Với <i>h</i><sub>i</sub><sup>(ℓ)</sup> là vector của đỉnh <i>i</i> sau ℓ vòng:</p>
+        <math display="block">
+          <mrow>
+            <msubsup><mi>h</mi><mi>i</mi><mrow><mo stretchy="false">(</mo><mi>ℓ</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msubsup>
+            <mo>=</mo><mi>σ</mi><mo>(</mo>
+            <msub><mi>A</mi><mi>ℓ</mi></msub><msubsup><mi>h</mi><mi>i</mi><mrow><mo stretchy="false">(</mo><mi>ℓ</mi><mo stretchy="false">)</mo></mrow></msubsup>
+            <mo>+</mo><msub><mi>B</mi><mi>ℓ</mi></msub><mo>·</mo>
+            <munder><mtext>trung bình</mtext><mrow><mi>j</mi><mo>→</mo><mi>i</mi></mrow></munder><mspace width="0.3em"></mspace>
+            <msubsup><mi>h</mi><mi>j</mi><mrow><mo stretchy="false">(</mo><mi>ℓ</mi><mo stretchy="false">)</mo></mrow></msubsup>
+            <mo>+</mo><msub><mi>C</mi><mi>ℓ</mi></msub><mo>·</mo>
+            <munder><mtext>trung bình</mtext><mrow><mi>i</mi><mo>→</mo><mi>j</mi></mrow></munder><mspace width="0.3em"></mspace>
+            <msubsup><mi>h</mi><mi>j</mi><mrow><mo stretchy="false">(</mo><mi>ℓ</mi><mo stretchy="false">)</mo></mrow></msubsup>
+            <mo>)</mo>
+          </mrow>
+        </math>
+        <p class="small"><i>j</i> → <i>i</i> là các đỉnh trỏ tới <i>i</i>; <i>i</i> → <i>j</i> là các đỉnh <i>i</i> trỏ tới. <i>A</i>, <i>B</i>, <i>C</i> là các ma trận học được, mỗi vòng một bộ riêng. σ là ReLU (giữ số dương, đổi số âm thành 0), không dùng ở vòng cuối vì vector CLIP có cả số âm. Hệ số tự do được bỏ qua cho gọn.</p>
+        <p class="small">Trong code, mỗi vòng là <code>DirectedSAGELayer</code>: tổng của hai lớp <code>SAGEConv</code> (thư viện PyTorch Geometric), một lớp theo chiều mũi tên, một lớp ngược chiều (<code>src/models/graphsage.py</code>). Cách dựng đồ thị nằm ở <code>src/models/graph_data.py</code>.</p>
+      </details>
+
+      <h3>Bước 4 · Tóm cả sơ đồ thành một dãy số</h3>
+      <p>Sau vòng 3, đỉnh ảnh đã gom thông tin của cả sơ đồ. Lấy vector của đỉnh ảnh, đưa qua một phép biến đổi cuối (gọi là <b>tầng chiếu</b>) để về cùng “ngôn ngữ” với CLIP, rồi chuẩn hoá về độ dài 1. Kết quả là <b>vector đồ thị</b> của ảnh. Vector này được tính sẵn một lần cho mỗi ảnh rồi lưu lại.</p>
+
+      <h3>Bước 5 · Học bằng trò chơi ghép cặp</h3>
+      <p>Lúc đầu, các tỉ lệ trộn là ngẫu nhiên nên vector đồ thị chưa mang nghĩa gì. Mô hình học như sau:</p>
+      <ol class="numbered">
+        <li>Lấy một nhóm 256 ảnh của tập train, mỗi ảnh kèm một câu mô tả của chính nó (chọn ngẫu nhiên trong 5 câu).</li>
+        <li>Tính độ giống nhau giữa vector đồ thị của mọi ảnh và vector CLIP của mọi câu: một bảng 256 × 256.</li>
+        <li>Chỉnh các tỉ lệ trộn sao cho ô của cặp đúng (đường chéo) cao hơn hẳn các ô khác, theo cả hai chiều: mỗi ảnh nhận ra câu của mình, và mỗi câu nhận ra ảnh của mình. Cách học này gọi là <b>học tương phản</b> (InfoNCE).</li>
+        <li>Lặp lại qua nhiều lượt. Dừng khi R@1 trên validation không tăng thêm trong 5 lượt liên tiếp (tối đa 50 lượt). CLIP giữ nguyên; chỉ GraphSAGE và tầng chiếu được học.</li>
+      </ol>
+      <div class="explorer" id="match-demo">
+        <h4>Bảng điểm ghép cặp, thu nhỏ còn 4 ảnh (số minh hoạ)</h4>
+        <div class="seg" role="group" aria-label="Thời điểm" id="m-when">
+          <button type="button" data-value="before" aria-pressed="true">Trước khi học</button>
+          <button type="button" data-value="after" aria-pressed="false">Sau khi học</button>
+        </div>
+        <div class="table-wrap"><table class="matrix" id="m-table"></table></div>
+        <p class="ex-note" id="m-text" aria-live="polite"></p>
+        <p class="note">Ô viền đậm là cặp đúng. Màu càng đậm, độ giống nhau càng cao.</p>
+      </div>
+      <details class="more">
+        <summary>Xem công thức</summary>
+        <p>Với <i>g</i><sub>a</sub> là vector đồ thị của ảnh <i>a</i>, <i>t</i><sub>b</sub> là vector CLIP của câu <i>b</i>, <i>S</i><sub>ab</sub> = <i>g</i><sub>a</sub> · <i>t</i><sub>b</sub> và τ = 0,07 (nhiệt độ, làm chênh lệch giữa các ô rõ hơn):</p>
+        <math display="block">
+          <mrow>
+            <mi>L</mi><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>B</mi></mrow></mfrac>
+            <munderover><mo>∑</mo><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover>
+            <mo>[</mo><mo>−</mo><mi>log</mi>
+            <mfrac><msup><mi>e</mi><mrow><msub><mi>S</mi><mrow><mi>a</mi><mi>a</mi></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup><mrow><munder><mo>∑</mo><mi>b</mi></munder><msup><mi>e</mi><mrow><msub><mi>S</mi><mrow><mi>a</mi><mi>b</mi></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup></mrow></mfrac>
+            <mo>−</mo><mi>log</mi>
+            <mfrac><msup><mi>e</mi><mrow><msub><mi>S</mi><mrow><mi>a</mi><mi>a</mi></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup><mrow><munder><mo>∑</mo><mi>b</mi></munder><msup><mi>e</mi><mrow><msub><mi>S</mi><mrow><mi>b</mi><mi>a</mi></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup></mrow></mfrac>
+            <mo>]</mo>
+          </mrow>
+        </math>
+        <p class="small">Mỗi hàng của bảng giống một câu hỏi trắc nghiệm có <i>B</i> = 256 lựa chọn, đáp án nằm ở đường chéo; số hạng thứ nhất phạt khi ảnh không chọn đúng câu, số hạng thứ hai phạt khi câu không chọn đúng ảnh. Code: hàm <code>info_nce</code> trong <code>src/models/train.py</code>.</p>
+      </details>
+
+      <h3>Bước 6 · Dùng lúc tìm ảnh</h3>
+      <p>Khi có một câu truy vấn, <b>điểm đồ thị</b> của mỗi ảnh là độ giống nhau (cosine) giữa vector đồ thị của ảnh và vector CLIP của câu. Điểm này được trộn với điểm CLIP theo α, như ở mục 2.</p>
+
+      <h3>Đồ thị giúp được bao nhiêu?</h3>
+      <div class="tiles">
+        <div class="tile"><div class="t-label">Chỉ dùng điểm đồ thị</div><div class="t-value">≈ 28%</div><div class="t-sub">R@1 trên test</div></div>
+        <div class="tile"><div class="t-label">Chỉ dùng CLIP</div><div class="t-value">≈ 44%</div><div class="t-sub">R@1 trên test</div></div>
+        <div class="tile"><div class="t-label">Trộn cả hai</div><div class="t-value">≈ 48%</div><div class="t-sub">R@1 trên test</div></div>
+      </div>
+      <p>Một mình, điểm đồ thị yếu hơn CLIP nhiều. Nhưng nó mạnh ở chỗ CLIP yếu (ai làm gì với ai), nên trộn lại tốt hơn cả hai. Thí nghiệm bỏ hết quan hệ, chỉ giữ vật thể, làm R@1 giảm 0,56 điểm phần trăm (khoảng 95%: 0,05 đến 1,06): các quan hệ có giúp, dù không nhiều. Riêng tên quan hệ cụ thể (cưỡi, trên…) thì chưa chứng minh được là giúp rõ ràng.</p>
+      <p class="note">Số chính xác: 27,78 ± 0,63% (lượt 17/11), 43,89% và 48,12 ± 0,23% (lượt 18/11). Nguồn: <code>README.md</code> và <code>docs/graphsage-design-decisions.md</code>; tài liệu sau cũng ghi lại mọi quyết định thiết kế của GraphSAGE.</p>
+    </section>
+
+    <!-- 4 -->
     <section id="y-tuong">
-      <h2><span class="sec-num">3</span>Ý tưởng: lúc nào nên nghe đồ thị nhiều hơn?</h2>
+      <h2><span class="sec-num">4</span>Ý tưởng: lúc nào nên nghe đồ thị nhiều hơn?</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Khi CLIP đã chắc chắn thì tin CLIP. Khi CLIP lưỡng lự giữa hai ảnh thì nghe đồ thị nhiều hơn. Muốn biết CLIP chắc đến đâu, chỉ cần nhìn khoảng cách giữa điểm của ảnh hạng 1 và ảnh hạng 2.</p>
@@ -458,12 +636,12 @@
         </div>
       </div>
       <p>Khoảng cách này gọi là <b>margin</b>: <em>điểm CLIP của ảnh hạng 1 trừ điểm CLIP của ảnh hạng 2</em>. Margin chỉ dùng điểm CLIP của chính câu đó, không cần biết đáp án, nên lúc dùng thật cũng tính được.</p>
-      <p class="note">Các con số ở đây là số dựng tay để minh hoạ, cũng chính là dữ liệu của một test tự động (xem mục 6).</p>
+      <p class="note">Các con số ở đây là số dựng tay để minh hoạ, cũng chính là dữ liệu của một test tự động (xem mục 7).</p>
     </section>
 
-    <!-- 4 -->
+    <!-- 5 -->
     <section id="gia-thuyet">
-      <h2><span class="sec-num">4</span>Giả thuyết và đối chứng</h2>
+      <h2><span class="sec-num">5</span>Giả thuyết và đối chứng</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Nhóm đặt cược rằng chia câu theo margin rồi cho mỗi nhóm một α sẽ tìm đúng nhiều câu hơn. Để chắc mức tăng là thật, nhóm so với một cách chia nhóm <em>bừa</em>.</p>
@@ -484,9 +662,9 @@
       </div>
     </section>
 
-    <!-- 5 -->
+    <!-- 6 -->
     <section id="cach-lam">
-      <h2><span class="sec-num">5</span>Cách làm, từng bước</h2>
+      <h2><span class="sec-num">6</span>Cách làm, từng bước</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Ôn luyện trên một tập câu có đáp án (validation) để chọn cách chia nhóm và α cho từng nhóm. Sau đó mới chấm bài thi (test), đúng một lần.</p>
@@ -524,7 +702,7 @@
               <mtable>
                 <mtr>
                   <mtd><mrow><msub><mi>α</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>C</mtext></msubsup><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>α</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><mo stretchy="false">)</mo><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>G</mtext></msubsup></mrow></mtd>
-                  <mtd><mtext>nếu ảnh </mtext><mi>i</mi><mtext> nằm trong </mtext><msub><mi>k</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><mtext> ảnh CLIP xếp cao nhất</mtext></mtd>
+                  <mtd><mtext>nếu ảnh&#160;</mtext><mi>i</mi><mtext>&#160;nằm trong&#160;</mtext><msub><mi>k</mi><mrow><mi>b</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></msub><mtext>&#160;ảnh CLIP xếp cao nhất</mtext></mtd>
                 </mtr>
                 <mtr>
                   <mtd><mrow><msubsup><mi>s</mi><mrow><mi>q</mi><mo>,</mo><mi>i</mi></mrow><mtext>C</mtext></msubsup><mo>−</mo><mn>3</mn></mrow></mtd>
@@ -548,9 +726,9 @@
       </details>
     </section>
 
-    <!-- 6 -->
+    <!-- 7 -->
     <section id="vi-du">
-      <h2><span class="sec-num">6</span>Ví dụ tự kéo thử</h2>
+      <h2><span class="sec-num">7</span>Ví dụ tự kéo thử</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Một ví dụ nhỏ, 8 câu và 3 ảnh, cho thấy vì sao một α chung có thể thua: hai loại câu cần hai α trái ngược nhau.</p>
@@ -665,9 +843,9 @@
       </div>
     </section>
 
-    <!-- 7 -->
+    <!-- 8 -->
     <section id="dang-tin">
-      <h2><span class="sec-num">7</span>Vì sao kết quả đáng tin</h2>
+      <h2><span class="sec-num">8</span>Vì sao kết quả đáng tin</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Nguyên tắc vàng: <b>không được nhìn đề thi khi ôn bài.</b> Mọi thứ được chọn trên validation; test chỉ được chấm một lần.</p>
@@ -677,14 +855,14 @@
         <li><b>Margin không dùng đáp án.</b> Nó chỉ dùng điểm CLIP của chính câu đó, thông tin vốn có sẵn lúc dùng thật.</li>
         <li><b>Mốc so sánh là đúng bộ xếp hạng chính thức.</b> Script tự chọn lại α, k chung bằng hàm chính thức và so với file benchmark của dự án cho từng seed. Khác dù một chút là dừng ngay.</li>
         <li><b>Test chỉ chấm một lần,</b> sau khi mọi thứ đã chốt trên validation.</li>
-        <li><b>Có đối chứng và khoảng tin cậy.</b> Cách chia ngẫu nhiên và khoảng 95% của bootstrap (mục <a href="#bootstrap">12</a>) tách mức tăng thật khỏi may rủi.</li>
+        <li><b>Có đối chứng và khoảng tin cậy.</b> Cách chia ngẫu nhiên và khoảng 95% của bootstrap (mục <a href="#bootstrap">13</a>) tách mức tăng thật khỏi may rủi.</li>
       </ul>
       <p>Mỗi điều trên đều có test tự động kiểm; danh sách ở mục <a href="#cac-test">Các test</a>.</p>
     </section>
 
-    <!-- 8 -->
+    <!-- 9 -->
     <section id="code">
-      <h2><span class="sec-num">8</span>Đi qua code</h2>
+      <h2><span class="sec-num">9</span>Đi qua code</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Tính năng gồm 4 file: phần <b>thuật toán</b> (các hàm tính toán), <b>script</b> (chạy cả quy trình trên dữ liệu thật), <b>config</b> (các con số cài đặt) và <b>test</b> (kiểm tra tự động).</p>
@@ -822,7 +1000,7 @@
             <tr><td><code>test_bucket_edges_are_quantiles_and_tied_quantiles_collapse</code></td><td>Vạch chia đúng là phân vị; vạch trùng được gộp; số nhóm bằng 0 bị từ chối</td></tr>
             <tr><td><code>test_a_value_on_an_edge_goes_to_the_lower_bucket</code></td><td>Giá trị nằm đúng trên vạch thuộc nhóm dưới</td></tr>
             <tr><td><code>test_one_bucket_reproduces_the_official_selection_and_scores</code></td><td>Một nhóm cho ra đúng lựa chọn và đúng điểm của bộ xếp hạng chính thức</td></tr>
-            <tr><td><code>test_each_bucket_gets_its_own_setting_where_one_alpha_cannot_serve_both</code></td><td>Ví dụ ở mục 6: α cố định đạt 50%, hai nhóm đạt 100%</td></tr>
+            <tr><td><code>test_each_bucket_gets_its_own_setting_where_one_alpha_cannot_serve_both</code></td><td>Ví dụ ở mục 7: α cố định đạt 50%, hai nhóm đạt 100%</td></tr>
             <tr><td><code>test_fitting_refuses_any_split_but_validation</code></td><td>Chọn tham số trên test bị từ chối</td></tr>
             <tr><td><code>test_buckets_too_small_to_select_on_are_refused</code></td><td>Nhóm quá nhỏ, hoặc nhóm rỗng do giá trị bằng nhau, bị từ chối</td></tr>
             <tr><td><code>test_scoring_another_split_uses_the_validation_edges</code></td><td>Tập được chấm dùng vạch của validation, không tự tính lại</td></tr>
@@ -838,9 +1016,9 @@
       <p class="small">Bộ test cũng đã được kiểm bằng cách cố ý gài lỗi vào code, chẳng hạn bỏ bước so với benchmark, cho phép chọn tham số trên test, hay đảo chiều phép so sánh. Lần nào test cũng báo hỏng, tức các test thực sự bắt được những lỗi đó.</p>
     </section>
 
-    <!-- 9 -->
+    <!-- 10 -->
     <section id="chay">
-      <h2><span class="sec-num">9</span>Cách chạy</h2>
+      <h2><span class="sec-num">10</span>Cách chạy</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>Cần có sẵn kết quả của mô hình chính trên máy, rồi chạy một lệnh. Không cần GPU, mất khoảng 10–15 phút.</p>
@@ -858,9 +1036,9 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       <p class="small">Kết quả ghi ra <code>runs/analysis/adaptive_fusion.json</code>. Thư mục <code>runs/</code> bị <code>.gitignore</code> bỏ qua, muốn commit thì dùng <code class="nowrap">git add -f</code>.</p>
     </section>
 
-    <!-- 10 -->
+    <!-- 11 -->
     <section id="ket-qua">
-      <h2><span class="sec-num">10</span>Đọc file kết quả</h2>
+      <h2><span class="sec-num">11</span>Đọc file kết quả</h2>
       <div class="simple">
         <span class="chip">Nói đơn giản</span>
         <p>File kết quả có một mục cho α cố định (<code>fixed</code>) và một mục cho mỗi cách chia. Con số quan trọng nhất là <b>chênh lệch so với α cố định</b> và <b>khoảng 95%</b> của chênh lệch đó.</p>
@@ -908,7 +1086,7 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
             <tr><td><code>seeds.&lt;seed&gt;.fit</code></td><td>Với <code>fixed</code>: α, k chọn trên toàn bộ validation. Với cách chia: vạch chia (<code>edges</code>) và α, k của từng nhóm (<code>buckets</code>)</td></tr>
             <tr><td><code>seeds.&lt;seed&gt;.val</code>, <code>.test</code></td><td><code>metrics</code>: R@1/5/10, MRR. Với cách chia, thêm <code>buckets</code> theo đúng thứ tự trong <code>fit.buckets</code>: số câu, R@1 của cách chia và của α cố định trên <b>cùng</b> các câu đó</td></tr>
             <tr><td><code>summary</code></td><td>Trung bình ± độ lệch chuẩn qua 3 seed</td></tr>
-            <tr><td><code>paired_vs_fixed_test</code></td><td>Chỉ có ở các cách chia. <code>delta_r1_pp</code> là chênh lệch R@1 so với α cố định trên test, đơn vị điểm phần trăm; <code>image_cluster_bootstrap_95ci_pp</code> là khoảng 95% (mục <a href="#bootstrap">12</a>). Trong <code>per_seed</code>, “full” là cách chia và “variant” là α cố định</td></tr>
+            <tr><td><code>paired_vs_fixed_test</code></td><td>Chỉ có ở các cách chia. <code>delta_r1_pp</code> là chênh lệch R@1 so với α cố định trên test, đơn vị điểm phần trăm; <code>image_cluster_bootstrap_95ci_pp</code> là khoảng 95% (mục <a href="#bootstrap">13</a>). Trong <code>per_seed</code>, “full” là cách chia và “variant” là α cố định</td></tr>
           </tbody>
         </table>
       </div>
@@ -937,9 +1115,9 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       </div>
     </section>
 
-    <!-- 11 -->
+    <!-- 12 -->
     <section id="gioi-han">
-      <h2><span class="sec-num">11</span>Giới hạn và hướng mở rộng</h2>
+      <h2><span class="sec-num">12</span>Giới hạn và hướng mở rộng</h2>
       <ul class="check-list" style="--x: 0">
         <li><b>Nhiều nhóm hơn thì nhiều tham số hơn</b>, nên dễ khớp quá mức với validation. Đối chứng ngẫu nhiên và kết quả trên test là hai cách kiểm điều này; <code>min_bucket_queries</code> (mặc định 500) chặn các nhóm quá nhỏ.</li>
         <li><b>Margin chỉ là một đặc trưng.</b> Có thể thêm: độ lệch giữa thứ hạng CLIP và thứ hạng đồ thị; số từ chỉ quan hệ trong câu; hoặc học α theo từng câu bằng một hàm logistic trên validation.</li>
@@ -948,9 +1126,9 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       </ul>
     </section>
 
-    <!-- 12 -->
+    <!-- 13 -->
     <section id="kien-thuc">
-      <h2><span class="sec-num">12</span>Kiến thức nền</h2>
+      <h2><span class="sec-num">13</span>Kiến thức nền</h2>
 
       <h3 id="phan-vi">Phân vị: cắt nhóm đông bằng nhau</h3>
       <div class="simple">
@@ -1090,16 +1268,21 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       </details>
     </section>
 
-    <!-- 13 -->
+    <!-- 14 -->
     <section id="tu-dien">
-      <h2><span class="sec-num">13</span>Từ điển nhỏ</h2>
+      <h2><span class="sec-num">14</span>Từ điển nhỏ</h2>
       <dl class="glossary">
         <div><dt>Truy vấn (câu mô tả)</dt><dd>Câu người dùng gõ để tìm ảnh. Trong dữ liệu, mỗi ảnh có 5 câu mô tả do người viết; mỗi câu là một truy vấn và ảnh đó là “ảnh đúng” của nó.</dd></div>
         <div><dt>Điểm</dt><dd>Con số đo độ hợp giữa câu và ảnh, ở đây nằm trong khoảng −1 đến 1. Càng cao càng hợp.</dd></div>
         <div><dt>Hạng</dt><dd>Vị trí của ảnh sau khi xếp theo điểm giảm dần. Hạng 1 là ảnh hệ thống tin nhất.</dd></div>
         <div><dt>CLIP</dt><dd>Mô hình có sẵn biến ảnh và câu thành dãy số để so độ giống nhau. Nhóm dùng nguyên, không huấn luyện lại.</dd></div>
         <div><dt>Đồ thị cảnh</dt><dd>Bản mô tả ảnh dưới dạng vật thể và quan hệ, ví dụ người → cưỡi → ngựa.</dd></div>
-        <div><dt>GraphSAGE</dt><dd>Một loại mạng nơ-ron học trên đồ thị. Nhóm dùng nó để biến đồ thị cảnh thành điểm so với câu.</dd></div>
+        <div><dt>GraphSAGE</dt><dd>Một loại mạng nơ-ron đọc đồ thị: mỗi đỉnh cập nhật dãy số của mình bằng cách trộn với trung bình dãy số của các đỉnh kề, lặp lại vài vòng. Nhóm dùng nó để biến đồ thị cảnh của ảnh thành một vector so được với câu (<a href="#graphsage">mục 3</a>).</dd></div>
+        <div><dt>Đỉnh, cạnh</dt><dd>Đỉnh là một ô trong sơ đồ (ảnh, vật thể hoặc quan hệ); cạnh là mũi tên nối hai đỉnh.</dd></div>
+        <div><dt>Vector</dt><dd>Một dãy số dài (ở đây 512 số) đại diện cho một chữ, một câu hay một ảnh. Hai thứ giống nhau thì vector gần nhau.</dd></div>
+        <div><dt>Cosine</dt><dd>Cách đo hai vector giống nhau đến đâu: 1 là cùng hướng hoàn toàn, 0 là không liên quan, −1 là ngược nhau.</dd></div>
+        <div><dt>Học tương phản (InfoNCE)</dt><dd>Cách huấn luyện: trong một nhóm cặp ảnh – câu, đẩy điểm của cặp đúng lên và điểm của các cặp sai xuống.</dd></div>
+        <div><dt>Visual Genome</dt><dd>Bộ dữ liệu ảnh có sơ đồ vật thể và quan hệ do người gán nhãn; nguồn của đồ thị cảnh trong dự án.</dd></div>
         <div><dt>α (an-pha)</dt><dd>Tỉ lệ trộn điểm, từ 0 đến 1. α = 1: chỉ dùng CLIP; α = 0: chỉ dùng đồ thị.</dd></div>
         <div><dt>k (top-k)</dt><dd>Số ảnh CLIP xếp cao nhất được đem ra trộn điểm. Các ảnh còn lại giữ thứ tự của CLIP và đứng sau.</dd></div>
         <div><dt>Margin</dt><dd>Điểm CLIP của ảnh hạng 1 trừ điểm của ảnh hạng 2. Lớn: CLIP chắc chắn; nhỏ: CLIP phân vân.</dd></div>
@@ -1121,9 +1304,9 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
       </dl>
     </section>
 
-    <!-- 14 -->
+    <!-- 15 -->
     <section id="hoi-dap" class="faq">
-      <h2><span class="sec-num">14</span>Câu hỏi hay gặp</h2>
+      <h2><span class="sec-num">15</span>Câu hỏi hay gặp</h2>
       <details><summary>Sao không chọn α trên tập test cho kết quả đẹp hơn?</summary>
         <p>Vì như vậy là xem đề thi trước khi thi. Con số sẽ đẹp nhưng không nói gì về việc hệ thống làm tốt trên những câu nó chưa từng thấy. Mọi tham số chỉ được chọn trên validation; test chấm một lần.</p></details>
       <details><summary>Margin có “ăn gian” bằng cách dùng đáp án không?</summary>
@@ -1138,6 +1321,10 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
         <p>Nhiều nhóm thì mỗi nhóm ít câu, và có nhiều tham số hơn để chọn, nên càng dễ khớp quá mức. Script thử 2, 3 và 4 nhóm, và từ chối nhóm có ít hơn 500 câu validation.</p></details>
       <details><summary>Nếu chạy xong mà không tăng thì sao?</summary>
         <p>Vẫn là một kết quả có giá trị. Báo cáo thẳng, kèm R@1 từng nhóm và α mà từng nhóm chọn, để giải thích vì sao ý tưởng không giúp trên dữ liệu này.</p></details>
+      <details><summary>GraphSAGE có tự nhìn ảnh không?</summary>
+        <p>Không. Nó chỉ đọc sơ đồ vật thể và quan hệ do người gán nhãn sẵn trong Visual Genome. Dự án không có bước tự sinh sơ đồ từ ảnh.</p></details>
+      <details><summary>Điểm đồ thị một mình chỉ khoảng 28%, sao trộn vào lại giúp?</summary>
+        <p>Vì nó sai ở những chỗ khác CLIP. CLIP giỏi nhận ra cảnh chung nhưng hay lẫn quan hệ; đồ thị ghi rõ ai làm gì với ai. Trộn hai nguồn có điểm mạnh khác nhau thì tốt hơn từng nguồn riêng lẻ.</p></details>
       <details><summary>Có dùng được cho mô hình khác, ví dụ AdaMF-MAT?</summary>
         <p>Hai hàm chính <code>fit_adaptive_fusion</code> và <code>adaptive_scores</code> không phụ thuộc mô hình. Chỉ phần script đọc vector hiện viết cho run GraphSAGE; cần thêm phần đọc vector của mô hình kia.</p></details>
       <details><summary>Để đủ điều kiện Cấp độ 4 còn thiếu gì?</summary>
@@ -1716,8 +1903,119 @@ pytest tests/retrieval/test_adaptive_fusion.py      # chỉ chạy test, không 
     document.getElementById("boot-once-out").textContent = text;
   });
 
+  /* ---------------- GraphSAGE explainer ---------------- */
+  const GRAPH = {
+    nodes: [
+      { id: "img", kind: "image", label: "Ảnh", x: 0.11, y: 0.5, w: 64 },
+      { id: "nguoi", kind: "object", label: "người", x: 0.45, y: 0.12, w: 88 },
+      { id: "ngua", kind: "object", label: "ngựa", x: 0.45, y: 0.5, w: 88 },
+      { id: "bien", kind: "object", label: "bãi biển", x: 0.45, y: 0.88, w: 88 },
+      { id: "cuoi", kind: "relation", label: "cưỡi", x: 0.83, y: 0.31, w: 68 },
+      { id: "tren", kind: "relation", label: "trên", x: 0.83, y: 0.69, w: 68 },
+    ],
+    edges: [["img", "nguoi"], ["img", "ngua"], ["img", "bien"], ["nguoi", "cuoi"], ["cuoi", "ngua"], ["ngua", "tren"], ["tren", "bien"]],
+  };
+  const ROUNDS = [
+    { text: "Ban đầu, đỉnh ảnh chỉ có dãy số chung cho mọi ảnh: nó chưa biết gì về ảnh này. Các đỉnh khác mang dãy số CLIP của tên mình.", know: [] },
+    { text: "Vòng 1: đỉnh ảnh nghe các đỉnh nó trỏ tới, tức các vật thể, nên biết ảnh có những gì. Cùng lúc, mỗi vật thể nghe các đỉnh quan hệ cạnh nó, và mỗi quan hệ nghe hai vật ở hai đầu.", know: ["có người", "có ngựa", "có bãi biển"] },
+    { text: "Vòng 2: đỉnh ảnh nghe lại các vật thể. Lúc này mỗi vật thể đã biết mình đứng ở đầu nào của quan hệ nào, nên đỉnh ảnh biết thêm vai của từng vật.", know: ["người là chủ thể của “cưỡi”", "ngựa là đối tượng của “cưỡi”", "ngựa là chủ thể của “trên”", "bãi biển là đối tượng của “trên”"] },
+    { text: "Vòng 3: thông tin ở đầu bên kia của mỗi quan hệ cũng tới được đỉnh ảnh. Giờ nó biết chính người cưỡi chính con ngựa, chứ không chỉ biết “có ai đó cưỡi, có cái gì đó bị cưỡi”.", know: ["người → cưỡi → ngựa", "ngựa → trên → bãi biển"] },
+  ];
+  const graphDemo = { round: 0 };
+
+  // round: null draws the plain structure; 0..3 shows what has reached the image node after that many rounds.
+  function drawGraph(box, round) {
+    box.querySelectorAll("svg").forEach((n) => n.remove());
+    const W = Math.max(300, box.clientWidth);
+    const H = 250;
+    const nodeH = 32;
+    const nodes = new Map(GRAPH.nodes.map((n) => [n.id, { ...n, cx: n.x * W, cy: 20 + n.y * (H - 40) }]));
+    const reached = (n) => round === null || n.kind === "image" || (n.kind === "object" && round >= 1) || (n.kind === "relation" && round >= 2);
+    const edgeClass = (from) => {
+      if (round === null) return "";
+      if (from.kind === "image") return round >= 1 ? "is-on" : "";
+      if (round >= 3) return "is-chain";
+      return round >= 2 ? "is-on" : "";
+    };
+    const root = svg("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": "Đồ thị cảnh của ảnh người cưỡi ngựa trên bãi biển: đỉnh ảnh trỏ tới người, ngựa và bãi biển; người trỏ tới quan hệ cưỡi, cưỡi trỏ tới ngựa; ngựa trỏ tới quan hệ trên, trên trỏ tới bãi biển." });
+    // Point where the ray from a node's centre leaves its box.
+    const exit = (n, dx, dy) => {
+      const t = Math.min(dx ? n.w / 2 / Math.abs(dx) : Infinity, dy ? nodeH / 2 / Math.abs(dy) : Infinity);
+      return [n.cx + dx * t, n.cy + dy * t];
+    };
+    for (const [fromId, toId] of GRAPH.edges) {
+      const a = nodes.get(fromId);
+      const b = nodes.get(toId);
+      const len = Math.hypot(b.cx - a.cx, b.cy - a.cy);
+      const ux = (b.cx - a.cx) / len;
+      const uy = (b.cy - a.cy) / len;
+      const [x1, y1] = exit(a, ux, uy);
+      const [x2, y2] = exit(b, -ux, -uy);
+      const cls = edgeClass(a);
+      const head = 9;
+      svg("line", { x1, y1, x2: x2 - ux * head, y2: y2 - uy * head, class: "g-edge " + cls }, root);
+      const bx = x2 - ux * head;
+      const by = y2 - uy * head;
+      svg("path", { d: `M${x2},${y2} L${bx - uy * 5},${by + ux * 5} L${bx + uy * 5},${by - ux * 5} Z`, class: "g-head " + cls }, root);
+    }
+    for (const n of nodes.values()) {
+      const g = svg("g", { class: `g-node g-${n.kind}` + (reached(n) ? "" : " is-dim") }, root);
+      svg("rect", { x: n.cx - n.w / 2, y: n.cy - nodeH / 2, width: n.w, height: nodeH, rx: n.kind === "relation" ? 16 : n.kind === "image" ? 3 : 8 }, g);
+      svgText(g, n.cx, n.cy + 4.5, n.label, "", "middle");
+    }
+    box.prepend(root);
+  }
+
+  function renderGraphDemo() {
+    drawGraph(document.getElementById("g-structure"), null);
+    drawGraph(document.getElementById("g-chart"), graphDemo.round);
+    setPressed(document.getElementById("g-steps"), graphDemo.round);
+    document.getElementById("g-text").textContent = ROUNDS[graphDemo.round].text;
+    const list = document.getElementById("g-know");
+    list.replaceChildren();
+    const items = ROUNDS.slice(1, graphDemo.round + 1).flatMap((r, i) => r.know.map((k) => [k, i + 1 === graphDemo.round]));
+    if (!items.length) list.append(h("li", { class: "is-empty" }, "chưa biết gì về ảnh này"));
+    for (const [k, isNew] of items) list.append(h("li", { class: isNew ? "is-new" : "" }, k));
+    document.getElementById("g-next").textContent = graphDemo.round < 3 ? "Vòng tiếp theo →" : "Làm lại từ đầu";
+  }
+  document.querySelectorAll("#g-steps button").forEach((b) => b.addEventListener("click", () => { graphDemo.round = Number(b.dataset.value); renderGraphDemo(); }));
+  document.getElementById("g-next").addEventListener("click", () => { graphDemo.round = graphDemo.round < 3 ? graphDemo.round + 1 : 0; renderGraphDemo(); });
+
+  // Illustrative similarity tables: rows are images, columns their captions; the diagonal is the true pair.
+  const MATRIX = {
+    before: [[0.21, 0.35, 0.18, 0.27], [0.30, 0.12, 0.25, 0.22], [0.16, 0.28, 0.24, 0.31], [0.26, 0.19, 0.33, 0.20]],
+    after: [[0.62, 0.21, 0.15, 0.18], [0.19, 0.58, 0.22, 0.12], [0.14, 0.20, 0.66, 0.17], [0.22, 0.16, 0.13, 0.60]],
+  };
+  const matchDemo = { when: "before" };
+  function renderMatch() {
+    const table = document.getElementById("m-table");
+    table.replaceChildren();
+    const names = ["A", "B", "C", "D"];
+    table.append(h("thead", {}, h("tr", {}, h("th", {}, ""), ...names.map((n) => h("th", { scope: "col" }, `câu của ${n}`)))));
+    const body = h("tbody");
+    MATRIX[matchDemo.when].forEach((row, i) => {
+      const tr = h("tr", {}, h("th", { scope: "row" }, `ảnh ${names[i]}`));
+      row.forEach((v, j) => {
+        const td = h("td", { class: i === j ? "is-pair" : "" }, fmt(v, 2));
+        const strength = Math.round(Math.min(60, Math.max(8, 8 + ((v - 0.1) / 0.6) * 52)));
+        td.style.background = `color-mix(in srgb, var(--series-1) ${strength}%, transparent)`;
+        tr.append(td);
+      });
+      body.append(tr);
+    });
+    table.append(body);
+    setPressed(document.getElementById("m-when"), matchDemo.when);
+    document.getElementById("m-text").textContent = matchDemo.when === "before"
+      ? "Trước khi học, ô của cặp đúng không nổi bật hơn các ô khác; ở hàng ảnh A, ô cao nhất còn rơi vào câu của B. Mô hình chưa phân biệt được."
+      : "Sau khi học, trong mỗi hàng và mỗi cột, ô của cặp đúng đều cao nhất: mỗi ảnh nhận ra câu của mình, mỗi câu nhận ra ảnh của mình.";
+  }
+  document.querySelectorAll("#m-when button").forEach((b) => b.addEventListener("click", () => { matchDemo.when = b.dataset.value; renderMatch(); }));
+
   /* ---------------- Render and keep charts sized ---------------- */
   function renderAll() {
+    renderGraphDemo();
+    renderMatch();
     renderExplorer();
     drawNumberLine();
     drawHistogram();
