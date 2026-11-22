@@ -8,23 +8,24 @@ Quy trình tổng thể: truy vấn → mã hóa bằng CLIP → chọn top-k �
 
 ## Thành viên
 
-| Tên | MSSV |
+| Tên | MSHV |
 |---|---|
-| Trần Quốc Thịnh | 25C11065 |
+| Nguyễn Trường Thịnh | 25C11066 |
 | Đỗ Thanh Nghị | 25C11051 |
 | Phan Lê Đắc Phú | 25C11059 |
-| Nguyễn Trường Thịnh | 25C11066 |
+| Trần Quốc Thịnh | 25C11065 |
 
 ## Báo cáo
 
-- Bài báo cáo: [report.pdf](report.pdf).
+- [Báo cáo kỹ thuật, PDF 12 trang](report.pdf).
 - Báo cáo W&B: [link](https://forge.coreweave.com/wandb/thinhnt3-vnggames/vg-coco-graph-retrieval/reports/x--VmlldzoxODM0MjcyMA); danh sách link và mục lục ở [wandb-reports.md](wandb-reports.md).
 - Tài liệu giải thích đầy đủ, có hình minh hoạ: [docs/README.md](docs/README.md).
 - Kết quả chi tiết: [VG ∩ COCO](docs/04-ket-qua.md), [MKG-W](docs/mkg-w-results.md), [VN Heritage](docs/vn-heritage-results.md).
+- [Data card VN Heritage](docs/vn-heritage-data-card.md) ghi nguồn, giấy phép và cách dựng triple.
 
-## Task
+## Phân công
 
-Phân công và tình trạng bàn giao: [task.md](task.md). Bảng số liệu cho báo cáo, kèm mã LaTeX: [table.md](table.md).
+Phân công và tiến độ theo sản phẩm nằm trong [task.md](task.md). Bảng số liệu cho báo cáo, kèm mã LaTeX: [table.md](table.md).
 
 | Cấp độ | Yêu cầu của đề | Tình trạng | Chi tiết |
 |---|---|---|---|
@@ -111,23 +112,32 @@ Lưu ý:
 
 ## Demo
 
-Video: [reports/demo/retrieval-demo.mp4](reports/demo/retrieval-demo.mp4) — khoảng 1 phút 30 giây, ghi từ thao tác thật, có phụ đề tiếng Việt, không có lời đọc.
+Demo tại máy dùng CLIP ViT-B/32 và GraphSAGE trên VG ∩ COCO. Có thể nhập câu tiếng Anh, lấy top-k ảnh, so thứ hạng CLIP với thứ hạng sau khi ghép điểm và xem tác động của từng quan hệ. [Video chạy thử 1 phút 30 giây](reports/demo/retrieval-demo.mp4)
 
-Demo chạy tại máy trên VG ∩ COCO với CLIP ViT-B/32 và checkpoint GraphSAGE đã huấn luyện: nhập một câu mô tả tiếng Anh, xem top-k ảnh, so hai bảng xếp hạng CLIP và CLIP + GraphSAGE, và mở đồ thị con của các quan hệ giải thích.
+### Chuẩn bị dữ liệu và mô hình
 
-```bash
-pip install -r requirements-notebook.txt
-python -m scripts.run_demo prepare-model                 # cache CLIP một lần (cần mạng), sau đó chạy offline
-python -m scripts.run_demo images                        # khôi phục 1.500 ảnh gallery của tập test
-python -m scripts.run_demo check                         # kiểm dữ liệu, checkpoint, cache CLIP, ảnh gallery
-python -m scripts.run_demo serve                         # mở http://127.0.0.1:7860
-```
-
-Chạy từ terminal hoặc notebook thay cho giao diện web:
+Gói nộp của nhóm có tệp `du-lieu-va-checkpoint-demo-vg-coco.tar.gz` chứa 1.500 ảnh test, cache embedding, checkpoint GraphSAGE seed 13 và các tệp kết quả cần cho demo. Đặt tệp đó ở thư mục gốc của repo rồi chạy:
 
 ```bash
-python -m scripts.run_demo query --text "A man riding a horse on a grassy field."
-python -m scripts.run_demo notebook                      # chạy notebooks/retrieval_demo.ipynb, lưu bản có output
+tar -xzf du-lieu-va-checkpoint-demo-vg-coco.tar.gz
+python -m pip install -r requirements-notebook.txt
+python -m scripts.run_demo prepare-model
+python -m scripts.run_demo check
 ```
 
-Nếu `check` báo thiếu vector hoặc checkpoint, chạy các lệnh embedding và train ở mục [Cách chạy](#cách-chạy) trước.
+`prepare-model` tải CLIP trong lần đầu. Khi `check` báo đủ 1.500 ảnh và cache CLIP đã sẵn sàng, có thể chạy demo ngoại tuyến.
+
+Với bản clone mới, cần giải nén gói trên hoặc tự dựng các artifact. Lệnh `run_demo images` chỉ tải ảnh test. Để tự dựng cache và checkpoint từ repo, thực hiện bước tải đủ ảnh, trích embedding, huấn luyện GraphSAGE và chạy benchmark ở [mục Cách chạy](#cách-chạy).
+
+### Truy vấn và giao diện
+
+```bash
+python -m scripts.run_demo serve
+python -m scripts.run_demo query --query-id coco-224024 --results 3
+python -m scripts.run_demo query --text "A yellow bus driving down a city street." --results 5
+python -m scripts.run_demo notebook
+```
+
+Mở giao diện tại `http://127.0.0.1:7860`. Truy vấn theo mã có ảnh đích để đối chiếu hạng. Trên gói demo của nhóm, `coco-224024` đưa ảnh VG 2355841 từ hạng CLIP 26 lên hạng 1. Truy vấn tự nhập trả điểm, thứ hạng và quan hệ của các ảnh tìm được. Lệnh notebook lưu bản đã chạy có kết quả.
+
+AdaMF–MAT được đánh giá riêng bằng `python -m scripts.run_benchmark --method adamf_mat --run adamf-mat-d256-mu1` sau khi chuẩn bị artifact theo [mục Cách chạy](#cách-chạy).

@@ -114,8 +114,8 @@ từ checkbox pilot. Không dùng bộ MMKG local cũ.
 | Tích hợp code hiện hành, không lùi về nhánh MKG-W cũ | Merge guide, query-alpha, dataset-2 configs, demo, W&B panels; giữ phần XAI khi giải conflict | 514 test passed; Ruff sạch; mypy 128 source files sạch | VERIFIED |
 | UI và notebook cùng pipeline/provenance | `src/demo/`, `scripts/run_demo.py`, cache hash/checkpoint validation | Check 1.500/1.500 ảnh, seed 13, α=.78/k=500; notebook 8/8 code cell đã chạy trên bản tích hợp | VERIFIED |
 | Dựng VG–COCO và phát hiện metadata hỏng | `scripts/build_vg_coco.py`, `scripts/review_vg_coco.py` | 7 test tích hợp raw giả lập; audit dữ liệu thật 7.000/1.500/1.500 ảnh; chưa full download/build raw sạch | PARTIAL |
-| Phân công đúng người, giữ lịch sử | `task.md`: 4 task riêng, 3 task chung đúng cặp; Git giữ author cũ | `thinhnt3` = Trường Thịnh theo đính chính mới nhất; Phú/Nghị theo remote/config; chưa xác nhận tài khoản Quốc Thịnh | VERIFIED trong phạm vi đã xác nhận |
-| Hoàn chỉnh toàn bộ sản phẩm nộp | `plan-task/requirements-checklist.md` | Còn report cuối, slide/video, đóng gói artifact và kiểm tay validity | PARTIAL |
+| Phân công đúng người, giữ lịch sử | `task.md` ghi phần riêng, phần theo cặp và việc chung | Các tài khoản đã được nhóm xác nhận gồm `thinhnt` cho Trường Thịnh và `thinhnt3` cho Quốc Thịnh | VERIFIED trong phạm vi đã xác nhận |
+| Hoàn chỉnh sản phẩm nộp | `plan-task/requirements-checklist.md` | Có báo cáo, slide, video và gói demo đã kiểm. Còn chạy thử trên máy vấn đáp và nhãn validity độc lập | PARTIAL |
 
 Các lệnh kiểm chứng: `python -m pytest -q`, `ruff check .`, `python -m mypy`,
 `python -m scripts.review_vg_coco`, `python -m scripts.run_demo check --asset-root ...`,

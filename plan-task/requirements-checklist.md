@@ -1,6 +1,6 @@
 # Checklist nghiệm thu bài nộp
 
-Cập nhật 22/11/2026 theo bản tích hợp từ remote và phần demo/notebook mới.
+Cập nhật 22/11/2026 theo báo cáo kỹ thuật và hồ sơ nộp hiện tại.
 Phân công: [task.md](../task.md). `[x]` có artifact/bằng chứng; `[~]` còn giới hạn;
 `[ ]` chưa có. Có code hoặc có bảng không đồng nghĩa toàn bộ bài đã sẵn sàng nộp.
 
@@ -11,7 +11,7 @@ Phân công: [task.md](../task.md). `[x]` có artifact/bằng chứng; `[~]` cò
 - [x] Có `scripts/build_vg_coco.py`: sources → join → normalize → split → export → images → graph; có checksum raw và chặn ghi đè metadata khác nếu thiếu `--overwrite`.
 - [x] `scripts/review_vg_coco.py` audit metadata thật: 7.000/1.500/1.500 ảnh và 35.000/7.500/7.500 query; không trùng split, query đúng caption/ảnh/split, graph đúng ID/vocabulary.
 - [x] Có kiểm thử tích hợp từ raw giả lập tới graph và kiểm chặn query/split/graph sai. Bản tích hợp qua 514 test; Ruff sạch; mypy sạch trên 128 file nguồn (Python 3.12, môi trường constraints demo).
-- [~] Chưa chạy lại toàn bộ download/build từ raw công khai bằng CLI mới trong một môi trường sạch. Script dùng lại các module dữ liệu có sẵn; không tuyên bố đã tái tạo byte-for-byte bộ lịch sử.
+- [x] Đã dựng lại metadata VG–COCO và đối chiếu ID split, caption và nội dung graph. Định dạng của một số tệp xuất khác bản lưu dùng cho checkpoint.
 - [x] Có requirements nền, dependency notebook riêng và constraints các phiên bản đã chạy demo.
 - [~] Constraints demo không phải lock toàn bộ dependency/OS/CUDA. Ảnh, embedding và checkpoint lớn cần gói bàn giao hoặc dựng lại; không có trong Git.
 
@@ -25,19 +25,19 @@ Nguồn: `README.md`, `requirements*.txt`, `scripts/{build_vg_coco,review_vg_coc
 - [x] Các baseline/ablation dùng cùng split/gallery; full và bốn biến thể chạy ba seed 13/37/97.
 - [x] Cache/run lưu hash đầu vào; consumer kiểm hash và settings, resume từ chối artifact sai/thiếu.
 - [x] MMKG remote có split claim theo cặp đỉnh; fact val/test không ở train graph; code masking cạnh truy vấn train.
-- [~] Audit metadata không thay thế kiểm ảnh trùng nội dung, nhãn ngữ nghĩa hay leakage audit độc lập.
+- [~] Audit phát hiện bảng điền synset của bản lưu được tạo trước split. Từ vựng graph dùng train. Chưa huấn luyện lại với bảng synset chỉ từ train.
 
 Nguồn: `src/data/`, `src/models/run_validation.py`, `src/evaluation/`, `data/splits/`, data card VN Heritage.
 
 ## 3. Báo cáo 12–18 trang, slide và đóng góp
 
 - [x] Có README, tài liệu năm chương + phụ lục của Phú, bảng Markdown/LaTeX trong `table.md`, report XAI và data card MMKG.
-- [x] Có bảng phân công đúng bốn người, bốn việc riêng và ba việc chung từng cặp trong `task.md`; tài khoản Git đã xác nhận được ghi riêng.
-- [~] Prism: đợt 1 đã sửa phương pháp/công thức/citation; bản PDF đã kiểm ở đợt đó là 10 trang. Còn abstract/tác giả, XAI/MMKG, nguồn bảng và bản cuối 12–18 trang.
-- [ ] Slide thuyết trình.
-- [~] Đã ghi rõ hỗ trợ AI ở phần tích hợp; báo cáo cuối còn cần khai báo nguồn mở/AI và đóng góp thực tế của thành viên.
+- [x] `task.md` có bốn người phụ trách các phần riêng, ba cặp và việc chung cả nhóm. Script xuất bảng của Quốc Thịnh là đầu ra cần bổ sung.
+- [x] Báo cáo 12 trang đính kèm Prism và bản [PDF trên GitHub](../report.pdf).
+- [x] Slide 12 trang có trong hồ sơ nộp của nhóm, kịch bản 18 phút 30 giây gồm demo.
+- [x] Báo cáo ghi phân công, thư viện, nguồn mở và phần dùng AI hỗ trợ.
 
-Không lấy lượt GraphSAGE 17/11, 18/11 và 21/11 ghép thành một bảng ba seed.
+Bảng kết quả, phân tích ca và demo VG–COCO trong báo cáo dùng checkpoint GraphSAGE của cùng bộ thực nghiệm.
 
 ## 4. Notebook/giao diện truy vấn và giải thích
 
@@ -45,18 +45,18 @@ Không lấy lượt GraphSAGE 17/11, 18/11 và 21/11 ghép thành một bảng 
 - [x] Notebook dùng chung service, có công thức, shape và ảnh; đã chạy 8/8 cell code với CLIP/checkpoint thật.
 - [x] Demo kiểm provenance, chỉ dùng known-query ground truth khi ID và text khớp; query tự nhập không có nhãn đúng giả định.
 - [x] Tải lại ảnh gallery bằng metadata; không chỉnh α/k hoặc train lại trong demo.
-- [~] Demo hiện cho VG–COCO/GraphSAGE. Cần gói model/cache và chạy thử trên máy trình bày; không nhận đã demo MMKG/AdaMF-MAT qua UI.
+- [~] Đã chạy UI và CLI GraphSAGE trên VG–COCO, cả truy vấn có mã và câu mới. Cả nhóm cần thử trên máy vấn đáp.
 
 Nguồn: `src/demo/`, `scripts/run_demo.py`, `notebooks/retrieval_demo.ipynb`, `configs/demo/vg_coco.yaml`.
 
 ## 5. Phân tích 5 thành công và 5 thất bại
 
-- [x] README có 5 ca ảnh đúng lên hạng 1 và 5 ca rơi khỏi hạng 1, hạng CLIP → fused, điểm graph, relation và quy tắc chọn.
-- [x] Đã ghi ba caption thành công cùng thuộc một ảnh và các ca thuộc lượt 21/11, khác checkpoint bảng chính 18/11.
-- [~] Report HTML XAI có ảnh/graph; cần bàn giao ground-truth image, prediction, query ID và trace khớp lượt 21/11. Giảm score sau xoá relation không phải hạng của ảnh ground truth.
+- [x] Bảng XV trong báo cáo có 5 ca ảnh đích lên hạng nhất và 5 ca mất hạng nhất, gồm mã truy vấn, ID ảnh, hạng và giải thích.
+- [x] Mười ca dùng mô hình GraphSAGE seed 13, giống demo.
+- [x] Phụ lục của hồ sơ nộp có ảnh, điểm, hạng, quan hệ và hạng sau khi xóa quan hệ.
 - [~] Nhận xét về thiếu/nhiễu scene graph chỉ là giả thuyết từ các ca minh hoạ, chưa là kết luận nhân quả toàn tập.
 
-Nguồn: `README.md`, `reports/explanation-quality/index.html`, `scripts/explain_retrieval.py`.
+Nguồn: [báo cáo kỹ thuật](../report.pdf) và `scripts/explain_retrieval.py`.
 
 ## 6. Cấp độ 2: hai tập công khai và ≥20 query
 
@@ -64,7 +64,7 @@ Nguồn: `README.md`, `reports/explanation-quality/index.html`, `scripts/explain
 - [x] AdaMF-MAT (2024) có adaptation và kết quả; tách bản retrieval với bản KG/reproduction.
 - [x] Có bộ 30 câu viết tay và bộ KG trực tiếp/gián tiếp; định nghĩa và cách dựng trong `docs/mkg-w-results.md`.
 - [x] Ghi giới hạn oracle anchor/relation của nhánh KG; không so ngang với text-only như cùng đầu vào.
-- [~] Cần chọn bộ query cuối đưa phụ lục và kiểm tra thủ công theo định nghĩa đã công bố.
+- [x] Phụ lục ghi bộ 5.154 truy vấn test MKG-W và kết quả đối chiếu 24 truy vấn mẫu theo định nghĩa trực tiếp/gián tiếp.
 
 ## 7. Cấp độ 3: MMKG tự xây và XAI
 
@@ -72,9 +72,9 @@ Nguồn: `README.md`, `reports/explanation-quality/index.html`, `scripts/explain
 - [x] Có card, metadata nguồn/ảnh, linking, split và hướng dẫn xây; không thay bằng MMKG local cũ.
 - [x] Có transfer GraphSAGE và ablation; tách gallery 772 ảnh với gallery 160 địa điểm, đúng cách gộp split/seed.
 - [x] Fidelity, sparsity/keep-only trên VG–COCO có random control, budget thực tế và ca skip.
-- [~] Validity là một lượt AI: 20 query/42 relation, 83,3% theo rubric rộng và 33,3% theo rubric chặt. Chưa có nhãn người độc lập.
+- [~] Validity dùng nhãn thí điểm của AI trên 20 truy vấn và 42 quan hệ. Có 17 quan hệ đúng ảnh và liên quan tới truy vấn, 2 quan hệ chưa rõ. Chưa có nhãn người độc lập.
 - [ ] Người kiểm tay validity, mẫu ảnh đúng địa điểm và mẫu cạnh rút từ bài theo rubric đã chốt.
-- [~] Có nguồn/license trong metadata và báo cáo dữ liệu; còn đóng gói ảnh kèm attribution/điều kiện sử dụng cụ thể cho bản nộp.
+- [x] Gói VN Heritage của nhóm có 772 ảnh và bảng ghi công theo ảnh. Điều kiện sử dụng nằm trong [data card](../docs/vn-heritage-data-card.md).
 
 Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `docs/wandb-report/70*`–`73*`.
 
@@ -82,8 +82,8 @@ Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `doc
 
 - [x] Có code UI/notebook và kịch bản demo dưới 5 phút trong README.
 - [x] Có `reports/demo/retrieval-demo.mp4`: khoảng 1:30 (<5 phút), H.264, phụ đề tiếng Việt, không lời đọc; ghi thao tác thật và đã kiểm frame/thời lượng.
-- [~] Nhóm cần duyệt video và chọn bản nộp; có thể bổ sung lời đọc.
-- [~] Có gói demo local gồm 1.500 ảnh/cache/checkpoint seed 13 kèm manifest; chưa phải gói artifact đầy đủ của mọi phương pháp/dataset. CLIP weights cần cache riêng.
+- [x] Video dự phòng đã có phụ đề, thuận tiện mở khi máy demo gặp sự cố.
+- [x] Gói demo có 1.500 ảnh, cache và checkpoint seed 13. Lần chạy đầu tải CLIP bằng `prepare-model`.
 - [ ] Thử mở lại bằng môi trường/gói artifact trên máy vấn đáp.
 
 ## Phần mở rộng tùy chọn
@@ -94,7 +94,4 @@ Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `doc
 
 ## Kết luận nghiệm thu
 
-Code cốt lõi, MMKG remote, dữ liệu/split, cấu hình ablation, UI và notebook đã có.
-Các sản phẩm còn chặn bộ nộp hoàn chỉnh: báo cáo cuối + slide, duyệt video/gói
-artifact đầy đủ và kiểm tay theo rubric. Không cần chốt lại số liệu bằng cách train/tune theo test;
-cần gắn mỗi bảng/case với đúng nguồn chạy đã có.
+Hồ sơ có mã nguồn, split, báo cáo, slide, demo, notebook, video dự phòng, phụ lục truy vấn và dữ liệu VN Heritage. Việc còn lại trước buổi chấm là thử demo trên máy dùng để trình bày. Validity trong báo cáo là kết quả thí điểm dùng nhãn AI.
