@@ -54,20 +54,13 @@ Sau P3: metric implementation, ablation harness, explanation extraction và cust
 
 Có thể chạy lại từ một command/config; có split cố định; không leakage; có CLIP-only và CLIP+Graph; có ablation; có mean/std từ 3 seed; có bảng metric và 5 query thành công + 5 query thất bại; nếu nhận Cấp độ 3 thì có MMKG tiếng Việt, data card và fidelity/validity/sparsity.
 
-## Trạng thái
+## Trạng thái hiện hành
 
-| ID | Nhóm | Phụ thuộc | Trạng thái |
-|---|---|---|---|
-| P0 | Chốt phạm vi, dataset, graph model | - | DONE: Visual Genome, GraphSAGE pending |
-| P1 | Contract, split, leakage, environment | P0 | DONE: fixed 28/10/10 split, no-overlap validation |
-| P2-DATA | Download/normalize/index dữ liệu | P1 | DONE: official dumps + 40 JPG + graph subset |
-| P2-CLIP | Frozen CLIP + FAISS baseline | P1 | DONE: real CLIP weights + FAISS run |
-| P2-GRAPH | Graph schema + graph score prototype | P1 | DONE: scorer + trained GraphSAGE experiment; primary reranker still uses traceable scorer |
-| P2-QUERY | Query benchmark trực tiếp/gián tiếp | P1 | DONE for C1: 40 graph-derived queries, 10 held-out test queries |
-| P3 | Tích hợp reranking + explanation trace | P2-* | DONE: pipeline smoke |
-| P4-EVAL | 3 seeds, metrics, alpha tuning | P3 | DONE on 10-query held-out test |
-| P4-ABL | Edge ablation/random graph | P3 | DONE: drop-all and shuffled-relation runs |
-| P4-XAI | Fidelity, validity, sparsity | P3 | OPTIONAL C3 |
-| P4-MMKG | MMKG tiếng Việt 50-150 entities, 300-1000 triples, 200-500 images | P3 | OPTIONAL C3 |
-| P4-EXT | Cấp độ 4, chọn một hướng | P4-EVAL + C3 nếu có | OPTIONAL |
-| P5 | Report, notebook/demo, reproducibility | P4-* cần thiết | TODO |
+Bảng tiến độ pilot 40 ảnh đã được thay bằng checklist nghiệm thu ngày 22/11/2026.
+Xem [requirements-checklist.md](requirements-checklist.md) và [phân công](../task.md).
+Code hiện dùng GraphSAGE đã huấn luyện, hai tập công khai và MMKG VN Heritage;
+không dùng các mốc 28/10/10 hoặc scorer từ khóa của pilot để mô tả bản cuối.
+
+UI/notebook và CLI dựng/audit VG–COCO đã có. Báo cáo cuối, slide, video và gói
+artifact vẫn cần bàn giao theo checklist. Dependency graph phía trên là kế hoạch
+triển khai gốc, không phải bằng chứng rằng mọi bước P5 đã hoàn tất.

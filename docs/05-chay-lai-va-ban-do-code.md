@@ -88,7 +88,14 @@ Về `.gitignore`:
 - `.gitignore` bỏ qua `/runs/` và `/private/`, nên mọi output **mới** chỉ nằm trên máy. Các file đã được theo dõi từ trước trong `runs/` vẫn được Git theo dõi. Muốn đưa một file kết quả mới vào repo thì phải chủ động `git add -f`.
 - Các file nén ở thư mục gốc, ví dụ `runs.zip` (bản lưu thí nghiệm cũ), cũng bị bỏ qua vì quá lớn; hãy chia sẻ chúng qua kênh khác.
 
-Hai script dựng dữ liệu không nằm trong repo: `scripts/build_vg_coco.py` (tải ảnh và dựng dữ liệu) và `scripts/review_vg_coco.py` (duyệt dữ liệu). Các module mà chúng dùng (`src/data/`) và test của các module đó thì có. Từ đó:
+Hai script dựng/audit đã được bổ sung vào repo ngày 22/11:
+
+- `python -m scripts.build_vg_coco --stage images`: tải/khôi phục ảnh theo metadata và split có sẵn, không đổi split.
+- `python -m scripts.build_vg_coco --stage all`: sources → join → normalize → split → export → images → graph; có thể chạy từng stage hoặc `--skip-images`.
+- `python -m scripts.review_vg_coco`: kiểm split/ID/query/graph, xuất JSON kèm hash. Metadata thật đã qua; raw → graph được kiểm bằng fixture nhỏ, chưa chạy lại toàn bộ raw công khai trong môi trường sạch.
+- Muốn dựng khác metadata có sẵn cần `--overwrite` hoặc config trỏ thư mục khác; kiểm hash trước khi dùng lại cache/checkpoint cũ.
+
+Các điều kiện còn cần:
 
 - Muốn chạy `embed_vg_coco` thì phải có sẵn 10.000 file ảnh.
 - Mọi lệnh dùng mô hình đã huấn luyện (`run_benchmark --method graphsage`, `explain_retrieval`, `analyze_ablation`, `evaluate_fidelity`, `evaluate_explanation_quality`) cần đã chạy `train_graphsage` trên máy, vì checkpoint và vector đồ thị không được commit. Các lệnh này kiểm tra sha256 và nguồn gốc của artifact trước khi chạy (`src/models/run_validation.py`).

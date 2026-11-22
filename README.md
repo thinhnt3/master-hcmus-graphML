@@ -29,6 +29,9 @@ Tài liệu giải thích đầy đủ, có hình minh hoạ và phụ lục cô
 | 3 | MMKG tự xây, chạy phương pháp của cấp độ 1/2 trên đó | Có: VN Heritage | [VN Heritage](#kết-quả-trên-vn-heritage-mmkg-tự-xây) |
 | 4 | Cải tiến riêng: α theo truy vấn (hướng a) | Một phần: code và test xong, chưa chạy trên 2 tập công khai | [Cấp độ 4](#cấp-độ-4-α-theo-truy-vấn) |
 
+Trách nhiệm bàn giao đã chốt: [task.md](task.md) (4 việc riêng, 3 việc chung từng cặp).
+Checklist tám sản phẩm cần nộp và phần còn thiếu: [requirements-checklist.md](plan-task/requirements-checklist.md).
+Demo/notebook đã có; báo cáo cuối, slide, video và gói model/cache vẫn cần hoàn thiện.
 Việc còn mở của từng phần nằm ở các mục "Chưa có" và "Chưa làm" bên dưới.
 
 ## Dữ liệu
@@ -84,7 +87,7 @@ Khi chỉ dùng điểm đồ thị, không có CLIP:
 Cách đọc bảng:
 
 - GraphSAGE nâng R@1 của CLIP thêm 4,2 điểm, và hơn cách so khớp từ (46,41) 1,7 điểm.
-- Ở mô hình chính, đỉnh ảnh không mang thông tin CLIP của ảnh, nên vector đồ thị chỉ đến từ cấu trúc đồ thị. Phần cải thiện vì thế quy được cho đồ thị.
+- Ở mô hình chính, đỉnh ảnh dùng token chung được học, không mang CLIP image vector. Vector đồ thị được học từ nhãn object/predicate và cấu trúc cạnh; việc vượt CLIP chưa chứng minh riêng cấu trúc cạnh có ích. Ablation bên dưới tách các nguồn thông tin này.
 - Biến thể "đỉnh ảnh mang vector CLIP" cho số cao hơn nhưng dao động giữa các seed nhiều hơn, và điểm đồ thị của nó đã lẫn thông tin CLIP.
 - Các tham số huấn luyện là giá trị khởi đầu, chưa tinh chỉnh.
 
@@ -125,9 +128,9 @@ Bản đầy đủ trừ biến thể, điểm % R@1 sau khi xếp hạng lại,
 
 ![Ablation trên hai dataset: R@1 tăng so với CLIP và R@1 chỉ dùng điểm đồ thị, theo từng biến thể](reports/ablation/level1-ablation.png)
 
-- **VG ∩ COCO:** đồ thị nâng R@1 thêm 4,24 điểm so với CLIP, nhưng bỏ hết cạnh vẫn còn +3,67. Khoảng 0,6 điểm đến từ cạnh; phần còn lại đến từ danh sách vật thể trong ảnh.
+- **VG ∩ COCO:** đồ thị nâng R@1 thêm 4,24 điểm so với CLIP, nhưng bỏ hết cạnh vẫn còn +3,67. Chênh full − objects-only khoảng 0,6 điểm; mô hình chỉ dùng vật thể vẫn giữ phần lớn mức tăng. Đây là bằng chứng trong giao thức hiện tại, không phải phân rã nhân quả chính xác.
 - **MKG-W caption subset:** cạnh đóng góp rõ hơn. Bỏ hết cạnh làm mất 2,68 trong 7,75 điểm tăng, và điểm đồ thị đứng riêng tụt từ 28,19% xuống 21,01%. Bỏ nhãn vị từ cũng làm mất 1,93 điểm, trong khi ở VG ∩ COCO gần như không đổi (0,05): ở đây mô hình dùng cả nội dung của quan hệ.
-- **Cạnh ngẫu nhiên** ở cả hai dataset đều chưa tách được khỏi bản đầy đủ (khoảng 95% chứa 0). Phép xáo giữ nguyên tập vật thể, số cạnh và nhãn vị từ của từng mục, chỉ đổi cặp chủ thể và tân ngữ, nên kết quả này nói rằng mô hình cần có cạnh và nhãn vị từ, còn việc cạnh nối đúng hai vật thể nào thì chưa thấy tác dụng.
+- **Cạnh ngẫu nhiên** ở cả hai dataset đều chưa tách được khỏi bản đầy đủ (khoảng 95% chứa 0). Phép xáo giữ nguyên tập vật thể, số cạnh và nhãn vị từ của từng mục, chỉ đổi cặp chủ thể và tân ngữ, nên chưa đủ bằng chứng về lợi ích riêng của việc nối đúng hai vật thể. Đóng góp của nhãn vị từ phải đọc riêng theo từng dataset, không suy ra chỉ từ random edges.
 - Tập test của MKG-W caption subset nhỏ (882 truy vấn), nên độ lệch chuẩn và khoảng tin cậy rộng hơn VG ∩ COCO.
 - Phép thử trực tiếp hơn cho câu hỏi mô hình có đọc cạnh hay không trên VG ∩ COCO là bộ relation queries của cấp độ 2 (mục "Mô hình có đọc cạnh không" bên dưới).
 
@@ -170,7 +173,7 @@ Thất bại (ảnh đúng đang ở hạng 1 với CLIP thì rơi xuống):
 | Female tennis player in full run on a blue court to complete a backhand return. | 1 → 21 | 0,103 (213) | 2 vật thể (sign, letters), 1 relation (`letters on sign`) |
 
 - **Thành công:** đồ thị của ảnh đúng chứa đúng các vật thể mà câu nêu (bike, umbrella, basket; truck, building; man, bird), nên điểm đồ thị của nó đứng hạng 1 hoặc 3 trong 1.500 ảnh và kéo ảnh lên. Ba trong năm truy vấn là ba caption của cùng một ảnh, nên thực chất chỉ có ba ảnh khác nhau.
-- **Thất bại:** cả năm ảnh đúng đều có đồ thị gần như rỗng hoặc không nhắc tới vật thể trong câu (không có skis, car, bag, bird, boat, player). Điểm đồ thị của chúng gần 0, đứng hạng 213 đến 1.291, trong khi các ảnh khác có đồ thị khớp chữ hơn vượt lên. Nguyên nhân nằm ở chú giải scene graph thiếu, không phải ở relation sai.
+- **Thất bại:** cả năm ảnh đúng đều có đồ thị gần như rỗng hoặc không nhắc tới vật thể trong câu (không có skis, car, bag, bird, boat, player). Điểm đồ thị của chúng gần 0, đứng hạng 213 đến 1.291, trong khi các ảnh khác có đồ thị khớp chữ hơn vượt lên. Các ca gợi ý chú giải thiếu hoặc nhiễu có thể làm hại xếp hạng; đây là quan sát minh hoạ, chưa loại trừ quan hệ sai hoặc các nguyên nhân khác.
 - Mười ca này là hai đầu cực của phân bố, dùng để thấy cơ chế, không đại diện cho mức thay đổi thường gặp. Chúng lấy từ mô hình huấn luyện lại tại máy ngày 21/11 (seed 13, α = 0,81, k = 1.500), không phải checkpoint ngày 18/11 của bảng trên.
 
 ### Chưa có
@@ -583,6 +586,21 @@ train và benchmark ở mục “Chạy lại” bên dưới trước. Lệnh `
 Demo hiện phục vụ VG ∩ COCO/GraphSAGE; các pipeline MKG-W/VN Heritage giữ
 các giao thức và lệnh riêng đã có.
 
+### Kịch bản demo khoảng 4 phút
+
+| Thời gian | Thao tác | Điều cần giải thích |
+|---|---|---|
+| 0:00–0:30 | Mở UI, nêu gallery 1.500 ảnh và checkpoint seed 13 | Text → CLIP text vector; ảnh và graph có vector cache. Query không thành node mới. |
+| 0:30–1:20 | Chọn một query mẫu có nhãn, xem CLIP rồi CLIP + GraphSAGE | Hạng ảnh đúng và ba loại score; α/k lấy từ validation, score không phải xác suất. |
+| 1:20–2:20 | Mở relation của ảnh đứng đầu | Node object, node phụ predicate; xoá từng relation làm graph score đổi bao nhiêu. Δ dương là score giảm khi bỏ; chưa chứng minh relation đúng ngữ nghĩa. |
+| 2:20–3:10 | Nhập câu tiếng Anh mới, đổi top-k | Không có ground truth cho câu tự nhập; chỉ xem kết quả thật, không tuyên bố tự động đúng. |
+| 3:10–4:00 | Xuất JSON và mở notebook đã chạy | Truy vết checkpoint/config/query; nêu một ca sai và giới hạn VG-only của UI. |
+
+Chuẩn bị trước ảnh/cache/checkpoint và CLIP offline; chạy `check`, `images` rồi
+`serve`. Trước khi quay, chọn một ca đúng và một ca sai từ các query mẫu đã kiểm,
+không sửa kết quả hoặc đổi tham số theo test. Video dự phòng cần quay và kiểm lại
+âm thanh/nội dung, tổng thời lượng không quá 5 phút; kịch bản này chưa phải video.
+
 ## Chạy lại
 
 Cần Python 3.12. Chạy mọi lệnh từ thư mục gốc của repo.
@@ -597,12 +615,14 @@ python -m scripts.train_graphsage                        # huấn luyện 3 seed
 python -m scripts.run_benchmark --method graphsage       # CLIP + GraphSAGE
 python -m scripts.explain_retrieval --sample 5           # kết quả kèm relation giải thích
 
-pytest                                                   # 458 test, không cần mạng
+pytest                                                   # test offline; số lượng hiện hành trong checklist/log kiểm tra
 ```
 
 Lưu ý:
 
-- `embed_vg_coco` cần 10.000 file ảnh trong `data/processed/vg_coco/images/`. Ảnh (1,4 GB) không nằm trong repo. Script tải ảnh và xây dữ liệu (`scripts/build_vg_coco.py`) hiện cũng không nằm trong repo; các file JSON nó sinh ra (ảnh, truy vấn, đồ thị, split) thì có.
+- `embed_vg_coco` cần 10.000 JPEG trong `data/processed/vg_coco/images/`; ảnh lớn không nằm trong Git. Dùng `python -m scripts.build_vg_coco --stage images` để khôi phục theo metadata/split đã chốt. Hai script dựng/audit nay nằm trong repo.
+- Kiểm tra metadata không cần model: `python -m scripts.review_vg_coco`. Dựng từ raw theo các stage `sources`, `join`, `normalize`, `split`, `export`, `images`, `graph` hoặc `all`. Cấu hình ở `configs/data/vg_coco.yaml`; `--skip-images` chỉ dựng metadata. Rebuild khác metadata có sẵn cần `--overwrite` hoặc config trỏ thư mục mới. Không ghi đè dữ liệu đang dùng bởi checkpoint khi chưa đối chiếu hash.
+- CLI dựng mới đã qua kiểm thử raw giả lập → graph, audit bộ dữ liệu thật đã qua. Chưa chạy lại toàn bộ raw download/build sạch; không nhận tái tạo byte-for-byte artifact lịch sử. Chuẩn hoá synset/backfill giữ cách làm của module cũ trên tập ảnh đã join; từ vựng graph và thống kê train được xây sau khi chia split.
 - `train_graphsage` báo cáo lên Weights & Biases. Đổi `wandb.mode` trong `configs/retrieval/vg_coco.yaml` thành `offline` hoặc `disabled` nếu không dùng.
 - Lệnh cho MKG-W nằm ở [docs/mkg-w-results.md](docs/mkg-w-results.md#chạy-lại); lệnh cho VN Heritage ở [docs/vn-heritage-results.md](docs/vn-heritage-results.md#chạy-lại).
 - Biến thể đỉnh ảnh mang CLIP: `python -m scripts.train_graphsage --image-node clip_image`, rồi `python -m scripts.run_benchmark --method graphsage --run directed-clip_image-l3-h512`.

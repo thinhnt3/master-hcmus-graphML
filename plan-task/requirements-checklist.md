@@ -1,175 +1,98 @@
-# Requirements checklist — Text-to-image Graph Retrieval
+# Checklist nghiệm thu bài nộp
 
-Cập nhật theo code và bằng chứng chạy trên `main` + thay đổi local ngày 18/11/2026.
-Checklist pilot 40 ảnh trước đây đã được thay bằng trạng thái VG ∩ COCO hiện tại.
+Cập nhật 22/11/2026 theo bản tích hợp từ remote và phần demo/notebook mới.
+Phân công: [task.md](../task.md). `[x]` có artifact/bằng chứng; `[~]` còn giới hạn;
+`[ ]` chưa có. Có code hoặc có bảng không đồng nghĩa toàn bộ bài đã sẵn sàng nộp.
 
-- `[x]`: đã có code và bằng chứng kiểm tra/chạy tương ứng.
-- `[~]`: đã làm một phần, còn giới hạn hoặc chưa đủ điều kiện nghiệm thu.
-- `[ ]`: chưa triển khai hoặc chưa có bằng chứng.
+## 1. Mã nguồn, môi trường và chạy lại
 
-Kết quả sinh trong `runs/` là artifact local; các snapshot cũ đã tracked vẫn tồn tại
-trong Git. Report hướng dẫn tương tác nằm trong `private/`, không commit.
+- [x] CLIP frozen, GraphSAGE, AdaMF-MAT adaptation, benchmark và explanation đã có code/config/test.
+- [x] Đã tích hợp hướng dẫn của Phú, năm config ablation MKG-W caption subset và panel W&B dataset 2.
+- [x] Có `scripts/build_vg_coco.py`: sources → join → normalize → split → export → images → graph; có checksum raw và chặn ghi đè metadata khác nếu thiếu `--overwrite`.
+- [x] `scripts/review_vg_coco.py` audit metadata thật: 7.000/1.500/1.500 ảnh và 35.000/7.500/7.500 query; không trùng split, query đúng caption/ảnh/split, graph đúng ID/vocabulary.
+- [x] Có kiểm thử tích hợp từ raw giả lập tới graph và kiểm chặn query/split/graph sai. Bản tích hợp qua 514 test; Ruff sạch; mypy sạch trên 128 file nguồn (Python 3.12, môi trường constraints demo).
+- [~] Chưa chạy lại toàn bộ download/build từ raw công khai bằng CLI mới trong một môi trường sạch. Script dùng lại các module dữ liệu có sẵn; không tuyên bố đã tái tạo byte-for-byte bộ lịch sử.
+- [x] Có requirements nền, dependency notebook riêng và constraints các phiên bản đã chạy demo.
+- [~] Constraints demo không phải lock toàn bộ dependency/OS/CUDA. Ảnh, embedding và checkpoint lớn cần gói bàn giao hoặc dựng lại; không có trong Git.
 
-## A. Dữ liệu và phạm vi
+Nguồn: `README.md`, `requirements*.txt`, `scripts/{build_vg_coco,review_vg_coco,run_demo}.py`, `tests/data/test_vg_coco_commands.py`.
 
-- [x] Chốt text-to-image, CLIP frozen và GraphSAGE trên VG ∩ COCO.
-- [x] Có annotation, graph JSON và caption COCO versioned theo image ID.
-- [x] Chốt subset 10.000 ảnh: 7.000 train / 1.500 val / 1.500 test.
-- [x] Khôi phục đủ 10.000 ảnh JPEG hợp lệ từ URL trong metadata; không có lượt tải thất bại cuối cùng.
-- [x] Có 50.000 caption; mỗi caption trỏ đến một ảnh đúng.
-- [x] Có graph card và báo cáo duyệt dữ liệu.
-- [~] Có nguồn và checksum; cần hoàn thiện license/data card cho sản phẩm nộp.
-- [ ] Chốt cách đóng gói dữ liệu/model theo giới hạn nộp bài hoặc cloud.
+## 2. Split và chống rò rỉ
 
-Evidence: `data/processed/vg_coco/`, `data/splits/vg_coco.json`,
-`data/splits/vg_coco_graph.yaml`, `reports/data-review/`, `src/data/`.
+- [x] VG–COCO: 10.000 ảnh, 50.000 caption; test chỉ từ Karpathy test; vocab graph từ train.
+- [x] MKG-W caption subset: 2.055/440/441 mục và 2 caption/mục; split versioned.
+- [x] α/k, checkpoint và query-adaptive alpha chọn/fit trên validation; không chọn lại từ test.
+- [x] Các baseline/ablation dùng cùng split/gallery; full và bốn biến thể chạy ba seed 13/37/97.
+- [x] Cache/run lưu hash đầu vào; consumer kiểm hash và settings, resume từ chối artifact sai/thiếu.
+- [x] MMKG remote có split claim theo cặp đỉnh; fact val/test không ở train graph; code masking cạnh truy vấn train.
+- [~] Audit metadata không thay thế kiểm ảnh trùng nội dung, nhãn ngữ nghĩa hay leakage audit độc lập.
 
-## B. Split, provenance và chống leakage
+Nguồn: `src/data/`, `src/models/run_validation.py`, `src/evaluation/`, `data/splits/`, data card VN Heritage.
 
-- [x] Có mapping image/concept/predicate/query và split cố định.
-- [x] Test chỉ lấy từ Karpathy test; có kiểm tra split và overlap trong data tests.
-- [x] Từ vựng concept/predicate và statistics xây graph lấy từ train.
-- [x] Chọn checkpoint trên val; α/k chỉ chọn trên val; test không dùng để tuning.
-- [x] Snapshot lưu seed, architecture, input hashes; consumer kiểm tra cấu hình và hash.
-- [x] Resume từ chối finished run thiếu artifact hoặc có settings khác.
-- [~] Có kiểm tra ID/overlap/hash trong nhiều module; chưa có một CLI leakage audit tổng hợp.
-- [ ] Có environment lock với phiên bản dependency đầy đủ.
+## 3. Báo cáo 12–18 trang, slide và đóng góp
 
-Evidence: `src/data/graph_build.py`, `src/data/splits.py`,
-`src/models/run_validation.py`, `src/models/checkpoint.py`, `tests/data/`.
+- [x] Có README, tài liệu năm chương + phụ lục của Phú, bảng Markdown/LaTeX trong `table.md`, report XAI và data card MMKG.
+- [x] Có bảng phân công đúng bốn người, bốn việc riêng và ba việc chung từng cặp trong `task.md`; tài khoản Git đã xác nhận được ghi riêng.
+- [~] Prism: đợt 1 đã sửa phương pháp/công thức/citation; bản PDF đã kiểm ở đợt đó là 10 trang. Còn abstract/tác giả, XAI/MMKG, nguồn bảng và bản cuối 12–18 trang.
+- [ ] Slide thuyết trình.
+- [~] Đã ghi rõ hỗ trợ AI ở phần tích hợp; báo cáo cuối còn cần khai báo nguồn mở/AI và đóng góp thực tế của thành viên.
 
-## C. Baseline và embedding
+Không lấy lượt GraphSAGE 17/11, 18/11 và 21/11 ghép thành một bảng ba seed.
 
-- [x] Dùng CLIP ViT-B/32 thật, frozen; encode image, caption, concept và predicate.
-- [x] Cache vector chuẩn hoá, ID và metadata/hash để không encode lại mỗi lượt.
-- [x] Baseline cosine chạy trên gallery test 1.500 ảnh, 7.500 query.
-- [x] Có lexical graph baseline để so với GraphSAGE.
-- [~] Retrieval hiện dùng NumPy cosine; FAISS của pilot không còn là implementation hiện hành.
-- [ ] Nếu đề yêu cầu FAISS bắt buộc: bổ sung index và kiểm tra tương đương với NumPy.
-- [ ] Backbone OpenCLIP thứ hai.
+## 4. Notebook/giao diện truy vấn và giải thích
 
-Evidence: `src/embeddings/`, `src/evaluation/benchmark.py`,
-`src/retrieval/lexical.py`, `scripts/run_benchmark.py`.
+- [x] UI local nhập text mới, top-3/5/10, ảnh thật, điểm CLIP/graph/fused, so baseline, subgraph và signed deletion score.
+- [x] Notebook dùng chung service, có công thức, shape và ảnh; đã chạy 8/8 cell code với CLIP/checkpoint thật.
+- [x] Demo kiểm provenance, chỉ dùng known-query ground truth khi ID và text khớp; query tự nhập không có nhãn đúng giả định.
+- [x] Tải lại ảnh gallery bằng metadata; không chỉnh α/k hoặc train lại trong demo.
+- [~] Demo hiện cho VG–COCO/GraphSAGE. Cần gói model/cache và chạy thử trên máy trình bày; không nhận đã demo MMKG/AdaMF-MAT qua UI.
 
-## D. GraphSAGE và training
+Nguồn: `src/demo/`, `scripts/run_demo.py`, `notebooks/retrieval_demo.ipynb`, `configs/demo/vg_coco.yaml`.
 
-- [x] Mỗi ảnh thành graph PyG gồm image/object/relation node.
-- [x] Có GraphSAGE có hướng, 3 tầng, image token học được và projection sang CLIP space.
-- [x] Có biến thể image node mang CLIP image vector; kết quả lịch sử còn trong repo.
-- [x] Huấn luyện InfoNCE thật; CLIP và lookup embedding đóng băng.
-- [x] Early stopping, checkpoint, resume, NaN checks và snapshot cấu hình.
-- [x] Full và bốn ablation đã train/export đủ seed 13/37/97.
-- [x] Kiểm tra 15 run: checkpoint có đủ, vector 10.000×512 hữu hạn và chuẩn hoá, input hashes nhất quán.
-- [~] Đã có validation selection; chưa nghiên cứu rộng hyperparameter hoặc chứng minh kiến trúc tối ưu.
+## 5. Phân tích 5 thành công và 5 thất bại
 
-Evidence: `src/models/{graph_data,graphsage,train,checkpoint}.py`,
-`scripts/train_graphsage.py`, output local `runs/graphsage/`.
+- [x] README có 5 ca ảnh đúng lên hạng 1 và 5 ca rơi khỏi hạng 1, hạng CLIP → fused, điểm graph, relation và quy tắc chọn.
+- [x] Đã ghi ba caption thành công cùng thuộc một ảnh và các ca thuộc lượt 21/11, khác checkpoint bảng chính 18/11.
+- [~] Report HTML XAI có ảnh/graph; cần bàn giao ground-truth image, prediction, query ID và trace khớp lượt 21/11. Giảm score sau xoá relation không phải hạng của ảnh ground truth.
+- [~] Nhận xét về thiếu/nhiễu scene graph chỉ là giả thuyết từ các ca minh hoạ, chưa là kết luận nhân quả toàn tập.
 
-## E. Reranking và explanation
+Nguồn: `README.md`, `reports/explanation-quality/index.html`, `scripts/explain_retrieval.py`.
 
-- [x] Kết hợp raw cosine CLIP và graph theo α; cùng nguồn candidate CLIP cho phép so sánh tương ứng.
-- [x] α/k chọn riêng cho từng seed/variant trên validation.
-- [x] α=1 giữ thứ hạng CLIP; có conservative tie handling.
-- [x] Explanation của GraphSAGE dùng đúng checkpoint và graph intervention tương ứng.
-- [x] Xếp relation theo signed score drop khi xoá từng relation.
-- [x] Có CLI embed/train/benchmark/explanation và hướng dẫn chạy.
-- [x] Có demo nhập câu mới, top-k ảnh/score/relation và notebook cùng engine; CLI `scripts/run_demo.py` gói check/images/model/query/serve/notebook.
+## 6. Cấp độ 2: hai tập công khai và ≥20 query
 
-Evidence: `src/retrieval/rerank.py`, `src/models/explain.py`,
-`scripts/explain_retrieval.py`, `docs/graphsage-design-decisions.md`.
+- [x] VG–COCO và MKG-W đã có pipeline/kết quả; ablation dataset 2 có đủ năm YAML.
+- [x] AdaMF-MAT (2024) có adaptation và kết quả; tách bản retrieval với bản KG/reproduction.
+- [x] Có bộ 30 câu viết tay và bộ KG trực tiếp/gián tiếp; định nghĩa và cách dựng trong `docs/mkg-w-results.md`.
+- [x] Ghi giới hạn oracle anchor/relation của nhánh KG; không so ngang với text-only như cùng đầu vào.
+- [~] Cần chọn bộ query cuối đưa phụ lục và kiểm tra thủ công theo định nghĩa đã công bố.
 
-## F. Query và phân tích trường hợp
+## 7. Cấp độ 3: MMKG tự xây và XAI
 
-- [x] Query lấy từ caption COCO, không sinh trực tiếp từ chữ trong graph.
-- [x] Query/split versioned, ground truth image ID rõ ràng.
-- [x] Phân tích paired wins/losses trên cùng query; bootstrap theo cụm ảnh.
-- [~] Có 5 ca full thắng và 5 ca objects-only thắng, kèm caption/graph/hạng; còn thiếu bình luận thủ công và ảnh minh hoạ hoàn chỉnh.
-- [ ] Định nghĩa và gán nhãn direct/indirect có kiểm tra thủ công.
-- [ ] Đánh giá đại diện để kiểm chứng giả thuyết caption thiên về đối tượng hoặc annotation nhiễu.
+- [x] MMKG chuẩn là VN Heritage trên remote: 160 địa điểm, 772 ảnh, 849 thực thể, 981 claim/18 quan hệ và 902 cạnh bài viết.
+- [x] Có card, metadata nguồn/ảnh, linking, split và hướng dẫn xây; không thay bằng MMKG local cũ.
+- [x] Có transfer GraphSAGE và ablation; tách gallery 772 ảnh với gallery 160 địa điểm, đúng cách gộp split/seed.
+- [x] Fidelity, sparsity/keep-only trên VG–COCO có random control, budget thực tế và ca skip.
+- [~] Validity là một lượt AI: 20 query/42 relation, 83,3% theo rubric rộng và 33,3% theo rubric chặt. Chưa có nhãn người độc lập.
+- [ ] Người kiểm tay validity, mẫu ảnh đúng địa điểm và mẫu cạnh rút từ bài theo rubric đã chốt.
+- [~] Có nguồn/license trong metadata và báo cáo dữ liệu; còn đóng gói ảnh kèm attribution/điều kiện sử dụng cụ thể cho bản nộp.
 
-Evidence: `scripts/analyze_ablation.py`, `src/evaluation/ablation_analysis.py`,
-output local `runs/analysis/ablation.json`.
+Nguồn: `docs/vn-heritage-results.md`, `data/processed/vn_heritage_core/`, `docs/wandb-report/70*`–`73*`.
 
-## G. Metrics và thực nghiệm
+## 8. Demo trực tiếp và video dự phòng
 
-- [x] Recall@1/5/10, MRR, per-seed và mean/sample std.
-- [x] Ba seed là ba lượt training thật, không nhân bản inference deterministic.
-- [x] CLIP, lexical và GraphSAGE đã có benchmark trên subset final.
-- [x] Phân biệt official benchmark với kiểm tra k=500 sau thực nghiệm; không dùng kiểm tra đó chọn lại model.
-- [ ] Bảng theo direct/indirect và thí nghiệm trên dataset công khai thứ hai.
+- [x] Có code UI/notebook và kịch bản demo dưới 5 phút trong README.
+- [ ] Video dự phòng ≤5 phút được nhóm kiểm và bàn giao.
+- [ ] Thử mở lại bằng môi trường/gói artifact trên máy vấn đáp.
 
-Evidence: `src/evaluation/{metrics,benchmark,ablation_analysis}.py`,
-`scripts/run_benchmark.py`, output local `runs/benchmark/`.
+## Phần mở rộng tùy chọn
 
-## H. Ablation
+- [x] Query-adaptive alpha của Phú có code/config và 27 kiểm thử, đã tích hợp.
+- [ ] Chạy và báo kết quả trên cả hai tập công khai, gồm random control; chưa nhận hoàn thành cấp độ 4 hoặc có cải thiện.
+- [ ] Backbone thứ hai, hub ablation và matched-parameter direction ablation: chưa có; không phải các mục đã nghiệm thu.
 
-- [x] Full, objects-only, zero predicate features, random endpoints và undirected.
-- [x] Random endpoints giữ directed degree và predicate histogram; cho phép cạnh tự nối/trùng theo định nghĩa control.
-- [x] Mỗi biến thể dùng cùng cache/split/training protocol; đủ ba seed.
-- [x] Có paired analysis và khoảng bất định conditional trên ba checkpoint đã train.
-- [~] Đã quét α/k để chọn cấu hình; chưa có biểu đồ sensitivity đầy đủ.
-- [ ] Ablation xử lý hub.
-- [ ] Direction ablation có số tham số khớp với full.
-- [ ] Lặp lại ablation cần thiết trên dataset thứ hai.
+## Kết luận nghiệm thu
 
-Full có R@1 fusion cao nhất ở lượt chạy hiện tại, nhưng không thắng mọi metric.
-Chưa có bằng chứng mạnh về lợi ích riêng của nhãn vị từ/cạnh thật qua các training seed mới.
-
-Evidence: `src/models/ablations.py`, `configs/retrieval/ablations/`,
-`docs/graphsage-design-decisions.md`.
-
-## I. XAI/fidelity
-
-- [x] Joint deletion trên full checkpoint cố định, so với random groups cùng số relation.
-- [x] 200 query được lấy mẫu cố định, đủ ba seed; 198/195/196 query hợp lệ sau small-graph skips.
-- [x] Đo signed graph-score drop, rank increase và mất top-1, lưu budget thực tế và skip reasons.
-- [x] Giữ nguyên CLIP, α/k, candidate pool và điểm đối thủ khi perturb ảnh dự đoán gốc.
-- [x] Ghi rõ selection dependence: đây là perturbation diagnostic, không phải chứng minh semantic faithfulness độc lập.
-- [~] Validity có form người audit và exporter cho toàn bộ query hợp lệ, không giới hạn 20; lượt AI thử nghiệm trước có 20 query/42 relation, chưa phải kết quả cuối.
-- [x] Có relation sparsity theo hai budget và keep-only so với random controls trên ba seed, báo tỷ lệ thật và ca skipped.
-- [ ] Hoàn tất đánh giá cả fidelity/validity/sparsity theo yêu cầu nộp.
-
-Evidence: `src/evaluation/fidelity.py`, `scripts/evaluate_fidelity.py`,
-`configs/evaluation/fidelity.yaml`, output local `runs/fidelity/`;
-`src/evaluation/explanation_quality.py`,
-`scripts/evaluate_explanation_quality.py`, `configs/evaluation/explanation_quality.yaml`,
-output local `runs/explanation-quality/`. Nhãn review/report ở `private/`, không commit.
-Giới hạn: phép đo sparsity hiện tại không tuyên bố lời giải thích tối thiểu;
-đây không phải một tiêu chí bắt buộc mới được thêm vào đề.
-Form v2 nằm ở `tools/validity-review/`, exporter ở `scripts/prepare_validity_review.py`.
-Dữ liệu/nhãn vẫn local; chưa có judge run, nhãn human hoặc CLI tổng hợp/đối chiếu
-schema v2. CLI `--labels` hiện chỉ nhận v1.
-
-## J. MMKG và mở rộng
-
-- [ ] MMKG tiếng Việt với entity/triple/image theo yêu cầu, linking, license và data card.
-- [ ] Transfer evaluation trên MMKG tự xây.
-- [~] Chọn và định nghĩa giả thuyết/baseline cho phần mở rộng Cấp độ 4: α theo truy vấn (α, k riêng cho
-  từng nhóm câu theo margin CLIP; H1), baseline α cố định, đối chứng chia nhóm ngẫu nhiên. Code và test đã
-  xong, có config cho VG ∩ COCO và MKG-W caption subset (`docs/query-alpha.md`); chưa chạy trên dữ liệu thật.
-
-## K. Sản phẩm nộp
-
-- [x] Source, config, tests và tài liệu định nghĩa ablation/fidelity.
-- [x] Split cuối được versioned; README có lệnh chạy lại.
-- [~] Clean-environment reproduction còn phụ thuộc ảnh/cache local và script khôi phục dữ liệu chưa được đóng gói đầy đủ.
-- [x] Demo nhập câu mới và xem top-k ảnh + explanation; đã chạy với 1.500 ảnh VG ∩ COCO và checkpoint thật trên nhánh `feat/retrieval-demo-notebook`.
-- [x] Notebook `notebooks/retrieval_demo.ipynb` chạy đủ 8 ô code; dùng chung engine với demo, có bản xuất JSON và notebook đã thực thi.
-- [ ] Report kỹ thuật 12–18 trang, slides và bảng đóng góp.
-- [ ] Video dự phòng ≤5 phút; chuẩn bị demo/vấn đáp.
-- [ ] Khai báo mã nguồn mở/AI và hướng dẫn đóng gói artifact cuối cùng.
-
-## Kết luận hiện tại
-
-Pipeline cốt lõi, ablation trên VG ∩ COCO và fidelity dạng perturbation đã chạy.
-Phase 4 còn OpenCLIP và phân tích ca hoàn chỉnh. Phase 5 còn dataset thứ hai,
-hub ablation và các giới hạn kiểm chứng đã nêu. Chưa coi toàn bộ bài nộp hoặc
-đánh giá XAI Cấp độ 3 là hoàn tất.
-
-## Cập nhật riêng phần demo/notebook — 22/11/2026
-
-- Input: config demo, gallery VG ∩ COCO, cache CLIP, checkpoint/graph vectors và benchmark đã chọn α/k trên validation.
-- Output: demo local có ô nhập câu, top-k ảnh/ba điểm/relation, notebook từng bước và JSON cùng protocol/hash.
-- Nghiệm thu: câu mới chạy qua CLIP thật; ảnh tải được; relation được bỏ riêng bằng đúng checkpoint; notebook chạy trọn vẹn; kiểm cả giao diện 390px.
-- Bằng chứng chạy tại máy: full suite 480 test qua; HTTP/UI và notebook chạy với 1.500 ảnh, seed 13, α=0.78, k=500. Dữ liệu và checkpoint không được ghi lại hay huấn luyện lại.
-- Phạm vi: VG ∩ COCO + GraphSAGE. Video/slide và toàn bộ gói nộp vẫn chưa được nghiệm thu ở mục này. Mã nằm trong nhánh triển khai riêng, chưa merge/push main.
+Code cốt lõi, MMKG remote, dữ liệu/split, cấu hình ablation, UI và notebook đã có.
+Các sản phẩm còn chặn bộ nộp hoàn chỉnh: báo cáo cuối + slide, video, gói artifact
+và kiểm tay theo rubric. Không cần chốt lại số liệu bằng cách train/tune theo test;
+cần gắn mỗi bảng/case với đúng nguồn chạy đã có.

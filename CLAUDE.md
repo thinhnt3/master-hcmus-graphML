@@ -57,7 +57,8 @@ python -m scripts.prepare_validity_review --all      # blinded package for tools
 python -m scripts.make_doc_figures                   # redraw docs/images/*.svg from runs/ and data/processed/
 ```
 
-- **Not in the repo** (gitignored): the 10k images (1.4 GB), the CLIP embeddings, the checkpoints (`*.pt`), `graph_vectors.*`, and the data-build scripts `scripts/build_vg_coco.py` and `scripts/review_vg_coco.py`. Every script that consumes a training run therefore needs a local `train_graphsage` run first.
+- **Not in the repo** (gitignored): the 10k images (1.4 GB), the CLIP embeddings, the checkpoints (`*.pt`), `graph_vectors.*`. Every script that consumes a training run therefore needs a local `train_graphsage` run first.
+- **Data commands:** `python -m scripts.build_vg_coco --stage images` restores images from the fixed metadata. The other stages rebuild raw-to-graph; `--overwrite` explicitly permits replacing different metadata. `python -m scripts.review_vg_coco` audits the fixed splits, queries and graph schema without models. Raw rebuilding has fixture coverage; a full fresh raw download/build remains unverified.
 - **Committed:** the processed JSON (`data/processed/vg_coco/*.json`, `graph/*.json`, `data/splits/*`) and the benchmark and run summaries already tracked under `runs/`.
 - **What `.gitignore` covers:**
   - `/runs/` and `/private/`, so new experiment outputs, local reports and review packages stay local. Files already tracked in `runs/` stay tracked; add a new result file only on purpose (`git add -f`).
@@ -70,7 +71,7 @@ python -m scripts.make_doc_figures                   # redraw docs/images/*.svg 
 
 Every stage writes files that the next stage reads, so each stage can be rerun on its own.
 
-1. **`src/data/`** (together with the gitignored build script) builds the dataset:
+1. **`src/data/`** (orchestrated by the committed `scripts/build_vg_coco.py`) builds the dataset:
    - It downloads the raw dumps and records their sha256 in `data/raw/MANIFEST.json`.
    - It joins VG with the Karpathy COCO captions.
    - It normalizes objects to WordNet synsets. Predicates are only lowercased.
