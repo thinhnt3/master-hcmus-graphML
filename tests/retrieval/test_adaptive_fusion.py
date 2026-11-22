@@ -30,9 +30,10 @@ from src.retrieval.rerank import SweepPoint, rerank_scores, sweep_alpha_and_k
 ALPHAS = tuple(round(i / 100, 2) for i in range(101))
 
 # Two kinds of query, three images each. "Unsure": CLIP puts a wrong image 0.02 above the right
-# one (column 1) and the graph weakly favours the right one, so it needs alpha < 0.834.
+# one (column 1) and the graph weakly favours the right one, so it needs alpha < 0.1 / 0.12 ≈ 0.833.
 # "Sure": CLIP is right (column 0) by 0.05 and the graph strongly favours the wrong image, so it
-# needs alpha > 0.952. No single alpha serves both; one per bucket does.
+# needs alpha > 1 / 1.05 ≈ 0.952. No single alpha serves both; one per bucket does.
+# docs/adaptive-fusion.md works this example through by hand.
 UNSURE_CLIP, UNSURE_GRAPH = [0.30, 0.28, 0.0], [0.0, 0.1, 0.0]
 SURE_CLIP, SURE_GRAPH = [0.60, 0.55, 0.0], [0.0, 1.0, 0.0]
 
