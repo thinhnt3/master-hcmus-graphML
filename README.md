@@ -141,3 +141,7 @@ python -m scripts.run_demo notebook
 Mở giao diện tại `http://127.0.0.1:7860`. Truy vấn theo mã có ảnh đích để đối chiếu hạng. Trên gói demo của nhóm, `coco-224024` đưa ảnh VG 2355841 từ hạng CLIP 26 lên hạng 1. Truy vấn tự nhập trả điểm, thứ hạng và quan hệ của các ảnh tìm được. Lệnh notebook lưu bản đã chạy có kết quả.
 
 AdaMF–MAT được đánh giá riêng bằng `python -m scripts.run_benchmark --method adamf_mat --run adamf-mat-d256-mu1` sau khi chuẩn bị artifact theo [mục Cách chạy](#cách-chạy).
+
+---
+
+Cảm ơn thầy cô và quý vị đã xem.
