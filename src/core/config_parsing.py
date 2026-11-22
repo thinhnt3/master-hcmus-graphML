@@ -1,4 +1,5 @@
 """Helpers for reading typed fields out of a parsed YAML mapping."""
+
 from __future__ import annotations
 
 from pathlib import Path

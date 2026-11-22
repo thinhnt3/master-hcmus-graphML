@@ -1,4 +1,5 @@
 """Weights & Biases run tracking. All calls to the W&B service go through this module."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -57,9 +58,7 @@ class WandbTracker:
             reinit="finish_previous",
             # Only the settings and metrics passed in are reported: no host name, account
             # e-mail, hardware details, git remote or console output.
-            settings=wandb.Settings(
-                x_disable_meta=True, x_disable_machine_info=True, disable_git=True, console="off"
-            ),
+            settings=wandb.Settings(x_disable_meta=True, x_disable_machine_info=True, disable_git=True, console="off"),
         )
 
     @property
@@ -75,3 +74,13 @@ class WandbTracker:
         """Attach final values and close the run; a failed run is marked as crashed."""
         self._run.summary.update(summary)
         self._run.finish(exit_code=1 if failed else 0)
+
+
+def resolve_entity(entity: str | None) -> str:
+    """The given W&B entity, else the logged-in user's default one."""
+    import wandb  # imported lazily, like the tracker, so wandb stays optional at import time
+
+    resolved = entity or wandb.Api().default_entity
+    if not resolved:
+        raise ConfigError("no W&B entity: pass --entity or run `wandb login`")
+    return str(resolved)

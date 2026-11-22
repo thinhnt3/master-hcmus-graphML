@@ -11,7 +11,10 @@ REPO_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "retrieval" / "v
 
 def _raw(**clip_overrides):
     clip = {
-        "model_name": "openai/clip-vit-base-patch32", "device": "auto", "image_batch_size": 64, "text_batch_size": 256,
+        "model_name": "openai/clip-vit-base-patch32",
+        "device": "auto",
+        "image_batch_size": 64,
+        "text_batch_size": 256,
     }
     clip.update(clip_overrides)
     return {
@@ -21,9 +24,25 @@ def _raw(**clip_overrides):
         "benchmark": {"recall_ks": [1, 5, 10], "alpha_step": 0.5, "top_k_grid": [10, 50]},
         "runs_dir": "runs",
         "graphsage": {"hidden_dim": 64, "num_layers": 3, "directed": True, "image_node": "learned"},
+        "adamf_mat": {
+            "dim": 32,
+            "adaptive_fusion": True,
+            "mat": True,
+            "mu": 1.0,
+            "noise_dim": 8,
+            "generator_hidden_dim": 16,
+            "generator_learning_rate": 0.0001,
+        },
         "training": {
-            "seeds": [13, 37], "device": "cpu", "batch_size": 8, "max_epochs": 5, "patience": 2,
-            "learning_rate": 0.001, "weight_decay": 0, "temperature": 0.07, "grad_clip_norm": 1.0,
+            "seeds": [13, 37],
+            "device": "cpu",
+            "batch_size": 8,
+            "max_epochs": 5,
+            "patience": 2,
+            "learning_rate": 0.001,
+            "weight_decay": 0,
+            "temperature": 0.07,
+            "grad_clip_norm": 1.0,
             "selection_metric": "recall@1",
         },
         "wandb": {"mode": "disabled", "project": "p"},
@@ -88,6 +107,23 @@ def test_alpha_grid_runs_from_zero_to_one_in_equal_steps():
     grid = RetrievalConfig.from_dict(raw).benchmark.alpha_grid
     assert len(grid) == 101 and grid[0] == 0.0 and grid[-1] == 1.0 and grid[91] == 0.91
     assert RetrievalConfig.from_yaml(REPO_CONFIG).benchmark.alpha_grid == grid
+
+
+def test_adamf_mat_section_is_parsed_and_validated():
+    config = RetrievalConfig.from_dict(_raw()).adamf_mat
+    assert (config.dim, config.adaptive_fusion, config.mat, config.mu) == (32, True, True, 1.0)
+    assert (config.noise_dim, config.generator_hidden_dim, config.generator_learning_rate) == (8, 16, 0.0001)
+    for overrides, message in (
+        ({"adaptive_fusion": "yes"}, "adaptive_fusion"),
+        ({"mat": 1}, "mat"),
+        ({"dim": 0}, "must be >= 1"),
+        ({"mu": 0}, "must be > 0"),
+        ({"generator_learning_rate": -1}, "must be > 0"),
+    ):
+        raw = _raw()
+        raw["adamf_mat"].update(overrides)
+        with pytest.raises(ConfigError, match=message):
+            RetrievalConfig.from_dict(raw)
 
 
 def test_graphsage_section_is_parsed_and_validated():

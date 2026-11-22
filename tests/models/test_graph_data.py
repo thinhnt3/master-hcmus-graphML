@@ -27,9 +27,13 @@ def test_edges_are_directed_image_to_object_and_subject_to_relation_to_object():
     data = image_graph_to_data(GRAPH, image_row=0)
     bicycle, man, guitar, riding, playing = 1, 2, 3, 4, 5
     assert _edges(data) == {
-        (IMAGE_NODE, bicycle), (IMAGE_NODE, man), (IMAGE_NODE, guitar),
-        (man, riding), (riding, bicycle),
-        (man, playing), (playing, guitar),
+        (IMAGE_NODE, bicycle),
+        (IMAGE_NODE, man),
+        (IMAGE_NODE, guitar),
+        (man, riding),
+        (riding, bicycle),
+        (man, playing),
+        (playing, guitar),
     }
     assert data.edge_index.shape == (2, 7)
 
@@ -62,9 +66,9 @@ def test_invalid_graphs_are_rejected():
 
 
 def test_batching_keeps_sub_graphs_separate_and_image_nodes_findable():
-    first = image_graph_to_data(GRAPH, image_row=11)                                             # 6 nodes
-    second = image_graph_to_data({"vg_image_id": 43, "concept_ids": [], "triplets": []}, 12)     # 1 node
-    third = image_graph_to_data({"vg_image_id": 44, "concept_ids": [9], "triplets": []}, 13)     # 2 nodes
+    first = image_graph_to_data(GRAPH, image_row=11)  # 6 nodes
+    second = image_graph_to_data({"vg_image_id": 43, "concept_ids": [], "triplets": []}, 12)  # 1 node
+    third = image_graph_to_data({"vg_image_id": 44, "concept_ids": [9], "triplets": []}, 13)  # 2 nodes
     batch = Batch.from_data_list([first, second, third])
 
     assert batch.num_nodes == 9 and batch.num_graphs == 3

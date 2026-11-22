@@ -127,7 +127,7 @@ class DirectedSAGELayer(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super().__init__()
-        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")   # messages along the edge
+        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages along the edge
         self.backward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages against the edge
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
@@ -135,13 +135,13 @@ class DirectedSAGELayer(nn.Module):
 
 
 # man(0) -> (riding)(1) -> bicycle(2)
-x = torch.randn(3, 8)                               # one row per node
-man_rides_bike = torch.tensor([[0, 1], [1, 2]])     # row 0: source nodes, row 1: target nodes
+x = torch.randn(3, 8)  # one row per node
+man_rides_bike = torch.tensor([[0, 1], [1, 2]])  # row 0: source nodes, row 1: target nodes
 bike_rides_man = torch.tensor([[2, 1], [1, 0]])
 
 layer = DirectedSAGELayer(8, 4)
-layer(x, man_rides_bike)   # shape (3, 4)
-layer(x, bike_rides_man)   # a different result: direction is visible to the model
+layer(x, man_rides_bike)  # shape (3, 4)
+layer(x, bike_rides_man)  # a different result: direction is visible to the model
 ```
 
 `edge_index` là ma trận 2 × số cạnh: hàng trên là đỉnh nguồn, hàng dưới là đỉnh đích. `edge_index.flip(0)` đổi chỗ hai hàng, tức đảo chiều mọi cạnh. Với một `SAGEConv` duy nhất chạy trên cạnh hai chiều, hai đồ thị trên cho cùng kết quả; với lớp có hướng thì khác nhau (đã kiểm bằng chạy thử).
@@ -278,6 +278,50 @@ minh mức phổ biến hay tác động tổng thể của nhiễu chú giải.
 mô tả và khả năng CLIP phân biệt chủ thể/tân ngữ cần một phép đánh giá riêng.
 
 ## Validation and remaining scope
+
+### GNNExplainer làm cách chọn độc lập
+
+Cách chọn mặc định xếp relation theo mức giảm điểm khi xoá từng relation, rồi lại
+đo bằng phép xoá. `selector: gnn_explainer` thay bước xếp hạng bằng GNNExplainer
+(Ying et al., 2019; `torch_geometric.explain`): học một mask mềm trên các cạnh của
+đồ thị con sao cho đồ thị đã mask vẫn giữ điểm, rồi lấy trung bình mask của hai
+cạnh chủ thể → relation → tân ngữ làm độ quan trọng của relation. Truy vấn, mức
+xoá và 20 nhóm ngẫu nhiên giống hệt giao thức fidelity, nên hai kết quả so được
+từng dòng.
+
+```bash
+python -m scripts.evaluate_fidelity --config configs/evaluation/fidelity_gnn_explainer.yaml
+python -m scripts.evaluate_explanation_quality --config configs/evaluation/explanation_quality_gnn_explainer.yaml
+```
+
+Mask được khớp trên logit lúc huấn luyện (cosine / `training.temperature`), không
+phải cosine thô. Với cosine thô, điểm chỉ đổi cỡ 0,02 khi bỏ relation, nhỏ hơn
+nhiều so với phần regularizer của GNNExplainer: hai lần chạy khác hạt giống cho
+hai mask tương quan 0,01 và phép xoá cho kết quả ngang ngẫu nhiên. Chọn logit dựa
+trên 37 ảnh validation (tương quan giữa hai hạt giống lên 0,57); số epoch, learning
+rate và hệ số regularizer giữ mặc định của PyG, không dò trên test.
+
+Kết quả ngày 21/11/2026, 200 truy vấn test, trung bình ba seed (đánh giá được
+197/195/195), trên ba mô hình huấn luyện lại tại máy bằng
+`configs/retrieval/ablations/full.yaml`. Đây không phải các checkpoint ngày 18/11,
+nên dòng "bỏ từng relation" lệch nhẹ so với mục trên (18,23% so với 17,81%).
+
+| Mức yêu cầu | Cách chọn | Mất vị trí đầu | Ngẫu nhiên | Điểm đồ thị giảm | Ngẫu nhiên | Giữ vị trí đầu khi chỉ giữ E | Ngẫu nhiên |
+|---|---|---|---|---|---|---|---|
+| 10% | Bỏ từng relation | 18,23% | 4,66% | 0,0236 | 0,0022 | 91,83% | 81,06% |
+| 10% | GNNExplainer | 8,52% | 4,66% | 0,0090 | 0,0022 | 87,91% | 81,06% |
+| 25% | Bỏ từng relation | 25,05% | 6,64% | 0,0327 | 0,0034 | 96,59% | 85,52% |
+| 25% | GNNExplainer | 12,78% | 6,64% | 0,0153 | 0,0034 | 92,33% | 85,52% |
+
+Sparsity bằng nhau ở hai cách (79,58% / 69,57%) vì cùng mức xoá. Nhóm relation của
+GNNExplainer trùng với nhóm của cách bỏ từng relation 31,4% ở mức 10% và 43,8% ở
+mức 25%, và thắng trung bình nhóm ngẫu nhiên ở 68,8% / 74,3% số truy vấn.
+
+Cách đọc: một cách chọn không dùng phép xoá vẫn vượt ngẫu nhiên ở cả phép xoá lẫn
+phép chỉ-giữ, nên tín hiệu fidelity không chỉ do cách chọn tự chấm chính nó. Nó
+yếu hơn cách bỏ từng relation, điều dễ hiểu vì cách kia được chọn theo đúng đại
+lượng đang đo. Giới hạn: mask phụ thuộc hạt giống khởi tạo, lớp không hướng chưa
+được hỗ trợ, và chưa có nhãn validity cho nhóm relation của GNNExplainer.
 
 ### Validity và sparsity
 

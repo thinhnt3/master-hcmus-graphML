@@ -7,6 +7,7 @@ Run from the repository root after `build_vg_coco --stage graph`:
 Writes four tables (images, queries, concepts, predicates) and meta.json to
 <embeddings_dir>/<model name>/. Later steps read these files and never call CLIP again.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -75,8 +76,7 @@ def run(config: RetrievalConfig) -> None:
     # every table has been encoded and written.
     known_images = set(image_ids)
     orphans = [
-        q["query_id"] for q in queries
-        if len(q["relevant_ids"]) != 1 or int(q["relevant_ids"][0]) not in known_images
+        q["query_id"] for q in queries if len(q["relevant_ids"]) != 1 or int(q["relevant_ids"][0]) not in known_images
     ]
     if orphans:
         raise DataError(
@@ -124,8 +124,12 @@ def run(config: RetrievalConfig) -> None:
     }
     write_json(out_dir / META_FILE, meta)
     log.info("tables: %s", {name: table.vectors.shape for name, table in tables.items()})
-    log.info("caption↔own image cosine %.4f, caption↔random image %.4f (%d captions)",
-             alignment.own_mean, alignment.random_mean, alignment.pairs)
+    log.info(
+        "caption↔own image cosine %.4f, caption↔random image %.4f (%d captions)",
+        alignment.own_mean,
+        alignment.random_mean,
+        alignment.pairs,
+    )
     log.info("wrote %s", out_dir)
 
 
