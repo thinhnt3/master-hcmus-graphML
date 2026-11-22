@@ -81,3 +81,6 @@ data/processed/vg_coco_kg/queries.json
 
 # Per-split CLIP embeddings; regenerate with scripts/run_vn_heritage_retrieval.py.
 data/processed/*/retrieval/embeddings/
+
+# Archived result folders at the root (e.g. runs.zip) are too large for git; share them separately.
+/*.zip

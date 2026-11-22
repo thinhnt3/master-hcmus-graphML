@@ -12,6 +12,8 @@ Báo cáo W&B: [link](https://forge.coreweave.com/wandb/thinhnt3-vnggames/vg-coc
 
 Bảng cho báo cáo, kèm mã LaTeX: [table.md](table.md).
 
+Tài liệu giải thích đầy đủ, có hình minh hoạ và phụ lục công thức kèm ví dụ: [`docs/README.md`](docs/README.md).
+
 ## Tình trạng theo cấp độ
 
 | Cấp độ | Yêu cầu của đề | Tình trạng | Mục |
