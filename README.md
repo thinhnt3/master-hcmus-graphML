@@ -489,6 +489,75 @@ Cách dựng dữ liệu, phép đếm ảnh chen nhau, mốc phụ AdaMF-MAT, p
 
 Chi tiết và lý do của từng quyết định: `docs/graphsage-design-decisions.md`. Minh hoạ từng bước: `docs/diagrams/graphsage-how-it-works.html`.
 
+## Demo nhập câu mới và notebook
+
+Demo dùng VG ∩ COCO, CLIP ViT-B/32 và checkpoint GraphSAGE đã có. Có ô nhập
+mô tả tiếng Anh, top-k ảnh, hai bảng xếp hạng CLIP/CLIP + GraphSAGE, điểm
+CLIP/graph/cuối và đồ thị con của các relation giải thích. Câu mới không được
+thêm làm node của graph. α/k giữ nguyên giá trị chọn trên validation.
+
+**Chuẩn bị môi trường Python 3.12** (chạy tại thư mục gốc checkout):
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-notebook.txt
+python -m scripts.run_demo prepare-model
+```
+
+Lệnh `prepare-model` chỉ cache CLIP từ Hugging Face lần đầu. Demo sau đó đọc
+model offline. `requirements-notebook.txt` kèm constraints của các thư viện
+chính đã kiểm; tránh dùng interpreter có Transformers 5 vì project dùng API 4.x.
+
+**Kịch bản khi đã có cache/vector/checkpoint:**
+
+```bash
+python -m scripts.run_demo check
+python -m scripts.run_demo serve
+```
+
+Mở **http://127.0.0.1:7860**. Thử một ví dụ nguyên bản để xem hạng ảnh đúng,
+sau đó gõ câu mới để xem kết quả suy luận. Chuyển tab CLIP/GraphSAGE, mở
+“Xem đồ thị con giải thích”, hoặc lưu JSON của cùng lượt chạy. Chỉ lắng nghe
+localhost; đây là demo chạy tại máy khi vấn đáp.
+
+Nếu dữ liệu, ảnh và `runs/` nằm ở checkout khác, thêm cùng một tùy chọn
+`--asset-root /duong/dan/checkout-co-du-lieu` vào lệnh `check`, `serve`, `query`,
+`images` và `notebook`. Các hash gốc vẫn được kiểm; không sửa metadata hay
+đổi working directory để bỏ qua kiểm tra provenance.
+
+| Lệnh | Tác dụng |
+|---|---|
+| `python -m scripts.run_demo check` | Kiểm dữ liệu, hash, checkpoint, cache CLIP, ảnh gallery và setting validation |
+| `python -m scripts.run_demo images` | Khôi phục ảnh gallery test từ URL trong metadata đã chốt; tiếp tục phần thiếu |
+| `python -m scripts.run_demo images --all` | Khôi phục ảnh của cả ba split nếu cần chạy lại embedding/train |
+| `python -m scripts.run_demo prepare-model` | Cache CLIP để chạy offline khi vấn đáp |
+| `python -m scripts.run_demo query --text "A man riding a horse on a grassy field." --output runs/demo/query.json` | Chạy cùng engine từ terminal, xuất JSON khi có `--output` |
+| `python -m scripts.run_demo query --query-id coco-770337` | Thử câu có nhãn đáp án trong split demo |
+| `python -m scripts.run_demo notebook` | Chạy toàn bộ notebook bằng chính Python đang gọi CLI, lưu bản có output |
+
+**Notebook:** [notebooks/retrieval_demo.ipynb](notebooks/retrieval_demo.ipynb).
+Có bảy bước: kiểm dữ liệu → nạp model → nhập câu → tách công thức/shape → đọc
+relation drop → ví dụ có đáp án → lưu bằng chứng. Notebook dùng cùng
+`src/demo/service.py` với giao diện, không nhân đôi thuật toán. Mở tương tác bằng
+JupyterLab; chọn kernel của `.venv` đã cài đúng requirements:
+
+```bash
+python -m ipykernel install --prefix .venv --name graph-retrieval-demo --display-name "Graph Retrieval Demo"
+python -m jupyterlab notebooks/retrieval_demo.ipynb
+```
+
+Trong notebook, chọn kernel **Graph Retrieval Demo**. Nếu dữ liệu ở chỗ khác,
+sửa `ASSET_ROOT` trong ô đầu. Bản thực thi tự động nằm ở
+`runs/demo/retrieval_demo.executed.ipynb`; JSON/ảnh nhúng là output, không đưa
+checkpoint hay dữ liệu lớn vào Git.
+
+Nếu `check` báo thiếu vector/checkpoint, chuẩn bị theo các lệnh embedding,
+train và benchmark ở mục “Chạy lại” bên dưới trước. Lệnh `images` khôi phục
+ảnh từ metadata đã versioned, không thay thế toàn bộ pipeline dựng raw annotation.
+Demo hiện phục vụ VG ∩ COCO/GraphSAGE; các pipeline MKG-W/VN Heritage giữ
+các giao thức và lệnh riêng đã có.
+
 ## Chạy lại
 
 Cần Python 3.12. Chạy mọi lệnh từ thư mục gốc của repo.

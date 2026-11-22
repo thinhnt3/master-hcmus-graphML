@@ -73,7 +73,7 @@ Evidence: `src/models/{graph_data,graphsage,train,checkpoint}.py`,
 - [x] Explanation của GraphSAGE dùng đúng checkpoint và graph intervention tương ứng.
 - [x] Xếp relation theo signed score drop khi xoá từng relation.
 - [x] Có CLI embed/train/benchmark/explanation và hướng dẫn chạy.
-- [~] Chưa có một giao diện demo hoặc một lệnh duy nhất gói trọn toàn bộ pipeline.
+- [x] Có demo nhập câu mới, top-k ảnh/score/relation và notebook cùng engine; CLI `scripts/run_demo.py` gói check/images/model/query/serve/notebook.
 
 Evidence: `src/retrieval/rerank.py`, `src/models/explain.py`,
 `scripts/explain_retrieval.py`, `docs/graphsage-design-decisions.md`.
@@ -151,7 +151,8 @@ schema v2. CLI `--labels` hiện chỉ nhận v1.
 - [x] Source, config, tests và tài liệu định nghĩa ablation/fidelity.
 - [x] Split cuối được versioned; README có lệnh chạy lại.
 - [~] Clean-environment reproduction còn phụ thuộc ảnh/cache local và script khôi phục dữ liệu chưa được đóng gói đầy đủ.
-- [ ] Demo/giao diện nhập query và xem top-k + explanation.
+- [x] Demo nhập câu mới và xem top-k ảnh + explanation; đã chạy với 1.500 ảnh VG ∩ COCO và checkpoint thật trên nhánh `feat/retrieval-demo-notebook`.
+- [x] Notebook `notebooks/retrieval_demo.ipynb` chạy đủ 8 ô code; dùng chung engine với demo, có bản xuất JSON và notebook đã thực thi.
 - [ ] Report kỹ thuật 12–18 trang, slides và bảng đóng góp.
 - [ ] Video dự phòng ≤5 phút; chuẩn bị demo/vấn đáp.
 - [ ] Khai báo mã nguồn mở/AI và hướng dẫn đóng gói artifact cuối cùng.
@@ -162,3 +163,11 @@ Pipeline cốt lõi, ablation trên VG ∩ COCO và fidelity dạng perturbation
 Phase 4 còn OpenCLIP và phân tích ca hoàn chỉnh. Phase 5 còn dataset thứ hai,
 hub ablation và các giới hạn kiểm chứng đã nêu. Chưa coi toàn bộ bài nộp hoặc
 đánh giá XAI Cấp độ 3 là hoàn tất.
+
+## Cập nhật riêng phần demo/notebook — 22/11/2026
+
+- Input: config demo, gallery VG ∩ COCO, cache CLIP, checkpoint/graph vectors và benchmark đã chọn α/k trên validation.
+- Output: demo local có ô nhập câu, top-k ảnh/ba điểm/relation, notebook từng bước và JSON cùng protocol/hash.
+- Nghiệm thu: câu mới chạy qua CLIP thật; ảnh tải được; relation được bỏ riêng bằng đúng checkpoint; notebook chạy trọn vẹn; kiểm cả giao diện 390px.
+- Bằng chứng chạy tại máy: full suite 480 test qua; HTTP/UI và notebook chạy với 1.500 ảnh, seed 13, α=0.78, k=500. Dữ liệu và checkpoint không được ghi lại hay huấn luyện lại.
+- Phạm vi: VG ∩ COCO + GraphSAGE. Video/slide và toàn bộ gói nộp vẫn chưa được nghiệm thu ở mục này. Mã nằm trong nhánh triển khai riêng, chưa merge/push main.

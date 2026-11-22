@@ -1,0 +1,6 @@
+# A fixed gallery and validation-selected setting; no tuning in the demo.
+retrieval_config: configs/retrieval/ablations/full.yaml
+seed: 13
+gallery_split: test
+results: 5
+relations: 3

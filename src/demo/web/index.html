@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tìm ảnh bằng văn bản · CLIP + GraphSAGE</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">PROJECT 03 · DEMO TRUY HỒI ẢNH</span>
+        <h1>Một câu mô tả.<br />Ảnh và những quan hệ phía sau.</h1>
+        <p>
+          So sánh CLIP với CLIP + GraphSAGE trên cùng một kho ảnh. Chọn một ví
+          dụ hoặc nhập câu mới bằng tiếng Anh.
+        </p>
+      </header>
+      <form id="search-form" class="search-panel">
+        <label for="query">Bạn đang tìm ảnh gì?</label>
+        <textarea
+          id="query"
+          maxlength="2000"
+          rows="2"
+          required
+          placeholder="A man riding a horse on a grassy field."
+        ></textarea>
+        <div class="form-bottom">
+          <label class="topn" for="results"
+            >Số ảnh<select id="results">
+              <option>3</option>
+              <option selected>5</option>
+              <option>10</option>
+            </select></label
+          ><button id="search-button" type="submit" disabled>
+            Tìm ảnh <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <div id="examples" class="examples" aria-label="Truy vấn ví dụ"></div>
+      </form>
+      <p id="status" role="status" aria-live="polite">
+        Đang tải thông tin kho ảnh…
+      </p>
+      <section id="search-output" hidden>
+        <div class="result-header">
+          <div>
+            <h2>Kết quả truy hồi</h2>
+            <p id="query-summary"></p>
+          </div>
+          <button id="download" type="button" class="quiet">
+            Lưu kết quả JSON
+          </button>
+        </div>
+        <div id="truth" class="truth" hidden></div>
+        <div class="tabs" role="tablist" aria-label="Phương pháp xếp hạng">
+          <button
+            id="graph-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="result-list"
+          >
+            CLIP + GraphSAGE</button
+          ><button
+            id="clip-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="result-list"
+          >
+            CLIP
+          </button>
+        </div>
+        <p id="method-note" class="method-note"></p>
+        <div
+          id="result-list"
+          class="result-grid"
+          role="tabpanel"
+          aria-labelledby="graph-tab"
+        ></div>
+      </section>
+      <details class="how">
+        <summary>Đọc điểm và quan hệ như thế nào?</summary>
+        <div>
+          <p>
+            <strong>CLIP</strong> so câu truy vấn với ảnh.
+            <strong>GraphSAGE</strong> mã hóa đồ thị đối tượng–quan hệ đã có của
+            mỗi ảnh; vector query được so với vector graph, không được thêm
+            thành node.
+          </p>
+          <p>
+            Điểm cuối = α × điểm CLIP + (1 − α) × điểm graph trong top-k ứng
+            viên CLIP. α và k được giữ theo lựa chọn trên validation. Các điểm
+            là mức phù hợp, không phải xác suất.
+          </p>
+          <p>
+            Mỗi relation được bỏ riêng rồi chấm lại bằng cùng checkpoint. Mức
+            giảm dương cho biết relation đó đang hỗ trợ điểm; mức âm cho biết bỏ
+            nó làm điểm tăng. Đây là giải thích tác động lên mô hình, chưa tự
+            xác nhận relation đúng về ngữ nghĩa.
+          </p>
+          <p id="protocol"></p>
+          <p>
+            Demo dùng graph chú giải của ảnh ứng viên. Câu mới không có ground
+            truth; nhãn đáp án chỉ xuất hiện với ví dụ nguyên bản có sẵn.
+          </p>
+        </div>
+      </details>
+      <footer>
+        Visual Genome ∩ COCO · CLIP ViT-B/32 đóng băng · GraphSAGE đã huấn luyện
+      </footer>
+    </main>
+  </body>
+</html>

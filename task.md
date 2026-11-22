@@ -31,4 +31,4 @@ Cập nhật: 18/11/2026.
 ## Chung
 
 - Báo cáo - đang làm - Quốc Thịnh
-- Demo - chưa ai nhận
+- Demo/notebook — phần C3 của Trường Thịnh + Quốc Thịnh: implementation đã chuẩn bị trên `feat/retrieval-demo-notebook`, chạy thật trên VG ∩ COCO; còn bàn giao kịch bản và video dự phòng.

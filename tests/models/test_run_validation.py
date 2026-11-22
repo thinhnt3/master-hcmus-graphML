@@ -102,3 +102,20 @@ def test_stale_benchmark_fails_closed(tmp_path):
         validate_artifact_inputs(report, "benchmark")
     with pytest.raises(DataError, match="missing input provenance"):
         validate_artifact_inputs({}, "benchmark")
+
+
+def test_relative_benchmark_provenance_is_portable_but_not_bypassed(tmp_path, monkeypatch):
+    from src.models.run_validation import validate_artifact_inputs
+
+    asset_root = tmp_path / "assets"
+    asset_root.mkdir()
+    file = asset_root / "vectors.npy"
+    file.write_bytes(b"old")
+    report = {"inputs_sha256": {"vectors.npy": sha256_of(file)}}
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    validate_artifact_inputs(report, "benchmark", input_root=asset_root)
+    file.write_bytes(b"changed")
+    with pytest.raises(DataError, match="stale input"):
+        validate_artifact_inputs(report, "benchmark", input_root=asset_root)
