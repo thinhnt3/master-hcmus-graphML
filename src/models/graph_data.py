@@ -6,6 +6,7 @@ image → object, subject → relation, relation → object. A relation stays an
 objects in meaning; the relation node only exists so that a GraphSAGE layer, which cannot
 read edge labels, can read the predicate.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping

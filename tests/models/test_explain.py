@@ -41,7 +41,8 @@ def test_relation_matching_the_query_contributes_most():
     score, contributions = explain_graph_score(_SumOfNodes(), GRAPH, 0, riding_query, CONCEPTS, PREDICATES)
     assert score == pytest.approx(1 / 5**0.5)  # five unit axes: three concepts, two predicates
     assert [(c.subject, c.predicate, c.object) for c in contributions] == [
-        ("man", "riding", "bike"), ("man", "near", "tree"),
+        ("man", "riding", "bike"),
+        ("man", "near", "tree"),
     ]
     # Without `riding` the query axis is gone: the whole score is lost.
     assert contributions[0].score_drop == pytest.approx(score)

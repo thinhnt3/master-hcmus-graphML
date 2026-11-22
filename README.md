@@ -6,50 +6,32 @@ Cho một câu mô tả, hệ thống tìm ảnh khớp nhất. CLIP chọn ra c
 điểm = α · cosine_CLIP + (1 − α) · điểm_đồ_thị
 ```
 
-Điểm đồ thị lấy từ GraphSAGE: mạng này mã hoá đồ thị của mỗi ảnh thành một vector trong không gian CLIP.
+Điểm đồ thị lấy từ một mô hình đồ thị: GraphSAGE ở cấp độ 1, AdaMF-MAT (Zhang et al., COLING 2024) ở cấp độ 2. Thí nghiệm chạy trên ba dataset: Visual Genome ∩ COCO, MKG-W, và VN Heritage (MMKG tự xây về di tích Việt Nam).
 
-## Kết quả
+Báo cáo W&B: [link](https://forge.coreweave.com/wandb/thinhnt3-vnggames/vg-coco-graph-retrieval/reports/x--VmlldzoxODM0MjcyMA); mục lục ở [wandb-reports.md](wandb-reports.md).
 
-Bảng dưới là lượt chạy ban đầu ngày 17/11. Lượt khôi phục local ngày 18/11
-đã chạy lại full và ablation; full R@1 mới là 48,12 ± 0,23%. Xem
-[ablation và fidelity](docs/graphsage-design-decisions.md#ablation-và-fidelity) để đọc giao thức và kết quả mới.
+Bảng cho báo cáo, kèm mã LaTeX: [table.md](table.md).
 
-Tập test: 1.500 ảnh, 7.500 câu truy vấn (caption COCO), mỗi câu có đúng một ảnh đúng. α và số ứng viên k được chọn trên tập validation; tập test chỉ được chấm sau khi đã chốt tham số.
+## Tình trạng theo cấp độ
 
-| Phương pháp | R@1 | R@5 | R@10 | MRR | α | k |
-|---|---|---|---|---|---|---|
-| CLIP ViT-B/32 | 43,89 | 72,19 | 82,64 | 56,76 | 1 | không dùng |
-| **CLIP + GraphSAGE** (mô hình chính) | **48,20 ± 0,05** | 75,87 ± 0,18 | 86,39 ± 0,14 | 60,75 ± 0,10 | 0,81 / 0,83 / 0,78 | 1.500 / 1.500 / 500 |
-| CLIP + GraphSAGE, đỉnh ảnh mang vector CLIP (lúc khởi tạo) | 49,43 ± 0,46 | 77,90 ± 0,47 | 87,52 ± 0,69 | 62,22 ± 0,37 | 0,66 / 0,63 / 0,68 | 500 / 500 / 20 |
+| Cấp độ | Yêu cầu của đề | Tình trạng | Mục |
+|---|---|---|---|
+| 1 | CLIP đóng băng, một GNN, xếp hạng lại, so CLIP với CLIP + đồ thị trên cùng cách chia | Có | [Cấp độ 1](#cấp-độ-1-clip--graphsage) |
+| 1 | Ablation bỏ cạnh hoặc cạnh ngẫu nhiên | Có, trên cả ba dataset | [Ablation](#ablation-bỏ-cạnh-và-cạnh-ngẫu-nhiên) |
+| 1 | Hiển thị quan hệ đã dùng; 5 truy vấn thành công và 5 thất bại | Có | [Ví dụ giải thích](#ví-dụ-giải-thích-5-truy-vấn-thành-công-và-5-thất-bại) |
+| 2 | Ít nhất 2 tập công khai | Có: VG ∩ COCO và MKG-W | [Dữ liệu](#dữ-liệu) |
+| 2 | Một phương pháp từ 2024 trên cùng pipeline | Có: AdaMF-MAT | [Cấp độ 2](#cấp-độ-2-adamf-mat) |
+| 2 | Bộ ≥ 20 truy vấn, tách trực tiếp và gián tiếp | Có | [Bộ truy vấn](#bộ-truy-vấn-trực-tiếp-và-gián-tiếp) |
+| 3 | Fidelity, sparsity trên ≥ 10 truy vấn | Có | [Đánh giá giải thích](#kết-quả-đánh-giá-giải-thích-cấp-độ-3) |
+| 3 | Validity | Một phần: nhãn do AI chấm, chưa có người chấm | [Đánh giá giải thích](#kết-quả-đánh-giá-giải-thích-cấp-độ-3) |
+| 3 | MMKG tự xây, chạy phương pháp của cấp độ 1/2 trên đó | Có: VN Heritage | [VN Heritage](#kết-quả-trên-vn-heritage-mmkg-tự-xây) |
+| 4 | Cải tiến riêng | Chưa làm | |
 
-Cột α và k ghi giá trị được chọn trên validation cho từng seed, theo thứ tự 13 / 37 / 97. α là trọng số của điểm CLIP trong điểm cuối, nên α càng thấp thì điểm đồ thị càng được tin: mô hình chính dành khoảng 19% cho điểm đồ thị, biến thể đỉnh ảnh mang CLIP khoảng 34%. Ở lượt khôi phục ngày 18/11, mô hình chính chọn α = 0,78 / 0,84 / 0,78 và k = 500 / 10 / 10.
-
-Các dòng GraphSAGE là trung bình ± độ lệch chuẩn qua 3 seed (13, 37, 97). Đơn vị: %.
-
-Khi chỉ dùng điểm đồ thị, không có CLIP:
-
-| Phương pháp | R@1 | R@10 |
-|---|---|---|
-| So khớp từ với đồ thị | 12,63 | 39,93 |
-| GraphSAGE (mô hình chính) | 27,78 ± 0,63 | 72,20 ± 0,36 |
-| Mức ngẫu nhiên | 0,07 | 0,67 |
-
-Cách đọc bảng:
-
-- GraphSAGE nâng R@1 của CLIP thêm 4,3 điểm, và hơn cách so khớp từ 1,8 điểm.
-- Ở mô hình chính, đỉnh ảnh không mang thông tin CLIP của ảnh, nên vector đồ thị chỉ đến từ cấu trúc đồ thị. Phần cải thiện vì thế quy được cho đồ thị.
-- Biến thể "đỉnh ảnh mang vector CLIP" cho số cao hơn nhưng dao động giữa các seed nhiều hơn, và điểm đồ thị của nó đã lẫn thông tin CLIP.
-- Các tham số huấn luyện là giá trị khởi đầu, chưa tinh chỉnh.
-
-File kết quả: `runs/benchmark/*.json`. Lịch sử huấn luyện từng seed: `runs/graphsage/<tên lượt chạy>/seed<n>/history.json`.
-
-### Chưa có
-
-- Dataset thứ hai và ablation xử lý hub; ablation cốt lõi và fidelity perturbation đã có (xem tài liệu bên dưới).
-- Backbone thứ hai (OpenCLIP) và tập dữ liệu công khai thứ hai.
-- Phân tích 5 truy vấn thành công và 5 truy vấn thất bại.
+Việc còn mở của từng phần nằm ở các mục "Chưa có" và "Chưa làm" bên dưới.
 
 ## Dữ liệu
+
+### Visual Genome ∩ COCO (dataset công khai thứ nhất)
 
 Phần giao của Visual Genome và COCO: ảnh và đồ thị cảnh lấy từ Visual Genome, câu truy vấn là caption COCO của cùng ảnh.
 
@@ -61,6 +43,441 @@ Phần giao của Visual Genome và COCO: ảnh và đồ thị cảnh lấy t�
 - Ảnh test chỉ lấy từ tập test của cách chia Karpathy.
 - Nhãn vật thể được gộp theo synset WordNet. Từ vựng của đồ thị (1.778 khái niệm, 493 vị từ) chỉ tính trên ảnh train.
 - Thông số đồ thị: `data/splits/vg_coco_graph.yaml`. Báo cáo duyệt dữ liệu: `reports/data-review/index.html`.
+
+### MKG-W (dataset công khai thứ hai)
+
+Đồ thị tri thức đa phương thức từ Wikidata: 15.000 thực thể, 169 quan hệ, 9.301 thực thể có ảnh. Nó được dùng dưới hai dạng:
+
+- **Bài toán đồ thị tri thức:** đáp án là một thực thể có ảnh, câu hỏi chia nhóm trực tiếp và gián tiếp. Kết quả ở [Kết quả trên MKG-W](#kết-quả-trên-mkg-w), cách dựng ở [docs/mkg-w-results.md](docs/mkg-w-results.md).
+- **Caption subset:** một tập con dựng theo đúng khuôn VG ∩ COCO (mỗi mục một ảnh, 2 caption, một đồ thị riêng) để chạy lại nguyên pipeline và ablation của dataset thứ nhất. 2.055 / 440 / 441 mục cho train / validation / test, 11.153 khái niệm, 144 vị từ. Thông số: `data/splits/mkg_w_captions_card.yaml`; chi tiết ở [docs/mkg-w-captions-results.md](docs/mkg-w-captions-results.md).
+
+### VN Heritage (MMKG tự xây, cấp độ 3)
+
+Địa điểm và di tích Việt Nam: 160 địa điểm, 772 ảnh từ Wikimedia Commons, 981 claim Wikidata (18 quan hệ) và 902 cạnh rút từ bài Wikipedia tiếng Việt. Nguồn, cách liên kết ảnh với thực thể và giới hạn: [docs/vn-heritage-results.md](docs/vn-heritage-results.md).
+
+## Cấp độ 1: CLIP + GraphSAGE
+
+Số liệu là lượt ngày 18/11, đọc từ `runs/benchmark/*.json`. Lượt đầu ngày 17/11 cho R@1 48,20 ± 0,05 và còn trong lịch sử Git.
+
+Tập test: 1.500 ảnh, 7.500 câu truy vấn (caption COCO), mỗi câu có đúng một ảnh đúng. α và số ứng viên k được chọn trên tập validation; tập test chỉ được chấm sau khi đã chốt tham số.
+
+| Phương pháp | R@1 | R@5 | R@10 | MRR | α | k |
+|---|---|---|---|---|---|---|
+| CLIP ViT-B/32 | 43,89 | 72,19 | 82,64 | 56,76 | 1 | không dùng |
+| **CLIP + GraphSAGE** (mô hình chính) | **48,12 ± 0,23** | 75,33 ± 0,65 | 83,87 ± 2,12 | 60,42 ± 0,44 | 0,78 / 0,84 / 0,78 | 500 / 10 / 10 |
+| CLIP + GraphSAGE, đỉnh ảnh mang vector CLIP (lúc khởi tạo) | 49,43 ± 0,46 | 77,90 ± 0,47 | 87,52 ± 0,69 | 62,22 ± 0,37 | 0,66 / 0,63 / 0,68 | 500 / 500 / 20 |
+
+Cột α và k ghi giá trị được chọn trên validation cho từng seed, theo thứ tự 13 / 37 / 97. α là trọng số của điểm CLIP trong điểm cuối, nên α càng thấp thì điểm đồ thị càng được tin: mô hình chính dành khoảng 20% cho điểm đồ thị, biến thể đỉnh ảnh mang CLIP khoảng 34%. Hai seed của mô hình chính chọn k = 10, nên R@10 của chúng bằng đúng R@10 của CLIP.
+
+Các dòng GraphSAGE là trung bình ± độ lệch chuẩn qua 3 seed (13, 37, 97). Đơn vị: %.
+
+Khi chỉ dùng điểm đồ thị, không có CLIP:
+
+| Phương pháp | R@1 | R@10 |
+|---|---|---|
+| So khớp từ với đồ thị | 12,63 | 39,93 |
+| GraphSAGE (mô hình chính) | 27,54 ± 0,50 | 72,23 ± 0,40 |
+| Mức ngẫu nhiên | 0,07 | 0,67 |
+
+Cách đọc bảng:
+
+- GraphSAGE nâng R@1 của CLIP thêm 4,2 điểm, và hơn cách so khớp từ (46,41) 1,7 điểm.
+- Ở mô hình chính, đỉnh ảnh không mang thông tin CLIP của ảnh, nên vector đồ thị chỉ đến từ cấu trúc đồ thị. Phần cải thiện vì thế quy được cho đồ thị.
+- Biến thể "đỉnh ảnh mang vector CLIP" cho số cao hơn nhưng dao động giữa các seed nhiều hơn, và điểm đồ thị của nó đã lẫn thông tin CLIP.
+- Các tham số huấn luyện là giá trị khởi đầu, chưa tinh chỉnh.
+
+File kết quả: `runs/benchmark/*.json`. Lịch sử huấn luyện từng seed: `runs/graphsage/<tên lượt chạy>/seed<n>/history.json`.
+
+### Ablation: bỏ cạnh và cạnh ngẫu nhiên
+
+Mỗi biến thể được huấn luyện lại 3 seed với cùng thiết lập, α và k chọn riêng trên validation. Cùng lệnh, cùng tham số trên hai dataset công khai: VG ∩ COCO (lượt ngày 18/11, 1.500 ảnh test) và MKG-W caption subset (lượt ngày 21/11, 441 mục test). Định nghĩa từng phép can thiệp: [docs/graphsage-design-decisions.md](docs/graphsage-design-decisions.md#intervention-contract).
+
+R@1 sau khi xếp hạng lại, %; trong ngoặc là mức tăng so với CLIP:
+
+| Biến thể | VG ∩ COCO (CLIP 43,88) | MKG-W caption subset (CLIP 35,60) |
+|---|---|---|
+| Đầy đủ | 48,12 ± 0,23 (+4,24) | 43,35 ± 0,54 (+7,75) |
+| Bỏ cạnh, chỉ giữ vật thể (`objects_only`) | 47,56 ± 0,16 (+3,67) | 40,67 ± 1,25 (+5,07) |
+| Cạnh ngẫu nhiên (`random_edges`) | 47,79 ± 0,18 (+3,91) | 42,67 ± 0,47 (+7,07) |
+| Bỏ nhãn vị từ (`drop_predicates`) | 48,06 ± 0,28 (+4,18) | 41,42 ± 0,66 (+5,82) |
+| Không hướng (`undirected`) | 47,84 ± 0,15 (+3,96) | 42,25 ± 0,56 (+6,65) |
+
+R@1 khi chỉ dùng điểm đồ thị, %:
+
+| Biến thể | VG ∩ COCO | MKG-W caption subset |
+|---|---|---|
+| Đầy đủ | 27,54 ± 0,50 | 28,19 ± 1,08 |
+| Bỏ cạnh, chỉ giữ vật thể | 26,16 ± 0,45 | 21,01 ± 0,58 |
+| Cạnh ngẫu nhiên | 27,38 ± 0,26 | 26,95 ± 0,91 |
+| Bỏ nhãn vị từ | 27,35 ± 0,49 | 22,52 ± 1,18 |
+| Không hướng | 28,16 ± 0,58 | 27,10 ± 1,93 |
+
+Bản đầy đủ trừ biến thể, điểm % R@1 sau khi xếp hạng lại, kèm khoảng 95% (bootstrap theo cặp, gom caption theo ảnh đúng, giữ cố định 3 mô hình đã huấn luyện):
+
+| Biến thể | VG ∩ COCO | MKG-W caption subset |
+|---|---|---|
+| Bỏ cạnh | 0,56 [0,05; 1,06] | 2,68 [1,06; 4,35] |
+| Cạnh ngẫu nhiên | 0,33 [−0,09; 0,74] | 0,68 [−0,45; 1,81] |
+| Bỏ nhãn vị từ | 0,05 [−0,35; 0,45] | 1,93 [0,38; 3,36] |
+| Không hướng | chưa có khoảng | 1,10 [−0,11; 2,34] |
+
+![Ablation trên hai dataset: R@1 tăng so với CLIP và R@1 chỉ dùng điểm đồ thị, theo từng biến thể](reports/ablation/level1-ablation.png)
+
+- **VG ∩ COCO:** đồ thị nâng R@1 thêm 4,24 điểm so với CLIP, nhưng bỏ hết cạnh vẫn còn +3,67. Khoảng 0,6 điểm đến từ cạnh; phần còn lại đến từ danh sách vật thể trong ảnh.
+- **MKG-W caption subset:** cạnh đóng góp rõ hơn. Bỏ hết cạnh làm mất 2,68 trong 7,75 điểm tăng, và điểm đồ thị đứng riêng tụt từ 28,19% xuống 21,01%. Bỏ nhãn vị từ cũng làm mất 1,93 điểm, trong khi ở VG ∩ COCO gần như không đổi (0,05): ở đây mô hình dùng cả nội dung của quan hệ.
+- **Cạnh ngẫu nhiên** ở cả hai dataset đều chưa tách được khỏi bản đầy đủ (khoảng 95% chứa 0). Phép xáo giữ nguyên tập vật thể, số cạnh và nhãn vị từ của từng mục, chỉ đổi cặp chủ thể và tân ngữ, nên kết quả này nói rằng mô hình cần có cạnh và nhãn vị từ, còn việc cạnh nối đúng hai vật thể nào thì chưa thấy tác dụng.
+- Tập test của MKG-W caption subset nhỏ (882 truy vấn), nên độ lệch chuẩn và khoảng tin cậy rộng hơn VG ∩ COCO.
+- Phép thử trực tiếp hơn cho câu hỏi mô hình có đọc cạnh hay không trên VG ∩ COCO là bộ relation queries của cấp độ 2 (mục "Mô hình có đọc cạnh không" bên dưới).
+
+File kết quả của MKG-W caption subset nằm local trong `runs/mkg_w_captions/`; config và lệnh chạy lại sẽ vào `main` cùng phần code.
+
+Cùng bộ phép can thiệp trên MMKG tự xây: [Ablation trên VN Heritage](#ablation-trên-vn-heritage).
+
+### Ví dụ giải thích, 5 truy vấn thành công và 5 thất bại
+
+Với mỗi ảnh được trả về, lời giải thích là các relation của ảnh làm điểm đồ thị giảm nhiều nhất khi bỏ riêng từng cái (`python -m scripts.explain_retrieval --query-id <id>`). Ví dụ, truy vấn "The man is holding a large bird outside." đưa ảnh đúng từ hạng 14 lên hạng 1, và ba relation đóng góp nhiều nhất của ảnh đó là `man petting bird` (+0,029), `shirt worn by man` (+0,013), `man has man` (+0,007).
+
+Mười truy vấn dưới đây lấy theo quy tắc, không chọn tay: trên tập test với mô hình seed 13, năm truy vấn mà ảnh đúng lên hạng 1 từ hạng CLIP thấp nhất, và năm truy vấn mà ảnh đúng rơi khỏi hạng 1 xa nhất. Trên cả 7.500 truy vấn, xếp hạng lại đưa 607 ảnh đúng lên hạng 1 và làm 281 ảnh đúng mất hạng 1 (CLIP đúng hạng 1 ở 3.292 truy vấn, sau xếp hạng lại 3.618).
+
+Thành công (ảnh đúng lên hạng 1):
+
+| Truy vấn | Hạng ảnh đúng: CLIP → sau | Điểm đồ thị của ảnh đúng (hạng trong 1.500 ảnh) | Relation đóng góp nhiều nhất của ảnh đúng |
+|---|---|---|---|
+| A bicycle with an umbrella, basket and cloths with pens. | 26 → 1 | 0,537 (1) | handle on umbrella (+0,011); flowers on umbrella (+0,005); clip in basket (+0,004) |
+| A bicycle with a blue umbrella and baskets attached to carry things. | 23 → 1 | 0,520 (1) | handle on umbrella (+0,007); bell on bike (+0,005); clip in basket (+0,004) |
+| a bicycle with a basket and a blue and pink umbrella | 21 → 1 | 0,532 (1) | handle on umbrella (+0,010); bell on bike (+0,005); flowers on umbrella (+0,004) |
+| A large red truck parks in front of a building. | 14 → 1 | 0,406 (3) | window on truck (+0,012); light on truck (+0,009); building next to fire truck (+0,003) |
+| The man is holding a large bird outside. | 14 → 1 | 0,321 (1) | man petting bird (+0,029); shirt worn by man (+0,013); man has man (+0,007) |
+
+Thất bại (ảnh đúng đang ở hạng 1 với CLIP thì rơi xuống):
+
+| Truy vấn | Hạng ảnh đúng: CLIP → sau | Điểm đồ thị của ảnh đúng (hạng trong 1.500 ảnh) | Đồ thị của ảnh đúng có gì |
+|---|---|---|---|
+| A man teaches a boy how to ski | 1 → 37 | −0,010 (1.266) | 4 vật thể (sky, people, clouds, outdoors), 7 relation, ví dụ `people enjoying outdoors`, `clouds eating sky` |
+| A rode that has car and bicycle lane that cars are driving on the left side of the road | 1 → 32 | 0,008 (813) | 3 vật thể (sign, glass, ramp), không có relation |
+| A man seated next to bags, suit cases and back packs | 1 → 25 | −0,081 (1.291) | 1 vật thể (sky), không có relation |
+| the birds are flying next to the boat | 1 → 25 | 0,033 (913) | 4 vật thể (man, floor, steps, deck), 2 relation (`man standing on deck`, `man walking up steps`) |
+| Female tennis player in full run on a blue court to complete a backhand return. | 1 → 21 | 0,103 (213) | 2 vật thể (sign, letters), 1 relation (`letters on sign`) |
+
+- **Thành công:** đồ thị của ảnh đúng chứa đúng các vật thể mà câu nêu (bike, umbrella, basket; truck, building; man, bird), nên điểm đồ thị của nó đứng hạng 1 hoặc 3 trong 1.500 ảnh và kéo ảnh lên. Ba trong năm truy vấn là ba caption của cùng một ảnh, nên thực chất chỉ có ba ảnh khác nhau.
+- **Thất bại:** cả năm ảnh đúng đều có đồ thị gần như rỗng hoặc không nhắc tới vật thể trong câu (không có skis, car, bag, bird, boat, player). Điểm đồ thị của chúng gần 0, đứng hạng 213 đến 1.291, trong khi các ảnh khác có đồ thị khớp chữ hơn vượt lên. Nguyên nhân nằm ở chú giải scene graph thiếu, không phải ở relation sai.
+- Mười ca này là hai đầu cực của phân bố, dùng để thấy cơ chế, không đại diện cho mức thay đổi thường gặp. Chúng lấy từ mô hình huấn luyện lại tại máy ngày 21/11 (seed 13, α = 0,81, k = 1.500), không phải checkpoint ngày 18/11 của bảng trên.
+
+### Chưa có
+
+- Ablation xử lý hub.
+- Backbone thứ hai (OpenCLIP).
+
+## Cấp độ 2: AdaMF-MAT
+
+Tái hiện AdaMF-MAT (trộn đa modality thích nghi + huấn luyện đối kháng) trên cùng bài toán và cùng cách đánh giá ở trên. Mỗi ảnh có ba modality, mỗi cái qua một lớp Linear về 256 chiều:
+
+- **structure:** GraphSAGE 3 tầng có hướng chạy trên đồ thị cảnh; đỉnh ảnh khởi tạo bằng vector học được, không mang CLIP ảnh.
+- **image:** vector CLIP ViT-B/32 của ảnh (đóng băng).
+- **text:** trung bình vector CLIP text của nhãn đối tượng trong ảnh, không có vị từ.
+
+Trọng số từng modality tính riêng cho từng ảnh: `w = softmax(aᵀ·tanh(e_m))`, vector trộn `e = Σ w_m·e_m`, rồi chiếu về không gian CLIP và huấn luyện bằng InfoNCE như GraphSAGE. MAT thêm một generator sinh vector image và text giả từ vector structure; encoder phải chấm ảnh thật cao hơn ảnh giả. Code: `src/models/adamf_mat.py`.
+
+### So với cấp độ 1
+
+Truy hồi theo caption, 1.500 ảnh test, 7.500 caption. Trung bình ± độ lệch chuẩn qua 3 seed (13, 37, 97), riêng các dòng ghi "5 seed" thêm seed 211 và 307. α và k chọn trên validation như cấp độ 1. Đơn vị %.
+
+| Phương pháp | R@1 | R@5 | R@10 | MRR | Chỉ điểm mô hình, R@1 |
+|---|---|---|---|---|---|
+| CLIP ViT-B/32 | 43,89 | 72,19 | 82,64 | 56,76 | |
+| CLIP + GraphSAGE (đỉnh ảnh học được) | 48,12 ± 0,23 | 75,33 ± 0,65 | 83,87 ± 2,12 | 60,42 ± 0,44 | 27,54 |
+| CLIP + GraphSAGE (đỉnh ảnh mang CLIP) | 49,43 ± 0,46 | 77,90 ± 0,47 | 87,52 ± 0,69 | 62,22 ± 0,37 | 42,25 |
+| CLIP + linear adapter (chỉ modality image, không đồ thị) | 49,76 ± 0,08 | 77,86 ± 0,06 | 87,33 ± 0,42 | 62,44 ± 0,13 | 46,25 |
+| CLIP + AdaMF-MAT (bản đầy đủ của bài báo) | 51,42 ± 0,32 | 79,36 ± 0,37 | 88,91 ± 0,19 | 63,98 ± 0,31 | 48,48 |
+| CLIP + AdaMF, không MAT, chuẩn hoá L2 từng modality (5 seed) | 51,93 ± 0,32 | 79,81 ± 0,17 | 89,23 ± 0,27 | 64,47 ± 0,24 | 48,62 |
+| + structure-only dropout 30% (`so0.3`, 5 seed) | 52,74 ± 0,26 | 80,64 ± 0,12 | 89,68 ± 0,26 | 65,19 ± 0,20 | 49,77 |
+| + structure-only loss, trọng số 0,1 (`sl0.1`, 5 seed) | **53,1** | | | | |
+
+AdaMF chọn α khoảng 0,5–0,6 (GraphSAGE khoảng 0,8), tức điểm mô hình được tin gần ngang CLIP.
+
+"Linear adapter" là AdaMF bỏ cả structure lẫn text: một lớp Linear trên vector CLIP ảnh, không dùng đồ thị. Nó là mốc để tách phần đóng góp của đồ thị: GraphSAGE đỉnh ảnh mang CLIP chỉ ngang adapter (49,43 so với 49,76), nghĩa là phép gộp hàng xóm không thêm gì; phần lớn mức tăng so với CLIP đến từ việc học lại vector ảnh.
+
+### Cùng benchmark trên MKG-W caption subset
+
+Cùng lệnh và cùng tham số, chạy trên một tập con của MKG-W được dựng theo khuôn của dataset này (mỗi mục một ảnh, 2 caption, một đồ thị riêng; 441 mục test). R@1 sau khi xếp hạng lại, đơn vị %.
+
+| Phương pháp | VG ∩ COCO | MKG-W caption subset |
+|---|---|---|
+| CLIP ViT-B/32 | 43,89 | 35,60 |
+| CLIP + GraphSAGE (đỉnh ảnh học được) | 48,12 ± 0,23 | 43,35 ± 0,54 |
+| CLIP + GraphSAGE (đỉnh ảnh mang CLIP) | 49,43 ± 0,46 | 39,98 ± 0,40 |
+| CLIP + linear adapter (chỉ modality image, không đồ thị) | 49,76 ± 0,08 | 35,75 ± 0,43 |
+| CLIP + AdaMF-MAT (bản đầy đủ của bài báo) | 51,42 ± 0,32 | 41,16 ± 0,59 |
+| CLIP + AdaMF, không MAT, chuẩn hoá L2 từng modality (5 seed) | 51,93 ± 0,32 | 41,70 ± 0,92 |
+| + structure-only dropout 30% (`so0.3`, 5 seed) | 52,74 ± 0,26 | 43,29 ± 0,65 |
+| + structure-only loss, trọng số 0,1 (`sl0.1`, 5 seed) | **53,1** | 43,08 ± 0,59 |
+
+Hai dataset cho hai bức tranh ngược nhau. Ở VG ∩ COCO, mức tăng đến từ modality image (linear adapter đã hơn CLIP 5,9 điểm). Ở tập con, linear adapter chỉ ngang CLIP, còn GraphSAGE không nhìn ảnh lại hơn CLIP 7,8 điểm: phần tăng đến từ đồ thị. Bảng đủ cột, cách dựng tập con và giới hạn: [docs/mkg-w-captions-results.md](docs/mkg-w-captions-results.md).
+
+#### Vì sao AdaMF-MAT không vượt GraphSAGE ở tập con
+
+AdaMF-MAT không vượt GraphSAGE ở tập con (41,16 so với 43,35), trái với VG ∩ COCO. Ba phép đo dưới đây chỉ ra nguyên nhân: modality image chiếm chỗ trong vector trộn mà không mang thêm thông tin.
+
+| Cấu hình trên tập con (3 seed; dòng đầu 5 seed) | R@1 sau khi xếp hạng lại | Chỉ điểm mô hình, R@1 |
+|---|---|---|
+| AdaMF, không MAT, L2 | 41,70 ± 0,92 | 34,29 ± 1,34 |
+| bỏ image | **44,37 ± 0,68** | 31,25 ± 0,26 |
+| bỏ structure | 41,12 ± 0,80 | 32,62 ± 2,11 |
+| bỏ text | 40,44 ± 1,62 | 31,97 ± 1,71 |
+| GraphSAGE (đỉnh ảnh học được), để so | 43,35 ± 0,54 | 28,19 ± 1,08 |
+
+- **Ảnh ở tập con không chứa điều caption hỏi.** Linear adapter, tức chỉ học lại vector CLIP của ảnh, đạt 35,75, ngang CLIP 35,60. Ở VG ∩ COCO nó đạt 49,76, hơn CLIP 5,9 điểm, vì caption COCO tả đúng thứ có trong ảnh.
+- **AdaMF vẫn dành khoảng 40% vector trộn cho image.** Trọng số trung bình của ba modality trong bản L2 là structure 0,21, image 0,40, text 0,39 (`scripts/adamf_weight_stats.py`). Phần 40% đó lặp lại điều CLIP đã biết.
+- **Điểm trùng với CLIP thì cộng vào CLIP không thêm gì.** Xét riêng điểm mô hình, AdaMF cao hơn GraphSAGE (34,29 so với 28,19). Nhưng điểm cuối là α·CLIP + (1 − α)·điểm mô hình, và điểm của AdaMF đã lẫn CLIP ảnh nên bổ sung cho CLIP ít hơn. GraphSAGE không nhìn ảnh, điểm của nó độc lập với CLIP nên cộng vào được nhiều hơn.
+- **Bỏ image là đủ để AdaMF vượt GraphSAGE.** Điểm mô hình giảm (34,29 xuống 31,25) nhưng R@1 sau khi xếp hạng lại tăng 2,7 điểm, lên 44,37, hơn GraphSAGE 1,0 điểm. Ở VG ∩ COCO, bỏ image làm tụt 3,9 điểm.
+- **Bản đầy đủ của bài báo còn thêm một vấn đề đã thấy ở VG ∩ COCO:** không chuẩn hoá thì trọng số structure chỉ khoảng 0,004 trong khi vector của nó dài gấp khoảng 40 lần hai modality kia, phần đóng góp thật khoảng 15%.
+
+Giới hạn của kết luận: các dòng ablation chạy 3 seed trên 882 câu truy vấn, và khoảng cách 1,0 điểm giữa "bỏ image" và GraphSAGE nằm trong tầm hai lần độ lệch giữa các seed. Điều chắc hơn là chiều thay đổi: bỏ image làm tăng 2,7 điểm ở tập con và làm giảm 3,9 điểm ở VG ∩ COCO.
+
+### Bộ truy vấn trực tiếp và gián tiếp
+
+Đề yêu cầu tối thiểu 20 truy vấn đánh giá, có nhóm gián tiếp cần khai thác quan hệ, và báo cáo tách hai nhóm. Các bộ đang có:
+
+| Dataset | Trực tiếp | Gián tiếp | Kết quả tách nhóm ở |
+|---|---|---|---|
+| MKG-W | 2.710 cặp test, câu nêu tên hoặc mô tả đáp án | 2.626 cặp test, câu hỏi qua một thực thể khác (ví dụ "the director of X") | [Kết quả trên MKG-W](#kết-quả-trên-mkg-w) |
+| MKG-W, bộ viết tay | | 30 câu do người viết, chỉ dùng để đánh giá | gạch đầu dòng cuối của mục trên; chi tiết ở [docs/mkg-w-results.md](docs/mkg-w-results.md) |
+| VN Heritage | câu là tên địa điểm | câu sinh từ một claim Wikidata bị giấu khỏi đồ thị (ví dụ "a heritage site located in Đà Lạt") | [Kết quả trên VN Heritage](#kết-quả-trên-vn-heritage-mmkg-tự-xây) |
+| VG ∩ COCO | direct twin: câu dùng tên gốc của vật thể (1.387 câu) | relation queries (1.408 câu) và indirect queries gọi vật thể bằng khái niệm cha (1.387 câu) | [Mô hình có đọc cạnh không](#mô-hình-có-đọc-cạnh-không) |
+
+### Kết quả trên MKG-W
+
+Dataset thứ hai: đồ thị tri thức đa phương thức MKG-W (15.000 thực thể, 169 quan hệ, 9.301 thực thể có ảnh). Đáp án là một thực thể có ảnh. Có hai nhóm câu hỏi: trực tiếp (nêu tên hoặc mô tả đáp án) và gián tiếp (nêu một thực thể khác, gọi là anchor, và một quan hệ: "the performer of Doggfather"). Sự kiện được hỏi trong câu test không có trong đồ thị train.
+
+Tập test, R@1 sau khi xếp hạng lại cùng CLIP. α và k chọn trên validation; đơn vị %; ± là độ lệch chuẩn qua 3 seed.
+
+| Phương pháp | Đọc gì từ câu hỏi | Gián tiếp (2.626 cặp) | Trực tiếp (2.710 cặp) | Toàn bộ |
+|---|---|---|---|---|
+| CLIP ViT-B/32 | câu chữ | 2,70 | 52,51 | 28,00 |
+| CLIP + GraphSAGE | câu chữ | 5,81 ± 0,16 | 60,96 ± 0,23 | 33,82 ± 0,17 |
+| CLIP + GraphSAGE, không cạnh | câu chữ | 4,70 ± 0,21 | **87,27 ± 0,30** | **46,63 ± 0,18** |
+| CLIP + path score (không huấn luyện) | anchor | 15,61 | 52,51 | 34,35 |
+| CLIP + RotatE (chỉ cấu trúc) | anchor + quan hệ | 26,18 ± 0,48 | 52,51 | 39,56 ± 0,24 |
+| CLIP + AdaMF-MAT (phương pháp 2024) | anchor + quan hệ | 24,77 ± 0,42 | 52,51 | 38,86 ± 0,20 |
+| CLIP + relation path scorer | câu chữ + anchor | **27,44 ± 0,12** | 52,51 | 40,17 ± 0,06 |
+
+Cách đọc bảng:
+
+- CLIP gần như không trả lời được câu hỏi gián tiếp: đáp án không được mô tả trong câu, và ảnh không cho thấy sự kiện được hỏi.
+- GraphSAGE mã hoá mỗi thực thể thành một vector cố định, không biết câu hỏi nhắc tới thực thể nào, nên chỉ hơn CLIP 3,1 điểm ở nhóm gián tiếp. Bỏ cạnh hay xáo cạnh gần như không đổi kết quả của nó.
+- Ba mô hình xuất phát từ anchor hơn hẳn. Khi xáo cạnh, path score và relation path scorer rơi về mức CLIP (2,44 và 2,75), nên phần tăng đến từ cạnh thật.
+- AdaMF-MAT (Zhang et al., COLING 2024) được tái lập trên bài toán gốc trước khi dùng cho truy hồi: MRR link prediction 34,58 ± 0,07 so với 35,85 trong bài báo. Ảnh và văn bản giúp link prediction (RotatE chỉ cấu trúc: 29,96) và R@10 truy hồi, nhưng R@1 gián tiếp của AdaMF-MAT lại thấp hơn RotatE 1,4 điểm.
+- Anchor và quan hệ đang được đọc từ nhãn của câu hỏi. Khi tự tìm anchor trong câu chữ cho mọi câu hỏi, chưa có cấu hình nào giữ được cả hai nhóm: hoặc trực tiếp tụt còn 11,2, hoặc gián tiếp tụt còn 10,7.
+- Trên hai bộ kiểm tra thêm, relation path scorer (anchor từ nhãn) đạt 3,9 với câu hỏi cần hai triple nối nhau và 20,0 với 30 câu viết tay (CLIP: 0,96 và 0,00).
+
+Cách dựng dữ liệu, ablation, kết quả theo khoảng cách từ anchor, chi tiết AdaMF-MAT, giới hạn và lệnh chạy lại: [docs/mkg-w-results.md](docs/mkg-w-results.md).
+
+### Ablation của AdaMF-MAT
+
+R@1 sau khi xếp hạng lại, 3 seed:
+
+| Cấu hình | R@1 | Cấu hình | R@1 |
+|---|---|---|---|
+| AdaMF-MAT đầy đủ | 51,42 | AdaMF không MAT | 51,63 |
+| trộn bằng trung bình + MAT | 52,16 | trộn bằng trung bình, không MAT | 51,69 |
+| bỏ structure | 51,92 | bỏ text | 50,54 |
+| bỏ image | 47,75 | chỉ image (linear adapter) | 49,76 |
+
+- Trọng số thích nghi và MAT đều không giúp: bật hay tắt, R@1 nằm trong 51,4–52,2.
+- Image là modality quyết định: bỏ đi thì tụt 3,9 điểm so với AdaMF không MAT. Thêm text vào image được thêm 2,2 điểm (49,76 → 51,92). Bỏ structure thì không đổi.
+- Bản gốc không chuẩn hoá: trọng số structure chỉ khoảng 0,0002 nhưng vector dài 84–2.011 lần, nên phần đóng góp thật khoảng 7%. Chuẩn hoá L2 từng modality trước khi trộn đưa phần đóng góp về đúng trọng số (`scripts/adamf_weight_stats.py`).
+
+### Mô hình có đọc cạnh không
+
+Caption COCO hiếm khi nhắc đúng quan hệ (chỉ 17,9% caption train chứa một triplet của ảnh), nên R@1 theo caption không cho biết mô hình có dùng cạnh hay không. Vì vậy dựng thêm bộ **relation queries** (`src/evaluation/relation_queries.py`):
+
+- **Relation query:** câu sinh từ một triplet chỉ có ở đúng một ảnh test, ví dụ `man riding horse`.
+- **Confuser:** ảnh test khác có **đủ cả hai object** của câu (`man` và `horse`) nhưng **không có quan hệ** được hỏi, ví dụ ảnh người đứng cạnh ngựa (`man next to horse`) hoặc người và ngựa đứng xa nhau.
+- **Confuser acc@1:** chỉ xếp hạng ảnh đúng cùng các confuser của nó, rồi đếm tỉ lệ ảnh đúng đứng đầu. Chọn ngẫu nhiên thì đúng 1 / (số confuser + 1), trung bình 21,4%.
+
+Vì sao cần confuser: nếu xếp hạng trên cả 1.500 ảnh, mô hình chỉ cần tìm ảnh có người và ngựa là đã loại được gần hết, không cần hiểu `riding`. Confuser đều có người và ngựa, nên cách duy nhất để chọn đúng là đọc quan hệ. Đây là phép thử trực tiếp cho câu hỏi "mô hình có dùng cạnh không".
+
+- Bộ **all** có 1.408 query. Bộ con **contrast** có 734 query và chỉ giữ những confuser có một quan hệ **khác** giữa đúng hai object đó (như `man next to horse`), bỏ các ảnh người và ngựa không liên quan nhau; mức ngẫu nhiên 31,4%. Bộ này đo việc phân biệt quan hệ A với quan hệ B.
+- **Edge masking:** xoá cạnh được hỏi khỏi đồ thị của ảnh đúng rồi chấm lại. Confuser acc@1 tụt nghĩa là mô hình có đọc cạnh đó.
+
+Confuser acc@1, graph-only score (không cộng CLIP), 5 seed, đơn vị %:
+
+| Cấu hình | all (1.408) | → edge masking | contrast (734) | → edge masking |
+|---|---|---|---|---|
+| CLIP (tham chiếu) | 28,8 | | 32,6 | |
+| AdaMF không MAT, L2 (mốc) | 27,7 | 27,7 | 33,6 | 33,7 |
+| so0.3 | 30,0 | 28,5 | 35,0 | 33,2 |
+| sl0.1 | 30,0 | 28,5 | 34,9 | 33,1 |
+| so0.3 + sl0.1 | 30,0 | 28,4 | 34,9 | 33,0 |
+
+Bootstrap ghép cặp theo cụm ảnh, so với mốc, CI 95%:
+
+- all: +2,3 điểm [1,2; 3,4] cho cả ba cấu hình.
+- contrast: +1,3 đến +1,4 điểm, CI chứa 0 (ví dụ so0.3 +1,42 [−0,14; 3,08]).
+- Mức tụt khi edge masking trên contrast: mốc −0,05 [−0,14; 0]; so0.3 +1,83 [1,28; 2,43]; sl0.1 +1,74; so0.3 + sl0.1 +1,93.
+
+Cách đọc:
+
+- AdaMF mốc **không đọc cạnh**: edge masking không đổi gì, điểm còn thấp hơn CLIP. Mô hình đi đường tắt qua vector CLIP ảnh ở modality image.
+- Ép modality structure tự gánh việc (so0.3 hoặc sl0.1) làm mô hình **bắt đầu đọc cạnh** (mức tụt có ý nghĩa thống kê), đồng thời R@1 caption tăng khoảng 1 điểm.
+- Việc **phân biệt quan hệ A với quan hệ B** giữa cùng hai vật thể chưa tốt hơn mốc một cách có ý nghĩa thống kê, và cũng chỉ ngang CLIP. Kết quả 3 seed (CI [0,3; 4,0]) không còn đứng vững ở 5 seed.
+
+#### Indirect queries: hỏi bằng khái niệm cha (WordNet IsA)
+
+Thử thêm một loại cạnh khác: cạnh **IsA** nối mỗi object với khái niệm cha của nó trong WordNet (tối đa 2 tầng, ví dụ `cat → feline → carnivore`). Bộ test tương ứng (`src/data/kg_edges.py`, `scripts/build_kg_variant.py`):
+
+- **Indirect query:** câu từ một triplet của ảnh test, nhưng subject được gọi bằng khái niệm cha, ví dụ `carnivore sitting in chair` cho ảnh có `cat sitting in chair`. Chỉ đúng một ảnh test khớp câu này.
+- **Direct twin:** cùng câu nhưng gọi đúng tên gốc (`cat sitting in chair`), để so độ khó.
+- **Confuser:** cùng ý như ở trên, ảnh test khác có object (`chair`) và một vật thuộc khái niệm cha (một `carnivore` nào đó, ví dụ chó) nhưng không có quan hệ được hỏi.
+- 1.387 cặp indirect/direct; chọn ngẫu nhiên trong nhóm {ảnh đúng + confuser} đúng 17,2%.
+- **KG graph:** đồ thị thêm cạnh IsA, mô hình train lại trên đó. **IsA masking:** xoá cạnh IsA của ảnh đúng rồi chấm lại.
+
+Graph-only score, 3 seed, đơn vị %. **R@1** tính trên cả 1.500 ảnh test; **confuser acc@1** là tỉ lệ ảnh đúng đứng đầu trong nhóm {ảnh đúng + confuser}.
+
+| Model | Graph | Indirect R@1 | Indirect confuser acc@1 | Direct R@1 | Direct confuser acc@1 |
+|---|---|---|---|---|---|
+| CLIP (reference) | không dùng | 3,8 | 23,9 | 7,6 | 27,3 |
+| AdaMF L2 | base | **5,3** | 24,2 | 9,1 | 27,2 |
+| AdaMF L2 | KG (+ IsA) | 5,0 | 25,0 | 8,4 | 26,7 |
+| AdaMF L2 | KG, IsA masked | 4,1 | 24,3 | 8,4 | 26,9 |
+| AdaMF so0.3 | base | **5,3** | 24,7 | 9,5 | 28,6 |
+| AdaMF so0.3 | KG (+ IsA) | **5,3** | 25,2 | 9,1 | 27,7 |
+| AdaMF so0.3 | KG, IsA masked | 4,7 | 25,8 | 9,2 | 28,3 |
+
+Cách đọc:
+
+- **Mô hình có dùng cạnh IsA:** IsA masking làm indirect R@1 tụt (5,0 → 4,1 với L2; 5,3 → 4,7 với so0.3), còn direct R@1 không đổi.
+- **Nhưng cạnh IsA không giúp:** model train trên KG graph không hơn model train trên base graph (5,0–5,3 so với 5,3). Vector CLIP text của tên object đã đủ gần khái niệm cha (`cat` gần `carnivore`), nên mô hình không cần cạnh để nối hai từ.
+- **Bộ này khó với mọi cấu hình, kể cả CLIP:** R@1 dưới 10% vì câu sinh từ một triplet ngắn và mơ hồ hơn caption; confuser acc@1 chỉ cao hơn ngẫu nhiên 7–11 điểm.
+- R@1 caption của model train trên KG graph: L2 51,45, so0.3 52,96, tức không tốt hơn base graph.
+
+### Ablation khác (3 seed nếu không ghi khác)
+
+| Thí nghiệm | Kết quả |
+|---|---|
+| Tỉ lệ so 10/30/50/70% | 10% đã đủ để mô hình đọc cạnh; từ 50% trở lên, R@1 caption giảm để đổi lấy độ đúng quan hệ |
+| Trọng số sl 0,1 / 0,3 / 1 | 0,1 tốt nhất (R@1 caption 53,2) |
+| Chọn checkpoint theo R@1 + độ đúng quan hệ | Không cứu được mốc; bộ đo độ nhạy cạnh trên validation báo đúng là mốc ≈ 0 ở mọi epoch |
+| Âm khó đổi vị từ (giống MAT) | Trọng số 1 làm huấn luyện mất ổn định (R@1 48,5); trọng số 0,1 không có tác dụng |
+| Batch gom ảnh cùng cặp vật thể | Không đọc cạnh; CLIP ảnh vẫn đủ để tách các ảnh |
+| Dữ liệu train 25 / 50 / 100% (7k ảnh) | Mốc không đọc cạnh ở mọi mức; so0.3 đọc cạnh ở mọi mức, độ đúng 28,2 → 29,5 → 30,2 |
+| Toàn bộ VG ∩ COCO (45.817 ảnh train, giữ nguyên val/test) | Mốc đạt R@1 55,8 (+3,7) và **tự đọc cạnh** (30,6 → 29,4 khi che); so0.3 đạt 56,0, mất lợi thế so với mốc |
+| Nhiễu đồ thị mô phỏng (bỏ đỉnh, đổi nhãn, bỏ cạnh) | Nhiễu nặng: mốc 48,1, so0.3 45,5, sl0.1 45,6. Mô hình đọc cạnh chịu nhiễu kém hơn |
+| Caption nhắc tới triplet của ảnh | Khớp chính xác 17,9%; thêm từ đồng nghĩa WordNet 19,3%; thêm khái niệm cha 22,0% |
+
+### Kết luận
+
+1. AdaMF-MAT vượt GraphSAGE 3,3 điểm R@1 (51,4 so với 48,1), nhưng gần như toàn bộ đến từ modality image và nhãn đối tượng, không đến từ quan hệ.
+2. Với 7k ảnh train, AdaMF bỏ qua cạnh vì modality image (CLIP) đã đủ để khớp caption.
+3. Ép modality structure học riêng (so hoặc sl) làm mô hình dùng cạnh và tăng R@1 caption khoảng 1 điểm, cao nhất 53,1.
+4. Khi có nhiều dữ liệu hơn (khoảng 6,5 lần), mô hình mốc tự dùng cạnh và R@1 tăng 3,7 điểm; lợi ích của can thiệp biến mất.
+5. Chưa cấu hình nào phân biệt quan hệ A với B tốt hơn mốc hoặc CLIP một cách có ý nghĩa thống kê.
+6. Dùng cạnh phải trả giá bằng độ bền khi đồ thị nhiễu. Cạnh IsA không thêm được gì so với chữ CLIP của nhãn.
+
+### Chưa làm
+
+- Âm khó đổi vị từ với trọng số giữa 0,1 và 1, hoặc áp riêng lên vector modality structure.
+- Bộ dữ liệu đầy đủ với 5 seed, kèm so/sl và nhiễu.
+- Nhiễu từ bộ sinh scene graph thật (cần GPU), thay cho nhiễu mô phỏng.
+
+Số liệu R@K, MRR, α, k: `runs/benchmark/adamf_mat-*.json`. Các bảng relation queries, ablation khác và bootstrap lấy từ báo cáo [plans/reports/ablation-261120-0650-relation-suite.md](plans/reports/ablation-261120-0650-relation-suite.md); file kết quả thô của chúng không được lưu trong repo. Bảng indirect queries lấy từ output của `scripts/eval_indirect_queries.py` lúc chạy; file kết quả thô cũng không được lưu.
+
+## Cấp độ 3: đánh giá giải thích và MMKG tự xây
+
+### Kết quả đánh giá giải thích (cấp độ 3)
+
+Báo cáo có biểu đồ và đồ thị con của 10 truy vấn: [reports/explanation-quality/index.html](reports/explanation-quality/index.html) (mở bằng trình duyệt).
+
+Giải thích của một cặp truy vấn và ảnh là các relation làm điểm đồ thị giảm nhiều nhất khi bỏ riêng từng cái. Bảng dưới xoá đồng thời cả nhóm đó khỏi đồ thị của ảnh đứng đầu, giữ nguyên CLIP và điểm của mọi ảnh khác, rồi so với 20 nhóm ngẫu nhiên cùng số relation. 200 truy vấn test, trung bình 3 seed, lượt ngày 21/11 trên mô hình huấn luyện lại từ `configs/retrieval/ablations/full.yaml`.
+
+| Mức xoá | Mất vị trí đầu | Ngẫu nhiên | Điểm đồ thị giảm | Ngẫu nhiên | Sparsity | Giữ vị trí đầu khi chỉ giữ nhóm giải thích | Ngẫu nhiên |
+|---|---|---|---|---|---|---|---|
+| 10% | 18,23% | 4,66% | 0,0236 | 0,0022 | 79,58% | 91,83% | 81,06% |
+| 25% | 25,05% | 6,64% | 0,0327 | 0,0034 | 69,57% | 96,59% | 85,52% |
+
+![Fidelity: mất vị trí đầu và điểm đồ thị giảm khi xoá nhóm giải thích so với xoá ngẫu nhiên](reports/explanation-quality/figures/fidelity.png)
+
+- **Fidelity**: xoá nhóm giải thích làm ảnh mất vị trí đầu nhiều gấp khoảng 4 lần xoá ngẫu nhiên, và điểm đồ thị giảm nhiều gấp khoảng 10 lần.
+- **Sparsity**: giải thích gồm 2,1 (mức 10%) và 3,7 (mức 25%) trên trung bình 13,0 relation của ảnh. Mức 10% thực tế lấy khoảng 20% vì luôn lấy ít nhất hai relation.
+
+![Sparsity: giữ vị trí đầu khi chỉ giữ nhóm giải thích so với giữ nhóm ngẫu nhiên](reports/explanation-quality/figures/keep-only.png)
+
+- **Validity**: nhãn do AI chấm, chưa có người chấm. Một trợ lý AI xem ảnh và chấm 20 truy vấn với 42 relation (seed 13, mức 10%, 10 ảnh trả về đúng và 10 sai) ngày 21/11. 38/42 relation đúng với ảnh, 4 chưa rõ, không có cái nào sai. Tỷ lệ đạt cả hai tiêu chí là 35/42 (83,3%) nếu "liên quan" nghĩa là relation chạm tới vật thể, hành động hoặc ràng buộc được hỏi, và 14/42 (33,3%) nếu relation phải nói đúng quan hệ hoặc hành động được hỏi. Cần chốt tiêu chí rồi nhờ người chấm; form chấm ở `tools/validity-review/`. File nhãn nằm local trong `runs/`, không thuộc repository.
+
+![Validity: nhãn AI trên 42 relation của 20 truy vấn, theo hai cách đọc tiêu chí liên quan](reports/explanation-quality/figures/validity-ai.png)
+
+Đối chứng cho giới hạn "cách chọn tự chấm chính nó": chọn relation bằng GNNExplainer (mask học trên cạnh, không dùng phép xoá) rồi chạy cùng giao thức. Nhóm nó chọn vẫn vượt ngẫu nhiên (mất vị trí đầu 8,52% ở mức 10% và 12,78% ở mức 25%) nhưng yếu hơn cách bỏ từng relation. Chi tiết: [docs/graphsage-design-decisions.md](docs/graphsage-design-decisions.md#gnnexplainer-làm-cách-chọn-độc-lập).
+
+![Đối chứng GNNExplainer: ba phép đo so với cách bỏ từng relation và ngẫu nhiên](reports/explanation-quality/figures/gnn-explainer-control.png)
+
+```bash
+python -m scripts.evaluate_fidelity --config configs/evaluation/fidelity_gnn_explainer.yaml
+python -m scripts.evaluate_explanation_quality --config configs/evaluation/explanation_quality_gnn_explainer.yaml
+```
+
+### Kết quả trên VN Heritage (MMKG tự xây)
+
+Dataset thứ ba, tự xây cho cấp độ 3: địa điểm và di tích Việt Nam, bản lõi gồm 160 địa điểm, 772 ảnh từ Wikimedia Commons, 981 claim Wikidata (18 quan hệ) và 902 cạnh rút từ bài Wikipedia tiếng Việt. Không có đồ thị cảnh: đồ thị là một KG dùng chung, ảnh nối vào KG qua cạnh "ảnh – mô tả – địa điểm". Có hai nhóm câu hỏi: trực tiếp (tên địa điểm) và gián tiếp (một claim Wikidata bị giấu, viết thành câu: "a heritage site located in Đà Lạt"). Sự kiện được hỏi trong câu test không có trong đồ thị train.
+
+Tập test, gallery 772 ảnh: một ảnh đúng khi nó chụp địa điểm trả lời, và một ảnh nhận điểm đồ thị của địa điểm nó mô tả. α và k chọn trên validation; đơn vị %; ± là độ lệch chuẩn qua 10 cách chia claim, mỗi cách chia là trung bình của 5 seed.
+
+| Phương pháp | Nhóm truy vấn | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| CLIP ViT-B/32 | trực tiếp | 4,9 | 24,4 | 31,7 | 14,2 |
+| CLIP ViT-B/32 | gián tiếp | 6,7 ± 1,7 | 17,8 ± 2,7 | 25,1 ± 3,2 | 13,3 ± 1,8 |
+| **CLIP + GraphSAGE**, đồ thị Wikidata | trực tiếp | 5,9 ± 1,8 | 16,4 ± 6,7 | 24,3 ± 8,7 | 12,6 ± 3,1 |
+| **CLIP + GraphSAGE**, đồ thị Wikidata | gián tiếp | 8,6 ± 1,0 | 17,3 ± 2,8 | 24,4 ± 3,9 | 14,1 ± 1,5 |
+
+Cùng các vector thực thể, chấm trên gallery 160 địa điểm (điểm của địa điểm là điểm ảnh tốt nhất của nó):
+
+| Phương pháp | R@1 gián tiếp | R@10 gián tiếp | R@10 trực tiếp |
+|---|---|---|---|
+| CLIP ViT-B/32 | 6,7 ± 1,7 | 30,5 ± 3,8 | 34,2 |
+| CLIP + GraphSAGE, đồ thị Wikidata | 8,6 ± 0,9 | 35,8 ± 2,8 | 41,1 ± 3,7 |
+
+Cách đọc bảng:
+
+- **Chấm theo ảnh, đồ thị không vượt CLIP ở R@10** trên truy vấn gián tiếp: −0,7 ± 1,4 (4/6) điểm (trong ngoặc là số cách chia thắng/thua). Chấm theo địa điểm thì hơn CLIP +5,3 ± 1,1 (10/0) điểm.
+- R@1 gián tiếp tăng +1,9 ± 0,5 (8/2) điểm, nhưng bản bỏ hết cạnh cũng tăng ngang vậy (bảng ablation), nên phần này không đến từ cạnh.
+- CLIP gần như không biết các địa điểm này: gõ đúng tên chỉ đưa một ảnh đúng lên hạng 1 ở 4,9% truy vấn.
+- Vì sao hai cách chấm lệch nhau: mọi ảnh của một địa điểm nhận cùng điểm đồ thị, nên một địa điểm sai được đẩy lên kéo theo tất cả ảnh của nó. Đồ thị làm giảm số địa điểm sai đứng trên đáp án, nhưng mỗi địa điểm sai giờ mang theo nhiều ảnh hơn, nên số ảnh sai đứng trên lại tăng. Chấm theo địa điểm tương đương với việc trả về mỗi địa điểm một ảnh.
+- α chọn trên validation có trung vị 0,70; k là cả gallery ở 41/50 lần chạy; 4/50 lần chạy chọn α = 1, tức bỏ hẳn điểm đồ thị.
+
+#### Ablation trên VN Heritage
+
+Cùng bộ phép can thiệp với cấp độ 1. Mỗi biến thể được huấn luyện lại trên 10 cách chia × 5 seed, α và k chọn riêng trên validation. Truy vấn gián tiếp, tập test. "So với bản đầy đủ" là chênh lệch ghép cặp bản đầy đủ − biến thể ± sai số chuẩn qua 10 cách chia, trong ngoặc là số cách chia thắng/thua.
+
+| Biến thể | R@1 theo ảnh | R@10 theo ảnh | R@10 so với CLIP | Đầy đủ − biến thể, R@10 theo ảnh | R@10 theo địa điểm | Đầy đủ − biến thể, R@10 theo địa điểm | R@10 theo địa điểm, chỉ dùng điểm đồ thị |
+|---|---|---|---|---|---|---|---|
+| Đầy đủ (đồ thị Wikidata) | 8,6 ± 1,0 | 24,4 ± 3,9 | −0,7 |  | 35,8 ± 2,8 |  | 32,4 |
+| Bỏ hết cạnh (`no_edges`) | 8,8 ± 0,8 | 23,3 ± 5,1 | −1,8 | +1,2 ± 1,8 (6/4) | 34,7 ± 2,4 | +1,1 ± 1,1 (7/3) | 31,7 |
+| Cạnh ngẫu nhiên (`claims_shuffled`) | 9,0 ± 1,0 | 21,7 ± 4,3 | −3,4 | +2,8 ± 1,5 (8/2) | 31,4 ± 2,5 | +4,4 ± 1,0 (9/1) | 27,5 |
+| Bỏ nhãn quan hệ (`claims_untyped`) | 8,4 ± 1,5 | 24,6 ± 3,1 | −0,5 | −0,2 ± 1,0 (5/4) | 34,8 ± 2,1 | +1,0 ± 0,4 (8/2) | 29,6 |
+| Không hướng (`claims_undirected`) | 8,7 ± 1,0 | 24,9 ± 4,0 | −0,2 | −0,5 ± 1,2 (4/6) | 36,8 ± 2,1 | −1,0 ± 0,8 (4/6) | 31,5 |
+
+- **Chỉ phép cạnh ngẫu nhiên tách được khỏi bản đầy đủ:** +2,8 ± 1,5 (8/2) điểm R@10 theo ảnh, +4,4 ± 1,0 (9/1) theo địa điểm. Việc "ai nối với ai" mang tín hiệu.
+- **Bỏ hết cạnh gần ngang bản đầy đủ:** +1,2 ± 1,8 (6/4) theo ảnh, +1,1 ± 1,1 (7/3) theo địa điểm, đều trong khoảng hai sai số chuẩn. Phần lớn kết quả đến từ vector tên của thực thể và việc huấn luyện trên truy vấn. Cấp độ 1 cũng cho thấy điều tương tự: danh sách vật thể gánh phần lớn, cạnh góp ít.
+- **Nhãn quan hệ và hướng cạnh gần như không được dùng:** theo ảnh, bỏ nhãn quan hệ −0,2 ± 1,0 (5/4), bỏ hướng −0,5 ± 1,2 (4/6). Theo địa điểm, bỏ nhãn quan hệ làm giảm nhẹ nhưng đều (+1,0 ± 0,4, 8/2); bỏ hướng thì không (−1,0 ± 0,8, 4/6).
+- **Cạnh sai gây hại:** cạnh ngẫu nhiên kém cả bản bỏ hết cạnh (21,7% so với 23,3% R@10 theo ảnh).
+- Sai số chuẩn lạc quan hơn thực tế vì 10 cách chia dùng chung 160 địa điểm và claim chồng lấn. Cột cuối chấm theo địa điểm vì trên gallery ảnh mọi ảnh của một địa điểm có cùng điểm đồ thị, nên chỉ dùng điểm đồ thị thì các ảnh hoà nhau.
+
+Thêm 902 cạnh rút từ bài Wikipedia vào đồ thị Wikidata, dưới bốn cách đặt tên quan hệ (gallery ảnh; cột thứ tư là chênh lệch ghép cặp so với đồ thị Wikidata):
+
+| Đồ thị | R@1 gián tiếp | R@10 gián tiếp | So với đồ thị Wikidata, R@10 | R@10 trực tiếp |
+|---|---|---|---|---|
+| Đồ thị Wikidata, không có cạnh từ bài | 8,6 ± 1,0 | 24,4 ± 3,9 | | 24,3 ± 8,7 |
+| + cạnh từ bài, `generic` | 8,4 ± 0,8 | 23,9 ± 4,9 | −0,5 ± 1,0 (3/7) | 25,7 ± 9,1 |
+| + cạnh từ bài, `cue` | 8,6 ± 1,0 | 24,5 ± 5,2 | +0,0 ± 1,3 (5/5) | 25,3 ± 9,1 |
+| + cạnh từ bài, `kind` | 8,6 ± 1,1 | 23,9 ± 4,3 | | 25,2 ± 7,2 |
+| + cạnh từ bài, `section` | 8,5 ± 0,9 | 23,5 ± 3,2 | | 24,2 ± 7,4 |
+| + cạnh từ bài, `cue`, cạnh ngẫu nhiên | 9,0 ± 1,2 | 21,9 ± 4,0 | | 24,9 ± 7,9 |
+
+- Thêm cạnh từ bài không đổi gì đo được trên truy vấn gián tiếp.
+- Bốn sơ đồ đặt tên không tách được nhau: chênh lệch nằm trong sai số chuẩn.
+- Mẫu 100 cạnh do mô hình ngôn ngữ chấm (chưa có người kiểm): đích và loại đích đúng 98/100, nhưng quan hệ đoán bằng từ khoá chỉ đúng 11/21.
+- Giới hạn: cạnh từ bài trùng cặp với một claim đã bị bỏ khi build, nên chưa thử vai trò "bài nhắc lại đúng sự kiện bị hỏi".
+
+Cách dựng dữ liệu, phép đếm ảnh chen nhau, mốc phụ AdaMF-MAT, phần chưa có và lệnh chạy lại: [docs/vn-heritage-results.md](docs/vn-heritage-results.md). Báo cáo về bộ dữ liệu (quy trình xây, cấu trúc đồ thị, rò rỉ, giấy phép): [plans/reports/vn-heritage-261120-0033-mmkg-report.html](plans/reports/vn-heritage-261120-0033-mmkg-report.html).
 
 ## Cách hoạt động
 
@@ -86,32 +503,39 @@ python -m scripts.train_graphsage                        # huấn luyện 3 seed
 python -m scripts.run_benchmark --method graphsage       # CLIP + GraphSAGE
 python -m scripts.explain_retrieval --sample 5           # kết quả kèm relation giải thích
 
-pytest                                                   # 252 test, không cần mạng
+pytest                                                   # 458 test, không cần mạng
 ```
 
 Lưu ý:
 
 - `embed_vg_coco` cần 10.000 file ảnh trong `data/processed/vg_coco/images/`. Ảnh (1,4 GB) không nằm trong repo. Script tải ảnh và xây dữ liệu (`scripts/build_vg_coco.py`) hiện cũng không nằm trong repo; các file JSON nó sinh ra (ảnh, truy vấn, đồ thị, split) thì có.
 - `train_graphsage` báo cáo lên Weights & Biases. Đổi `wandb.mode` trong `configs/retrieval/vg_coco.yaml` thành `offline` hoặc `disabled` nếu không dùng.
+- Lệnh cho MKG-W nằm ở [docs/mkg-w-results.md](docs/mkg-w-results.md#chạy-lại); lệnh cho VN Heritage ở [docs/vn-heritage-results.md](docs/vn-heritage-results.md#chạy-lại).
 - Biến thể đỉnh ảnh mang CLIP: `python -m scripts.train_graphsage --image-node clip_image`, rồi `python -m scripts.run_benchmark --method graphsage --run directed-clip_image-l3-h512`.
 
-## Cấu trúc repo
+Cấp độ 2 (AdaMF), mỗi seed khoảng 5 phút trên CPU:
 
-```
-configs/        tham số dữ liệu và thí nghiệm (YAML)
-src/data/       xây dữ liệu: ghép VG với COCO, chuẩn hoá synset, chia split, xây đồ thị
-src/embeddings/ CLIP đóng băng và kho lưu vector
-src/models/     đồ thị con, GraphSAGE, huấn luyện, giải thích
-src/retrieval/  xếp hạng lại, so khớp từ, đọc config
-src/evaluation/ Recall@K, MRR, bộ chạy benchmark
-scripts/        các lệnh chạy ở trên
-runs/           kết quả benchmark và lượt huấn luyện
-docs/           quyết định thiết kế và sơ đồ
-plans/          kế hoạch theo phase và nhật ký công việc
-tests/          test tự động
+```bash
+python -m scripts.train_graphsage --model adamf_mat                                   # AdaMF-MAT đầy đủ
+python -m scripts.run_benchmark --method adamf_mat --run adamf-mat-d256-mu1
+python -m scripts.train_graphsage --model adamf_mat --no-mat --normalize-modalities \
+    --structure-only-rate 0.3 --config configs/retrieval/vg_coco_5seeds.yaml          # so0.3, 5 seed
+python -m scripts.run_benchmark --method adamf_mat --run adamf-d256-l2-so0.3 --config configs/retrieval/vg_coco_5seeds.yaml
+python -m scripts.build_relation_queries                                              # bộ relation queries
+python -m scripts.eval_relation_queries                                               # confuser acc@1 + edge masking
+python -m scripts.adamf_weight_stats --run adamf-mat-d256-mu1                         # trọng số và phần đóng góp từng modality
 ```
 
-## Ablation và fidelity
+Báo cáo W&B ([link](https://forge.coreweave.com/wandb/thinhnt3-vnggames/vg-coco-graph-retrieval/reports/x--VmlldzoxODM0MjcyMA); danh sách link và mục lục ở [wandb-reports.md](wandb-reports.md)) dựng từ các file kết quả local, không train lại:
+
+```bash
+python -m scripts.upload_report_runs                       # run tổng hợp + đường học lên W&B, bỏ qua run đã có
+python -m scripts.build_wandb_report --url <link report>   # viết lại report tại chỗ; bỏ --url để tạo report mới
+```
+
+Phần chữ của report nằm trong `docs/wandb-report/*.md`.
+
+Ablation và fidelity:
 
 Hướng dẫn chạy, định nghĩa phép can thiệp và giới hạn kết luận:
 [docs/graphsage-design-decisions.md](docs/graphsage-design-decisions.md#ablation-và-fidelity).
@@ -121,9 +545,30 @@ python -m scripts.train_graphsage --config configs/retrieval/ablations/objects_o
 python -m scripts.run_benchmark --method graphsage --config configs/retrieval/ablations/objects_only.yaml
 python -m scripts.analyze_ablation
 python -m scripts.evaluate_fidelity --config configs/evaluation/fidelity.yaml
+python -m scripts.evaluate_explanation_quality
 ```
 
-Report giải thích tương tác là tài liệu local trong `private/`, không thuộc repository.
+## Cấu trúc repo
+
+```
+configs/          tham số dữ liệu và thí nghiệm (YAML)
+src/data/         xây dữ liệu: VG ∩ COCO, MKG-W, VN Heritage
+src/embeddings/   CLIP đóng băng và kho lưu vector
+src/models/       đồ thị con, GraphSAGE, AdaMF-MAT, huấn luyện, giải thích
+src/retrieval/    xếp hạng lại, so khớp từ, đọc config
+src/evaluation/   Recall@K, MRR, benchmark, ablation, fidelity, sparsity, validity
+scripts/          các lệnh chạy ở trên
+runs/             kết quả benchmark và lượt huấn luyện (file mới nằm local)
+reports/          báo cáo có hình: duyệt dữ liệu, ablation, đánh giá giải thích
+docs/             quyết định thiết kế, kết quả từng dataset, phần chữ của report W&B
+tools/            form chấm validity
+plans/, plan-task/  kế hoạch, nhật ký và checklist yêu cầu
+task.md           bảng việc
+wandb-reports.md  link report W&B
+tests/            test tự động
+```
+
+Report giải thích tương tác của lượt 18/11 là tài liệu local trong `private/`, không thuộc repository.
 
 ## Kết hợp điểm thích nghi
 

@@ -1,4 +1,5 @@
 """Domain exceptions. Raise where the problem is detected; handle once at the script boundary."""
+
 from __future__ import annotations
 
 

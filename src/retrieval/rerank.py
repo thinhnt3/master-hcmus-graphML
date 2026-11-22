@@ -1,4 +1,5 @@
 """Rerank the top-k CLIP candidates with a graph score, and pick alpha and k on validation."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence

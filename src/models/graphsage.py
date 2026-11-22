@@ -1,4 +1,5 @@
 """GraphSAGE encoder that turns an image's sub-graph into one vector in the CLIP space."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from src.models.graph_data import NodeKind
 class ImageNodeFeature(StrEnum):
     """Initial feature of the image node."""
 
-    LEARNED = "learned"        # one trainable vector shared by all images: the output comes from the graph only
+    LEARNED = "learned"  # one trainable vector shared by all images: the output comes from the graph only
     CLIP_IMAGE = "clip_image"  # the image's own frozen CLIP vector
 
 
@@ -48,7 +49,7 @@ class DirectedSAGELayer(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super().__init__()
-        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")   # messages along the edge
+        self.forward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages along the edge
         self.backward_conv = SAGEConv(in_dim, out_dim, aggr="mean")  # messages against the edge
 
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
@@ -106,8 +107,8 @@ class GraphImageEncoder(nn.Module):
             self.image_token = nn.Parameter(torch.randn(dim) / dim**0.5)
 
         # Direction ablation reuses the existing undirected layer.
-        use_direction = config.directed and config.ablation is not Ablation.UNDIRECTED
-        layer = DirectedSAGELayer if use_direction else UndirectedSAGELayer
+        self.uses_edge_direction = config.directed and config.ablation is not Ablation.UNDIRECTED
+        layer = DirectedSAGELayer if self.uses_edge_direction else UndirectedSAGELayer
         sizes = [dim] + [config.hidden_dim] * config.num_layers
         self.layers = nn.ModuleList(layer(sizes[i], sizes[i + 1]) for i in range(config.num_layers))
         self.project = nn.Linear(config.hidden_dim, dim)
@@ -128,13 +129,21 @@ class GraphImageEncoder(nn.Module):
             features[is_image] = self.image_token.to(features.dtype)
         return features
 
-    def forward(self, batch: Batch) -> torch.Tensor:
-        """Unit-length graph vector of each image in the batch, shape (graphs, clip dim)."""
-        x = self.node_features(batch)
+    def message_passing(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+        """State of every node after the GraphSAGE layers, before the projection."""
         for position, layer in enumerate(self.layers):
-            x = layer(x, batch.edge_index)
+            x = layer(x, edge_index)
             # No ReLU after the last layer: CLIP vectors have negative components, so must these.
             if position < len(self.layers) - 1:
                 x = torch.relu(x)
+        return x
+
+    def image_node_state(self, batch: Batch) -> torch.Tensor:
+        """State of each image node after the last layer, shape (graphs, hidden dim)."""
+        x = self.message_passing(self.node_features(batch), batch.edge_index)
         image_nodes = batch.ptr[:-1]  # the image is the first node of every sub-graph
-        return nn.functional.normalize(self.project(x[image_nodes]), dim=-1)
+        return x[image_nodes]
+
+    def forward(self, batch: Batch) -> torch.Tensor:
+        """Unit-length graph vector of each image in the batch, shape (graphs, clip dim)."""
+        return nn.functional.normalize(self.project(self.image_node_state(batch)), dim=-1)

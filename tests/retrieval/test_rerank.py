@@ -92,8 +92,11 @@ def test_sweep_prefers_recall_at_1_over_mrr():
 def test_sweep_keeps_plain_clip_when_the_graph_score_adds_nothing():
     # A constant graph score cannot change any ranking, so every setting ties.
     best, points = sweep_alpha_and_k(
-        CLIP.astype(np.float32), np.zeros_like(CLIP, dtype=np.float32), _split([2, 0]),
-        alphas=[0.1, 0.5, 1.0], top_ks=[4, 2],
+        CLIP.astype(np.float32),
+        np.zeros_like(CLIP, dtype=np.float32),
+        _split([2, 0]),
+        alphas=[0.1, 0.5, 1.0],
+        top_ks=[4, 2],
     )
     assert len({tuple(sorted(p.metrics.items())) for p in points}) == 1
     assert (best.alpha, best.top_k) == (1.0, 2)  # most CLIP weight, then fewest candidates
@@ -155,8 +158,11 @@ def test_evaluate_reranking_selects_on_validation_and_applies_to_every_split():
 def test_evaluate_reranking_needs_validation():
     with pytest.raises(DataError, match="needs the validation split"):
         evaluate_reranking(
-            {Split.TEST: CLIP}, {Split.TEST: GRAPH}, {Split.TEST: _split([0, 1], split=Split.TEST)},
-            alphas=[1.0], top_ks=[4],
+            {Split.TEST: CLIP},
+            {Split.TEST: GRAPH},
+            {Split.TEST: _split([0, 1], split=Split.TEST)},
+            alphas=[1.0],
+            top_ks=[4],
         )
 
 
