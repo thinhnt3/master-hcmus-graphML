@@ -58,7 +58,7 @@ def wrong_above(test: ImageSplit, scores: np.ndarray) -> list[tuple[int, int]]:
 def best_image_mask(test: ImageSplit) -> np.ndarray:
     """True at each place's most CLIP-similar image, per query."""
     place = np.array(test.image_entities)
-    best = np.zeros(test.clip_scores.shape, dtype=bool)
+    best = np.zeros_like(test.clip_scores, dtype=bool)
     for entity in np.unique(place):
         columns = np.flatnonzero(place == entity)
         best[np.arange(best.shape[0]), columns[test.clip_scores[:, columns].argmax(axis=1)]] = True

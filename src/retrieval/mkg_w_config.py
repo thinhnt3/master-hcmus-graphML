@@ -104,7 +104,7 @@ class MkgwRetrievalConfig:
         if (
             not isinstance(decays, list)
             or not decays
-            or not all(isinstance(d, (int, float)) and not isinstance(d, bool) and 0 < d <= 1 for d in decays)
+            or not all(isinstance(d, int | float) and not isinstance(d, bool) and 0 < d <= 1 for d in decays)
         ):
             raise ConfigError("path_score.decay_grid must be a non-empty list of numbers in (0, 1]")
         self_weights: list[Any] | None = None
@@ -113,7 +113,7 @@ class MkgwRetrievalConfig:
             if (
                 not isinstance(self_weights, list)
                 or not self_weights
-                or not all(isinstance(w, (int, float)) and not isinstance(w, bool) and w >= 0 for w in self_weights)
+                or not all(isinstance(w, int | float) and not isinstance(w, bool) and w >= 0 for w in self_weights)
             ):
                 raise ConfigError("anchor_linking.self_weight_grid must be a non-empty list of numbers >= 0")
         sage_raw = require_section(raw, "kg_graphsage")
@@ -122,7 +122,7 @@ class MkgwRetrievalConfig:
         if selection not in {s.value for s in SelectionQueries}:
             raise ConfigError(f"kg_graphsage.selection_queries must be one of {[s.value for s in SelectionQueries]}")
         structure_only_rate = sage_raw.get("structure_only_rate", 0.0)
-        if not isinstance(structure_only_rate, (int, float)) or isinstance(structure_only_rate, bool):
+        if not isinstance(structure_only_rate, int | float) or isinstance(structure_only_rate, bool):
             raise ConfigError(f"kg_graphsage.structure_only_rate must be a number, got {structure_only_rate!r}")
         training = _training_config(raw)
         relation_paths: RelationPathConfig | None = None
